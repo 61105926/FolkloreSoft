@@ -30,7 +30,7 @@ export class AuthService {
       throw new UnauthorizedException('Invalid credentials');
     }
 
-    const accessToken = this.generateAccessToken(user.id, user.email);
+    const accessToken = this.generateAccessToken(user.id, user.email, user.rol, user.sucursalId ?? null);
     const refreshToken = await this.generateAndStoreRefreshToken(user.id);
 
     return { accessToken, refreshToken };
@@ -58,6 +58,8 @@ export class AuthService {
     const accessToken = this.generateAccessToken(
       tokenRecord.user.id,
       tokenRecord.user.email,
+      tokenRecord.user.rol,
+      (tokenRecord.user as any).sucursalId ?? null,
     );
 
     return { accessToken };
@@ -70,8 +72,8 @@ export class AuthService {
     });
   }
 
-  private generateAccessToken(userId: number, email: string): string {
-    return this.jwtService.sign({ sub: userId, email });
+  private generateAccessToken(userId: number, email: string, rol: string, sucursalId: number | null): string {
+    return this.jwtService.sign({ sub: userId, email, rol, sucursalId });
   }
 
   private async generateAndStoreRefreshToken(userId: number): Promise<string> {

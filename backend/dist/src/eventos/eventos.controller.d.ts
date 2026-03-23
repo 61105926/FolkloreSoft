@@ -14,11 +14,11 @@ export declare class EventosController {
     } & {
         id: number;
         nombre: string;
+        sucursalId: number | null;
         createdAt: Date;
         updatedAt: Date;
         tipo: import(".prisma/client").$Enums.TipoEvento;
         descripcion: string | null;
-        sucursalId: number | null;
         estado: import(".prisma/client").$Enums.EstadoEvento;
         fecha_inicio: Date;
         fecha_fin: Date | null;
@@ -36,11 +36,11 @@ export declare class EventosController {
     } & {
         id: number;
         nombre: string;
+        sucursalId: number | null;
         createdAt: Date;
         updatedAt: Date;
         tipo: import(".prisma/client").$Enums.TipoEvento;
         descripcion: string | null;
-        sucursalId: number | null;
         estado: import(".prisma/client").$Enums.EstadoEvento;
         fecha_inicio: Date;
         fecha_fin: Date | null;
@@ -58,11 +58,11 @@ export declare class EventosController {
     } & {
         id: number;
         nombre: string;
+        sucursalId: number | null;
         createdAt: Date;
         updatedAt: Date;
         tipo: import(".prisma/client").$Enums.TipoEvento;
         descripcion: string | null;
-        sucursalId: number | null;
         estado: import(".prisma/client").$Enums.EstadoEvento;
         fecha_inicio: Date;
         fecha_fin: Date | null;
@@ -80,11 +80,11 @@ export declare class EventosController {
     } & {
         id: number;
         nombre: string;
+        sucursalId: number | null;
         createdAt: Date;
         updatedAt: Date;
         tipo: import(".prisma/client").$Enums.TipoEvento;
         descripcion: string | null;
-        sucursalId: number | null;
         estado: import(".prisma/client").$Enums.EstadoEvento;
         fecha_inicio: Date;
         fecha_fin: Date | null;
@@ -93,11 +93,11 @@ export declare class EventosController {
     remove(id: number): Promise<{
         id: number;
         nombre: string;
+        sucursalId: number | null;
         createdAt: Date;
         updatedAt: Date;
         tipo: import(".prisma/client").$Enums.TipoEvento;
         descripcion: string | null;
-        sucursalId: number | null;
         estado: import(".prisma/client").$Enums.EstadoEvento;
         fecha_inicio: Date;
         fecha_fin: Date | null;

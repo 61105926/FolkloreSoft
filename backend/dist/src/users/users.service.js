@@ -46,6 +46,11 @@ exports.UsersService = void 0;
 const common_1 = require("@nestjs/common");
 const prisma_service_js_1 = require("../prisma/prisma.service.js");
 const bcrypt = __importStar(require("bcrypt"));
+const USER_SELECT = {
+    id: true, nombre: true, email: true, rol: true, activo: true,
+    sucursalId: true, createdAt: true, updatedAt: true,
+    sucursal: { select: { id: true, nombre: true, ciudad: true } },
+};
 let UsersService = class UsersService {
     prisma;
     constructor(prisma) {
@@ -59,15 +64,7 @@ let UsersService = class UsersService {
     }
     async findAll() {
         return this.prisma.user.findMany({
-            select: {
-                id: true,
-                nombre: true,
-                email: true,
-                rol: true,
-                activo: true,
-                createdAt: true,
-                updatedAt: true,
-            },
+            select: USER_SELECT,
             orderBy: { nombre: 'asc' },
         });
     }
@@ -82,8 +79,9 @@ let UsersService = class UsersService {
                 email: data.email,
                 password_hash,
                 rol: data.rol ?? 'VENDEDOR',
+                sucursalId: data.sucursalId ?? null,
             },
-            select: { id: true, nombre: true, email: true, rol: true, activo: true, createdAt: true, updatedAt: true },
+            select: USER_SELECT,
         });
     }
     async update(id, data) {
@@ -99,13 +97,11 @@ let UsersService = class UsersService {
             updateData.rol = data.rol;
         if (data.activo !== undefined)
             updateData.activo = data.activo;
+        if ('sucursalId' in data)
+            updateData.sucursalId = data.sucursalId ?? null;
         if (data.password)
             updateData.password_hash = await bcrypt.hash(data.password, 10);
-        return this.prisma.user.update({
-            where: { id },
-            data: updateData,
-            select: { id: true, nombre: true, email: true, rol: true, activo: true, createdAt: true, updatedAt: true },
-        });
+        return this.prisma.user.update({ where: { id }, data: updateData, select: USER_SELECT });
     }
     async remove(id) {
         const user = await this.prisma.user.findUnique({ where: { id } });
@@ -114,7 +110,7 @@ let UsersService = class UsersService {
         return this.prisma.user.update({
             where: { id },
             data: { activo: false },
-            select: { id: true, nombre: true, email: true, rol: true, activo: true },
+            select: USER_SELECT,
         });
     }
 };

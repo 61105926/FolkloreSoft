@@ -33,11 +33,11 @@ export declare class CatalogoController {
                 };
             } & {
                 id: number;
+                sucursalId: number;
                 createdAt: Date;
                 updatedAt: Date;
                 codigo: string;
                 variacionId: number;
-                sucursalId: number;
                 estado: import(".prisma/client").$Enums.EstadoInstanciaConjunto;
                 notas: string | null;
             })[];
@@ -102,11 +102,11 @@ export declare class CatalogoController {
                 };
             } & {
                 id: number;
+                sucursalId: number;
                 createdAt: Date;
                 updatedAt: Date;
                 codigo: string;
                 variacionId: number;
-                sucursalId: number;
                 estado: import(".prisma/client").$Enums.EstadoInstanciaConjunto;
                 notas: string | null;
             })[];
@@ -222,11 +222,11 @@ export declare class CatalogoController {
                 };
             } & {
                 id: number;
+                sucursalId: number;
                 createdAt: Date;
                 updatedAt: Date;
                 codigo: string;
                 variacionId: number;
-                sucursalId: number;
                 estado: import(".prisma/client").$Enums.EstadoInstanciaConjunto;
                 notas: string | null;
             })[];

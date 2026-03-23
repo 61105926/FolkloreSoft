@@ -46,7 +46,48 @@ export declare class ContratosController {
         observaciones: string | null;
         condiciones: string | null;
     })[]>;
+    findAllGarantias(): import(".prisma/client").Prisma.PrismaPromise<({
+        contrato: {
+            id: number;
+            codigo: string;
+            estado: import(".prisma/client").$Enums.EstadoContrato;
+            cliente: {
+                id: number;
+                nombre: string;
+                celular: string | null;
+                ci: string | null;
+            };
+        };
+        participante: {
+            id: number;
+            nombre: string;
+            ci: string | null;
+        } | null;
+    } & {
+        id: number;
+        createdAt: Date;
+        tipo: import(".prisma/client").$Enums.TipoGarantia;
+        descripcion: string | null;
+        contratoId: number;
+        participanteId: number | null;
+        valor: import("@prisma/client/runtime/library").Decimal | null;
+        retenida: boolean;
+        motivo_retencion: string | null;
+    })[]>;
     findOne(id: number): Promise<{
+        movimientosCaja: {
+            id: number;
+            sucursalId: number | null;
+            createdAt: Date;
+            tipo: import(".prisma/client").$Enums.TipoMovimiento;
+            descripcion: string | null;
+            userId: number | null;
+            contratoId: number | null;
+            forma_pago: import(".prisma/client").$Enums.FormaPago;
+            concepto: import(".prisma/client").$Enums.ConceptoCaja;
+            monto: import("@prisma/client/runtime/library").Decimal;
+            referencia: string | null;
+        }[];
         historial: {
             id: number;
             createdAt: Date;
@@ -132,10 +173,10 @@ export declare class ContratosController {
             tipo: import(".prisma/client").$Enums.TipoGarantia;
             descripcion: string | null;
             contratoId: number;
+            participanteId: number | null;
             valor: import("@prisma/client/runtime/library").Decimal | null;
             retenida: boolean;
             motivo_retencion: string | null;
-            participanteId: number | null;
         })[];
         participantes: ({
             instanciaConjunto: {
@@ -149,10 +190,10 @@ export declare class ContratosController {
                 tipo: import(".prisma/client").$Enums.TipoGarantia;
                 descripcion: string | null;
                 contratoId: number;
+                participanteId: number | null;
                 valor: import("@prisma/client/runtime/library").Decimal | null;
                 retenida: boolean;
                 motivo_retencion: string | null;
-                participanteId: number | null;
             }[];
         } & {
             id: number;
@@ -167,17 +208,6 @@ export declare class ContratosController {
             prendaId: number | null;
             devuelto: boolean;
         })[];
-        movimientosCaja: {
-            id: number;
-            createdAt: Date;
-            tipo: import(".prisma/client").$Enums.TipoMovimiento;
-            descripcion: string | null;
-            contratoId: number | null;
-            forma_pago: import(".prisma/client").$Enums.FormaPago;
-            concepto: import(".prisma/client").$Enums.ConceptoCaja;
-            monto: import("@prisma/client/runtime/library").Decimal;
-            referencia: string | null;
-        }[];
     } & {
         id: number;
         createdAt: Date;
@@ -204,6 +234,19 @@ export declare class ContratosController {
         condiciones: string | null;
     }>;
     create(body: any): Promise<{
+        movimientosCaja: {
+            id: number;
+            sucursalId: number | null;
+            createdAt: Date;
+            tipo: import(".prisma/client").$Enums.TipoMovimiento;
+            descripcion: string | null;
+            userId: number | null;
+            contratoId: number | null;
+            forma_pago: import(".prisma/client").$Enums.FormaPago;
+            concepto: import(".prisma/client").$Enums.ConceptoCaja;
+            monto: import("@prisma/client/runtime/library").Decimal;
+            referencia: string | null;
+        }[];
         historial: {
             id: number;
             createdAt: Date;
@@ -289,10 +332,10 @@ export declare class ContratosController {
             tipo: import(".prisma/client").$Enums.TipoGarantia;
             descripcion: string | null;
             contratoId: number;
+            participanteId: number | null;
             valor: import("@prisma/client/runtime/library").Decimal | null;
             retenida: boolean;
             motivo_retencion: string | null;
-            participanteId: number | null;
         })[];
         participantes: ({
             instanciaConjunto: {
@@ -306,10 +349,10 @@ export declare class ContratosController {
                 tipo: import(".prisma/client").$Enums.TipoGarantia;
                 descripcion: string | null;
                 contratoId: number;
+                participanteId: number | null;
                 valor: import("@prisma/client/runtime/library").Decimal | null;
                 retenida: boolean;
                 motivo_retencion: string | null;
-                participanteId: number | null;
             }[];
         } & {
             id: number;
@@ -324,17 +367,6 @@ export declare class ContratosController {
             prendaId: number | null;
             devuelto: boolean;
         })[];
-        movimientosCaja: {
-            id: number;
-            createdAt: Date;
-            tipo: import(".prisma/client").$Enums.TipoMovimiento;
-            descripcion: string | null;
-            contratoId: number | null;
-            forma_pago: import(".prisma/client").$Enums.FormaPago;
-            concepto: import(".prisma/client").$Enums.ConceptoCaja;
-            monto: import("@prisma/client/runtime/library").Decimal;
-            referencia: string | null;
-        }[];
     } & {
         id: number;
         createdAt: Date;
@@ -361,6 +393,19 @@ export declare class ContratosController {
         condiciones: string | null;
     }>;
     update(id: number, body: any): Promise<{
+        movimientosCaja: {
+            id: number;
+            sucursalId: number | null;
+            createdAt: Date;
+            tipo: import(".prisma/client").$Enums.TipoMovimiento;
+            descripcion: string | null;
+            userId: number | null;
+            contratoId: number | null;
+            forma_pago: import(".prisma/client").$Enums.FormaPago;
+            concepto: import(".prisma/client").$Enums.ConceptoCaja;
+            monto: import("@prisma/client/runtime/library").Decimal;
+            referencia: string | null;
+        }[];
         historial: {
             id: number;
             createdAt: Date;
@@ -446,10 +491,10 @@ export declare class ContratosController {
             tipo: import(".prisma/client").$Enums.TipoGarantia;
             descripcion: string | null;
             contratoId: number;
+            participanteId: number | null;
             valor: import("@prisma/client/runtime/library").Decimal | null;
             retenida: boolean;
             motivo_retencion: string | null;
-            participanteId: number | null;
         })[];
         participantes: ({
             instanciaConjunto: {
@@ -463,10 +508,10 @@ export declare class ContratosController {
                 tipo: import(".prisma/client").$Enums.TipoGarantia;
                 descripcion: string | null;
                 contratoId: number;
+                participanteId: number | null;
                 valor: import("@prisma/client/runtime/library").Decimal | null;
                 retenida: boolean;
                 motivo_retencion: string | null;
-                participanteId: number | null;
             }[];
         } & {
             id: number;
@@ -481,17 +526,6 @@ export declare class ContratosController {
             prendaId: number | null;
             devuelto: boolean;
         })[];
-        movimientosCaja: {
-            id: number;
-            createdAt: Date;
-            tipo: import(".prisma/client").$Enums.TipoMovimiento;
-            descripcion: string | null;
-            contratoId: number | null;
-            forma_pago: import(".prisma/client").$Enums.FormaPago;
-            concepto: import(".prisma/client").$Enums.ConceptoCaja;
-            monto: import("@prisma/client/runtime/library").Decimal;
-            referencia: string | null;
-        }[];
     } & {
         id: number;
         createdAt: Date;
@@ -543,6 +577,19 @@ export declare class ContratosController {
         condiciones: string | null;
     }>;
     confirmar(id: number): Promise<{
+        movimientosCaja: {
+            id: number;
+            sucursalId: number | null;
+            createdAt: Date;
+            tipo: import(".prisma/client").$Enums.TipoMovimiento;
+            descripcion: string | null;
+            userId: number | null;
+            contratoId: number | null;
+            forma_pago: import(".prisma/client").$Enums.FormaPago;
+            concepto: import(".prisma/client").$Enums.ConceptoCaja;
+            monto: import("@prisma/client/runtime/library").Decimal;
+            referencia: string | null;
+        }[];
         historial: {
             id: number;
             createdAt: Date;
@@ -628,10 +675,10 @@ export declare class ContratosController {
             tipo: import(".prisma/client").$Enums.TipoGarantia;
             descripcion: string | null;
             contratoId: number;
+            participanteId: number | null;
             valor: import("@prisma/client/runtime/library").Decimal | null;
             retenida: boolean;
             motivo_retencion: string | null;
-            participanteId: number | null;
         })[];
         participantes: ({
             instanciaConjunto: {
@@ -645,10 +692,10 @@ export declare class ContratosController {
                 tipo: import(".prisma/client").$Enums.TipoGarantia;
                 descripcion: string | null;
                 contratoId: number;
+                participanteId: number | null;
                 valor: import("@prisma/client/runtime/library").Decimal | null;
                 retenida: boolean;
                 motivo_retencion: string | null;
-                participanteId: number | null;
             }[];
         } & {
             id: number;
@@ -663,17 +710,6 @@ export declare class ContratosController {
             prendaId: number | null;
             devuelto: boolean;
         })[];
-        movimientosCaja: {
-            id: number;
-            createdAt: Date;
-            tipo: import(".prisma/client").$Enums.TipoMovimiento;
-            descripcion: string | null;
-            contratoId: number | null;
-            forma_pago: import(".prisma/client").$Enums.FormaPago;
-            concepto: import(".prisma/client").$Enums.ConceptoCaja;
-            monto: import("@prisma/client/runtime/library").Decimal;
-            referencia: string | null;
-        }[];
     } & {
         id: number;
         createdAt: Date;
@@ -700,6 +736,19 @@ export declare class ContratosController {
         condiciones: string | null;
     }>;
     entregar(id: number): Promise<{
+        movimientosCaja: {
+            id: number;
+            sucursalId: number | null;
+            createdAt: Date;
+            tipo: import(".prisma/client").$Enums.TipoMovimiento;
+            descripcion: string | null;
+            userId: number | null;
+            contratoId: number | null;
+            forma_pago: import(".prisma/client").$Enums.FormaPago;
+            concepto: import(".prisma/client").$Enums.ConceptoCaja;
+            monto: import("@prisma/client/runtime/library").Decimal;
+            referencia: string | null;
+        }[];
         historial: {
             id: number;
             createdAt: Date;
@@ -785,10 +834,10 @@ export declare class ContratosController {
             tipo: import(".prisma/client").$Enums.TipoGarantia;
             descripcion: string | null;
             contratoId: number;
+            participanteId: number | null;
             valor: import("@prisma/client/runtime/library").Decimal | null;
             retenida: boolean;
             motivo_retencion: string | null;
-            participanteId: number | null;
         })[];
         participantes: ({
             instanciaConjunto: {
@@ -802,10 +851,10 @@ export declare class ContratosController {
                 tipo: import(".prisma/client").$Enums.TipoGarantia;
                 descripcion: string | null;
                 contratoId: number;
+                participanteId: number | null;
                 valor: import("@prisma/client/runtime/library").Decimal | null;
                 retenida: boolean;
                 motivo_retencion: string | null;
-                participanteId: number | null;
             }[];
         } & {
             id: number;
@@ -820,17 +869,6 @@ export declare class ContratosController {
             prendaId: number | null;
             devuelto: boolean;
         })[];
-        movimientosCaja: {
-            id: number;
-            createdAt: Date;
-            tipo: import(".prisma/client").$Enums.TipoMovimiento;
-            descripcion: string | null;
-            contratoId: number | null;
-            forma_pago: import(".prisma/client").$Enums.FormaPago;
-            concepto: import(".prisma/client").$Enums.ConceptoCaja;
-            monto: import("@prisma/client/runtime/library").Decimal;
-            referencia: string | null;
-        }[];
     } & {
         id: number;
         createdAt: Date;
@@ -857,6 +895,19 @@ export declare class ContratosController {
         condiciones: string | null;
     }>;
     iniciarUso(id: number): Promise<{
+        movimientosCaja: {
+            id: number;
+            sucursalId: number | null;
+            createdAt: Date;
+            tipo: import(".prisma/client").$Enums.TipoMovimiento;
+            descripcion: string | null;
+            userId: number | null;
+            contratoId: number | null;
+            forma_pago: import(".prisma/client").$Enums.FormaPago;
+            concepto: import(".prisma/client").$Enums.ConceptoCaja;
+            monto: import("@prisma/client/runtime/library").Decimal;
+            referencia: string | null;
+        }[];
         historial: {
             id: number;
             createdAt: Date;
@@ -942,10 +993,10 @@ export declare class ContratosController {
             tipo: import(".prisma/client").$Enums.TipoGarantia;
             descripcion: string | null;
             contratoId: number;
+            participanteId: number | null;
             valor: import("@prisma/client/runtime/library").Decimal | null;
             retenida: boolean;
             motivo_retencion: string | null;
-            participanteId: number | null;
         })[];
         participantes: ({
             instanciaConjunto: {
@@ -959,10 +1010,10 @@ export declare class ContratosController {
                 tipo: import(".prisma/client").$Enums.TipoGarantia;
                 descripcion: string | null;
                 contratoId: number;
+                participanteId: number | null;
                 valor: import("@prisma/client/runtime/library").Decimal | null;
                 retenida: boolean;
                 motivo_retencion: string | null;
-                participanteId: number | null;
             }[];
         } & {
             id: number;
@@ -977,17 +1028,6 @@ export declare class ContratosController {
             prendaId: number | null;
             devuelto: boolean;
         })[];
-        movimientosCaja: {
-            id: number;
-            createdAt: Date;
-            tipo: import(".prisma/client").$Enums.TipoMovimiento;
-            descripcion: string | null;
-            contratoId: number | null;
-            forma_pago: import(".prisma/client").$Enums.FormaPago;
-            concepto: import(".prisma/client").$Enums.ConceptoCaja;
-            monto: import("@prisma/client/runtime/library").Decimal;
-            referencia: string | null;
-        }[];
     } & {
         id: number;
         createdAt: Date;
@@ -1014,6 +1054,19 @@ export declare class ContratosController {
         condiciones: string | null;
     }>;
     devolver(id: number, body: any): Promise<{
+        movimientosCaja: {
+            id: number;
+            sucursalId: number | null;
+            createdAt: Date;
+            tipo: import(".prisma/client").$Enums.TipoMovimiento;
+            descripcion: string | null;
+            userId: number | null;
+            contratoId: number | null;
+            forma_pago: import(".prisma/client").$Enums.FormaPago;
+            concepto: import(".prisma/client").$Enums.ConceptoCaja;
+            monto: import("@prisma/client/runtime/library").Decimal;
+            referencia: string | null;
+        }[];
         historial: {
             id: number;
             createdAt: Date;
@@ -1099,10 +1152,10 @@ export declare class ContratosController {
             tipo: import(".prisma/client").$Enums.TipoGarantia;
             descripcion: string | null;
             contratoId: number;
+            participanteId: number | null;
             valor: import("@prisma/client/runtime/library").Decimal | null;
             retenida: boolean;
             motivo_retencion: string | null;
-            participanteId: number | null;
         })[];
         participantes: ({
             instanciaConjunto: {
@@ -1116,10 +1169,10 @@ export declare class ContratosController {
                 tipo: import(".prisma/client").$Enums.TipoGarantia;
                 descripcion: string | null;
                 contratoId: number;
+                participanteId: number | null;
                 valor: import("@prisma/client/runtime/library").Decimal | null;
                 retenida: boolean;
                 motivo_retencion: string | null;
-                participanteId: number | null;
             }[];
         } & {
             id: number;
@@ -1134,17 +1187,6 @@ export declare class ContratosController {
             prendaId: number | null;
             devuelto: boolean;
         })[];
-        movimientosCaja: {
-            id: number;
-            createdAt: Date;
-            tipo: import(".prisma/client").$Enums.TipoMovimiento;
-            descripcion: string | null;
-            contratoId: number | null;
-            forma_pago: import(".prisma/client").$Enums.FormaPago;
-            concepto: import(".prisma/client").$Enums.ConceptoCaja;
-            monto: import("@prisma/client/runtime/library").Decimal;
-            referencia: string | null;
-        }[];
     } & {
         id: number;
         createdAt: Date;
@@ -1171,6 +1213,19 @@ export declare class ContratosController {
         condiciones: string | null;
     }>;
     cerrar(id: number): Promise<{
+        movimientosCaja: {
+            id: number;
+            sucursalId: number | null;
+            createdAt: Date;
+            tipo: import(".prisma/client").$Enums.TipoMovimiento;
+            descripcion: string | null;
+            userId: number | null;
+            contratoId: number | null;
+            forma_pago: import(".prisma/client").$Enums.FormaPago;
+            concepto: import(".prisma/client").$Enums.ConceptoCaja;
+            monto: import("@prisma/client/runtime/library").Decimal;
+            referencia: string | null;
+        }[];
         historial: {
             id: number;
             createdAt: Date;
@@ -1256,10 +1311,10 @@ export declare class ContratosController {
             tipo: import(".prisma/client").$Enums.TipoGarantia;
             descripcion: string | null;
             contratoId: number;
+            participanteId: number | null;
             valor: import("@prisma/client/runtime/library").Decimal | null;
             retenida: boolean;
             motivo_retencion: string | null;
-            participanteId: number | null;
         })[];
         participantes: ({
             instanciaConjunto: {
@@ -1273,10 +1328,10 @@ export declare class ContratosController {
                 tipo: import(".prisma/client").$Enums.TipoGarantia;
                 descripcion: string | null;
                 contratoId: number;
+                participanteId: number | null;
                 valor: import("@prisma/client/runtime/library").Decimal | null;
                 retenida: boolean;
                 motivo_retencion: string | null;
-                participanteId: number | null;
             }[];
         } & {
             id: number;
@@ -1291,17 +1346,6 @@ export declare class ContratosController {
             prendaId: number | null;
             devuelto: boolean;
         })[];
-        movimientosCaja: {
-            id: number;
-            createdAt: Date;
-            tipo: import(".prisma/client").$Enums.TipoMovimiento;
-            descripcion: string | null;
-            contratoId: number | null;
-            forma_pago: import(".prisma/client").$Enums.FormaPago;
-            concepto: import(".prisma/client").$Enums.ConceptoCaja;
-            monto: import("@prisma/client/runtime/library").Decimal;
-            referencia: string | null;
-        }[];
     } & {
         id: number;
         createdAt: Date;
@@ -1328,6 +1372,19 @@ export declare class ContratosController {
         condiciones: string | null;
     }>;
     cancelar(id: number): Promise<{
+        movimientosCaja: {
+            id: number;
+            sucursalId: number | null;
+            createdAt: Date;
+            tipo: import(".prisma/client").$Enums.TipoMovimiento;
+            descripcion: string | null;
+            userId: number | null;
+            contratoId: number | null;
+            forma_pago: import(".prisma/client").$Enums.FormaPago;
+            concepto: import(".prisma/client").$Enums.ConceptoCaja;
+            monto: import("@prisma/client/runtime/library").Decimal;
+            referencia: string | null;
+        }[];
         historial: {
             id: number;
             createdAt: Date;
@@ -1413,10 +1470,10 @@ export declare class ContratosController {
             tipo: import(".prisma/client").$Enums.TipoGarantia;
             descripcion: string | null;
             contratoId: number;
+            participanteId: number | null;
             valor: import("@prisma/client/runtime/library").Decimal | null;
             retenida: boolean;
             motivo_retencion: string | null;
-            participanteId: number | null;
         })[];
         participantes: ({
             instanciaConjunto: {
@@ -1430,10 +1487,10 @@ export declare class ContratosController {
                 tipo: import(".prisma/client").$Enums.TipoGarantia;
                 descripcion: string | null;
                 contratoId: number;
+                participanteId: number | null;
                 valor: import("@prisma/client/runtime/library").Decimal | null;
                 retenida: boolean;
                 motivo_retencion: string | null;
-                participanteId: number | null;
             }[];
         } & {
             id: number;
@@ -1448,17 +1505,6 @@ export declare class ContratosController {
             prendaId: number | null;
             devuelto: boolean;
         })[];
-        movimientosCaja: {
-            id: number;
-            createdAt: Date;
-            tipo: import(".prisma/client").$Enums.TipoMovimiento;
-            descripcion: string | null;
-            contratoId: number | null;
-            forma_pago: import(".prisma/client").$Enums.FormaPago;
-            concepto: import(".prisma/client").$Enums.ConceptoCaja;
-            monto: import("@prisma/client/runtime/library").Decimal;
-            referencia: string | null;
-        }[];
     } & {
         id: number;
         createdAt: Date;
@@ -1487,6 +1533,19 @@ export declare class ContratosController {
     retenerGarantia(id: number, body: {
         motivo: string;
     }): Promise<{
+        movimientosCaja: {
+            id: number;
+            sucursalId: number | null;
+            createdAt: Date;
+            tipo: import(".prisma/client").$Enums.TipoMovimiento;
+            descripcion: string | null;
+            userId: number | null;
+            contratoId: number | null;
+            forma_pago: import(".prisma/client").$Enums.FormaPago;
+            concepto: import(".prisma/client").$Enums.ConceptoCaja;
+            monto: import("@prisma/client/runtime/library").Decimal;
+            referencia: string | null;
+        }[];
         historial: {
             id: number;
             createdAt: Date;
@@ -1572,10 +1631,10 @@ export declare class ContratosController {
             tipo: import(".prisma/client").$Enums.TipoGarantia;
             descripcion: string | null;
             contratoId: number;
+            participanteId: number | null;
             valor: import("@prisma/client/runtime/library").Decimal | null;
             retenida: boolean;
             motivo_retencion: string | null;
-            participanteId: number | null;
         })[];
         participantes: ({
             instanciaConjunto: {
@@ -1589,10 +1648,10 @@ export declare class ContratosController {
                 tipo: import(".prisma/client").$Enums.TipoGarantia;
                 descripcion: string | null;
                 contratoId: number;
+                participanteId: number | null;
                 valor: import("@prisma/client/runtime/library").Decimal | null;
                 retenida: boolean;
                 motivo_retencion: string | null;
-                participanteId: number | null;
             }[];
         } & {
             id: number;
@@ -1607,17 +1666,6 @@ export declare class ContratosController {
             prendaId: number | null;
             devuelto: boolean;
         })[];
-        movimientosCaja: {
-            id: number;
-            createdAt: Date;
-            tipo: import(".prisma/client").$Enums.TipoMovimiento;
-            descripcion: string | null;
-            contratoId: number | null;
-            forma_pago: import(".prisma/client").$Enums.FormaPago;
-            concepto: import(".prisma/client").$Enums.ConceptoCaja;
-            monto: import("@prisma/client/runtime/library").Decimal;
-            referencia: string | null;
-        }[];
     } & {
         id: number;
         createdAt: Date;
@@ -1644,6 +1692,19 @@ export declare class ContratosController {
         condiciones: string | null;
     }>;
     registrarPago(id: number, body: any): Promise<{
+        movimientosCaja: {
+            id: number;
+            sucursalId: number | null;
+            createdAt: Date;
+            tipo: import(".prisma/client").$Enums.TipoMovimiento;
+            descripcion: string | null;
+            userId: number | null;
+            contratoId: number | null;
+            forma_pago: import(".prisma/client").$Enums.FormaPago;
+            concepto: import(".prisma/client").$Enums.ConceptoCaja;
+            monto: import("@prisma/client/runtime/library").Decimal;
+            referencia: string | null;
+        }[];
         historial: {
             id: number;
             createdAt: Date;
@@ -1729,10 +1790,10 @@ export declare class ContratosController {
             tipo: import(".prisma/client").$Enums.TipoGarantia;
             descripcion: string | null;
             contratoId: number;
+            participanteId: number | null;
             valor: import("@prisma/client/runtime/library").Decimal | null;
             retenida: boolean;
             motivo_retencion: string | null;
-            participanteId: number | null;
         })[];
         participantes: ({
             instanciaConjunto: {
@@ -1746,10 +1807,10 @@ export declare class ContratosController {
                 tipo: import(".prisma/client").$Enums.TipoGarantia;
                 descripcion: string | null;
                 contratoId: number;
+                participanteId: number | null;
                 valor: import("@prisma/client/runtime/library").Decimal | null;
                 retenida: boolean;
                 motivo_retencion: string | null;
-                participanteId: number | null;
             }[];
         } & {
             id: number;
@@ -1764,17 +1825,6 @@ export declare class ContratosController {
             prendaId: number | null;
             devuelto: boolean;
         })[];
-        movimientosCaja: {
-            id: number;
-            createdAt: Date;
-            tipo: import(".prisma/client").$Enums.TipoMovimiento;
-            descripcion: string | null;
-            contratoId: number | null;
-            forma_pago: import(".prisma/client").$Enums.FormaPago;
-            concepto: import(".prisma/client").$Enums.ConceptoCaja;
-            monto: import("@prisma/client/runtime/library").Decimal;
-            referencia: string | null;
-        }[];
     } & {
         id: number;
         createdAt: Date;
@@ -1801,6 +1851,19 @@ export declare class ContratosController {
         condiciones: string | null;
     }>;
     registrarEgreso(id: number, body: any): Promise<{
+        movimientosCaja: {
+            id: number;
+            sucursalId: number | null;
+            createdAt: Date;
+            tipo: import(".prisma/client").$Enums.TipoMovimiento;
+            descripcion: string | null;
+            userId: number | null;
+            contratoId: number | null;
+            forma_pago: import(".prisma/client").$Enums.FormaPago;
+            concepto: import(".prisma/client").$Enums.ConceptoCaja;
+            monto: import("@prisma/client/runtime/library").Decimal;
+            referencia: string | null;
+        }[];
         historial: {
             id: number;
             createdAt: Date;
@@ -1886,10 +1949,10 @@ export declare class ContratosController {
             tipo: import(".prisma/client").$Enums.TipoGarantia;
             descripcion: string | null;
             contratoId: number;
+            participanteId: number | null;
             valor: import("@prisma/client/runtime/library").Decimal | null;
             retenida: boolean;
             motivo_retencion: string | null;
-            participanteId: number | null;
         })[];
         participantes: ({
             instanciaConjunto: {
@@ -1903,10 +1966,10 @@ export declare class ContratosController {
                 tipo: import(".prisma/client").$Enums.TipoGarantia;
                 descripcion: string | null;
                 contratoId: number;
+                participanteId: number | null;
                 valor: import("@prisma/client/runtime/library").Decimal | null;
                 retenida: boolean;
                 motivo_retencion: string | null;
-                participanteId: number | null;
             }[];
         } & {
             id: number;
@@ -1921,17 +1984,6 @@ export declare class ContratosController {
             prendaId: number | null;
             devuelto: boolean;
         })[];
-        movimientosCaja: {
-            id: number;
-            createdAt: Date;
-            tipo: import(".prisma/client").$Enums.TipoMovimiento;
-            descripcion: string | null;
-            contratoId: number | null;
-            forma_pago: import(".prisma/client").$Enums.FormaPago;
-            concepto: import(".prisma/client").$Enums.ConceptoCaja;
-            monto: import("@prisma/client/runtime/library").Decimal;
-            referencia: string | null;
-        }[];
     } & {
         id: number;
         createdAt: Date;
@@ -2033,10 +2085,10 @@ export declare class ContratosController {
         tipo: import(".prisma/client").$Enums.TipoGarantia;
         descripcion: string | null;
         contratoId: number;
+        participanteId: number | null;
         valor: import("@prisma/client/runtime/library").Decimal | null;
         retenida: boolean;
         motivo_retencion: string | null;
-        participanteId: number | null;
     }>;
     updateGarantia(id: number, body: any): import(".prisma/client").Prisma.Prisma__ContratoGarantiaClient<{
         id: number;
@@ -2044,10 +2096,10 @@ export declare class ContratosController {
         tipo: import(".prisma/client").$Enums.TipoGarantia;
         descripcion: string | null;
         contratoId: number;
+        participanteId: number | null;
         valor: import("@prisma/client/runtime/library").Decimal | null;
         retenida: boolean;
         motivo_retencion: string | null;
-        participanteId: number | null;
     }, never, import("@prisma/client/runtime/library").DefaultArgs>;
     removeGarantia(id: number): Promise<void>;
     addParticipante(id: number, body: any): Promise<{
@@ -2062,10 +2114,10 @@ export declare class ContratosController {
             tipo: import(".prisma/client").$Enums.TipoGarantia;
             descripcion: string | null;
             contratoId: number;
+            participanteId: number | null;
             valor: import("@prisma/client/runtime/library").Decimal | null;
             retenida: boolean;
             motivo_retencion: string | null;
-            participanteId: number | null;
         }[];
     } & {
         id: number;
@@ -2092,10 +2144,10 @@ export declare class ContratosController {
             tipo: import(".prisma/client").$Enums.TipoGarantia;
             descripcion: string | null;
             contratoId: number;
+            participanteId: number | null;
             valor: import("@prisma/client/runtime/library").Decimal | null;
             retenida: boolean;
             motivo_retencion: string | null;
-            participanteId: number | null;
         }[];
     } & {
         id: number;
@@ -2123,10 +2175,10 @@ export declare class ContratosController {
             tipo: import(".prisma/client").$Enums.TipoGarantia;
             descripcion: string | null;
             contratoId: number;
+            participanteId: number | null;
             valor: import("@prisma/client/runtime/library").Decimal | null;
             retenida: boolean;
             motivo_retencion: string | null;
-            participanteId: number | null;
         }[];
     } & {
         id: number;

@@ -10,7 +10,19 @@ export declare class CajaService {
         concepto?: ConceptoCaja;
         formaPago?: FormaPago;
         contratoId?: number;
+        userId?: number;
+        sucursalId?: number;
+        isAdmin?: boolean;
     }): import(".prisma/client").Prisma.PrismaPromise<({
+        sucursal: {
+            id: number;
+            nombre: string;
+        } | null;
+        user: {
+            id: number;
+            nombre: string;
+            rol: import(".prisma/client").$Enums.Rol;
+        } | null;
         contrato: {
             id: number;
             codigo: string;
@@ -20,16 +32,22 @@ export declare class CajaService {
         } | null;
     } & {
         id: number;
+        sucursalId: number | null;
         createdAt: Date;
         tipo: import(".prisma/client").$Enums.TipoMovimiento;
         descripcion: string | null;
+        userId: number | null;
         contratoId: number | null;
         forma_pago: import(".prisma/client").$Enums.FormaPago;
         concepto: import(".prisma/client").$Enums.ConceptoCaja;
         monto: import("@prisma/client/runtime/library").Decimal;
         referencia: string | null;
     })[]>;
-    stats(): Promise<{
+    stats(filter?: {
+        userId?: number;
+        sucursalId?: number;
+        isAdmin?: boolean;
+    }): Promise<{
         hoy: {
             ingresos: number;
             egresos: number;
@@ -66,6 +84,7 @@ export declare class CajaService {
         anticipo: import("@prisma/client/runtime/library").Decimal;
         total_pagado: import("@prisma/client/runtime/library").Decimal;
     }[]>;
+    private static readonly CONCEPTOS_PAGO;
     create(data: {
         tipo: TipoMovimiento;
         concepto: ConceptoCaja;
@@ -74,7 +93,18 @@ export declare class CajaService {
         forma_pago?: FormaPago;
         referencia?: string;
         contratoId?: number;
-    }): import(".prisma/client").Prisma.Prisma__MovimientoCajaClient<{
+        userId?: number;
+        sucursalId?: number;
+    }): Promise<{
+        sucursal: {
+            id: number;
+            nombre: string;
+        } | null;
+        user: {
+            id: number;
+            nombre: string;
+            rol: import(".prisma/client").$Enums.Rol;
+        } | null;
         contrato: {
             id: number;
             codigo: string;
@@ -84,24 +114,34 @@ export declare class CajaService {
         } | null;
     } & {
         id: number;
+        sucursalId: number | null;
         createdAt: Date;
         tipo: import(".prisma/client").$Enums.TipoMovimiento;
         descripcion: string | null;
-        contratoId: number | null;
-        forma_pago: import(".prisma/client").$Enums.FormaPago;
-        concepto: import(".prisma/client").$Enums.ConceptoCaja;
-        monto: import("@prisma/client/runtime/library").Decimal;
-        referencia: string | null;
-    }, never, import("@prisma/client/runtime/library").DefaultArgs>;
-    remove(id: number): Promise<{
-        id: number;
-        createdAt: Date;
-        tipo: import(".prisma/client").$Enums.TipoMovimiento;
-        descripcion: string | null;
+        userId: number | null;
         contratoId: number | null;
         forma_pago: import(".prisma/client").$Enums.FormaPago;
         concepto: import(".prisma/client").$Enums.ConceptoCaja;
         monto: import("@prisma/client/runtime/library").Decimal;
         referencia: string | null;
     }>;
+    remove(id: number): Promise<{
+        id: number;
+        sucursalId: number | null;
+        createdAt: Date;
+        tipo: import(".prisma/client").$Enums.TipoMovimiento;
+        descripcion: string | null;
+        userId: number | null;
+        contratoId: number | null;
+        forma_pago: import(".prisma/client").$Enums.FormaPago;
+        concepto: import(".prisma/client").$Enums.ConceptoCaja;
+        monto: import("@prisma/client/runtime/library").Decimal;
+        referencia: string | null;
+    }>;
+    recalcularTodosPagados(): Promise<{
+        id: number;
+        codigo: string;
+        antes: number;
+        despues: number;
+    }[]>;
 }

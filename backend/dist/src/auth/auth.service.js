@@ -38,7 +38,7 @@ let AuthService = class AuthService {
         if (!passwordValid) {
             throw new common_1.UnauthorizedException('Invalid credentials');
         }
-        const accessToken = this.generateAccessToken(user.id, user.email);
+        const accessToken = this.generateAccessToken(user.id, user.email, user.rol, user.sucursalId ?? null);
         const refreshToken = await this.generateAndStoreRefreshToken(user.id);
         return { accessToken, refreshToken };
     }
@@ -57,7 +57,7 @@ let AuthService = class AuthService {
             await this.prisma.refreshToken.delete({ where: { id: tokenRecord.id } });
             throw new common_1.UnauthorizedException('Refresh token expired');
         }
-        const accessToken = this.generateAccessToken(tokenRecord.user.id, tokenRecord.user.email);
+        const accessToken = this.generateAccessToken(tokenRecord.user.id, tokenRecord.user.email, tokenRecord.user.rol, tokenRecord.user.sucursalId ?? null);
         return { accessToken };
     }
     async logout(rawRefreshToken) {
@@ -67,8 +67,8 @@ let AuthService = class AuthService {
             where: { token: rawRefreshToken },
         });
     }
-    generateAccessToken(userId, email) {
-        return this.jwtService.sign({ sub: userId, email });
+    generateAccessToken(userId, email, rol, sucursalId) {
+        return this.jwtService.sign({ sub: userId, email, rol, sucursalId });
     }
     async generateAndStoreRefreshToken(userId) {
         const token = (0, crypto_1.randomBytes)(64).toString('hex');

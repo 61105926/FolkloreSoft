@@ -23,11 +23,11 @@ export declare class InventarioService {
             };
         } & {
             id: number;
+            sucursalId: number;
             createdAt: Date;
             updatedAt: Date;
             componenteId: number;
             talla: string | null;
-            sucursalId: number;
             estado: import(".prisma/client").$Enums.EstadoInstanciaComponente;
             notas: string | null;
             serial: string;
@@ -85,11 +85,11 @@ export declare class InventarioService {
         };
     } & {
         id: number;
+        sucursalId: number;
         createdAt: Date;
         updatedAt: Date;
         codigo: string;
         variacionId: number;
-        sucursalId: number;
         estado: import(".prisma/client").$Enums.EstadoInstanciaConjunto;
         notas: string | null;
     })[]>;
@@ -113,11 +113,11 @@ export declare class InventarioService {
             };
         } & {
             id: number;
+            sucursalId: number;
             createdAt: Date;
             updatedAt: Date;
             componenteId: number;
             talla: string | null;
-            sucursalId: number;
             estado: import(".prisma/client").$Enums.EstadoInstanciaComponente;
             notas: string | null;
             serial: string;
@@ -175,11 +175,11 @@ export declare class InventarioService {
         };
     } & {
         id: number;
+        sucursalId: number;
         createdAt: Date;
         updatedAt: Date;
         codigo: string;
         variacionId: number;
-        sucursalId: number;
         estado: import(".prisma/client").$Enums.EstadoInstanciaConjunto;
         notas: string | null;
     }>;
@@ -229,11 +229,11 @@ export declare class InventarioService {
         };
     } & {
         id: number;
+        sucursalId: number;
         createdAt: Date;
         updatedAt: Date;
         codigo: string;
         variacionId: number;
-        sucursalId: number;
         estado: import(".prisma/client").$Enums.EstadoInstanciaConjunto;
         notas: string | null;
     }, never, import("@prisma/client/runtime/library").DefaultArgs>;
@@ -249,11 +249,11 @@ export declare class InventarioService {
             };
         } & {
             id: number;
+            sucursalId: number;
             createdAt: Date;
             updatedAt: Date;
             componenteId: number;
             talla: string | null;
-            sucursalId: number;
             estado: import(".prisma/client").$Enums.EstadoInstanciaComponente;
             notas: string | null;
             serial: string;
@@ -261,11 +261,11 @@ export declare class InventarioService {
         })[];
     } & {
         id: number;
+        sucursalId: number;
         createdAt: Date;
         updatedAt: Date;
         codigo: string;
         variacionId: number;
-        sucursalId: number;
         estado: import(".prisma/client").$Enums.EstadoInstanciaConjunto;
         notas: string | null;
     }) | null>;
@@ -283,11 +283,11 @@ export declare class InventarioService {
         };
     } & {
         id: number;
+        sucursalId: number;
         createdAt: Date;
         updatedAt: Date;
         componenteId: number;
         talla: string | null;
-        sucursalId: number;
         estado: import(".prisma/client").$Enums.EstadoInstanciaComponente;
         notas: string | null;
         serial: string;
@@ -312,11 +312,11 @@ export declare class InventarioService {
         };
     } & {
         id: number;
+        sucursalId: number;
         createdAt: Date;
         updatedAt: Date;
         componenteId: number;
         talla: string | null;
-        sucursalId: number;
         estado: import(".prisma/client").$Enums.EstadoInstanciaComponente;
         notas: string | null;
         serial: string;
@@ -347,11 +347,11 @@ export declare class InventarioService {
         };
     } & {
         id: number;
+        sucursalId: number;
         createdAt: Date;
         updatedAt: Date;
         componenteId: number;
         talla: string | null;
-        sucursalId: number;
         estado: import(".prisma/client").$Enums.EstadoInstanciaComponente;
         notas: string | null;
         serial: string;
@@ -359,11 +359,11 @@ export declare class InventarioService {
     }, never, import("@prisma/client/runtime/library").DefaultArgs>;
     updateEstadoComponente(id: number, estado: EstadoInstanciaComponente, notas?: string): import(".prisma/client").Prisma.Prisma__InstanciaComponenteClient<{
         id: number;
+        sucursalId: number;
         createdAt: Date;
         updatedAt: Date;
         componenteId: number;
         talla: string | null;
-        sucursalId: number;
         estado: import(".prisma/client").$Enums.EstadoInstanciaComponente;
         notas: string | null;
         serial: string;

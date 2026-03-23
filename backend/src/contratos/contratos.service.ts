@@ -61,6 +61,21 @@ export class ContratosService {
 
   // ── Contratos ─────────────────────────────────────────────────────────────
 
+  findAllGarantias() {
+    return this.prisma.contratoGarantia.findMany({
+      include: {
+        contrato: {
+          select: {
+            id: true, codigo: true, estado: true,
+            cliente: { select: { id: true, nombre: true, celular: true, ci: true } },
+          },
+        },
+        participante: { select: { id: true, nombre: true, ci: true } },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+  }
+
   findAll() {
     return this.prisma.contratoAlquiler.findMany({
       include: INCLUDE_LIST,

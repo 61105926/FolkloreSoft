@@ -29,10 +29,15 @@ let JwtStrategy = class JwtStrategy extends (0, passport_1.PassportStrategy)(pas
     }
     async validate(payload) {
         const user = await this.usersService.findById(payload.sub);
-        if (!user) {
+        if (!user)
             throw new common_1.UnauthorizedException('User no longer exists');
-        }
-        return { id: user.id, email: user.email, rol: user.rol };
+        return {
+            id: user.id,
+            email: user.email,
+            nombre: user.nombre,
+            rol: user.rol,
+            sucursalId: user.sucursalId ?? null,
+        };
     }
 };
 exports.JwtStrategy = JwtStrategy;

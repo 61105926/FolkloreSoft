@@ -4,6 +4,8 @@ import { UsersService } from '../users/users.service.js';
 interface JwtPayload {
     sub: number;
     email: string;
+    rol: string;
+    sucursalId: number | null;
 }
 declare const JwtStrategy_base: new (...args: [opt: import("passport-jwt").StrategyOptionsWithRequest] | [opt: import("passport-jwt").StrategyOptionsWithoutRequest]) => Strategy & {
     validate(...args: any[]): unknown;
@@ -15,7 +17,9 @@ export declare class JwtStrategy extends JwtStrategy_base {
     validate(payload: JwtPayload): Promise<{
         id: number;
         email: string;
+        nombre: string;
         rol: import(".prisma/client").$Enums.Rol;
+        sucursalId: any;
     }>;
 }
 export {};

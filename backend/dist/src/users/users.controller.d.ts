@@ -8,8 +8,14 @@ export declare class UsersController {
         nombre: string;
         rol: import(".prisma/client").$Enums.Rol;
         activo: boolean;
+        sucursalId: number | null;
         createdAt: Date;
         updatedAt: Date;
+        sucursal: {
+            id: number;
+            nombre: string;
+            ciudad: string;
+        } | null;
     }[]>;
     create(body: {
         nombre: string;
@@ -22,8 +28,14 @@ export declare class UsersController {
         nombre: string;
         rol: import(".prisma/client").$Enums.Rol;
         activo: boolean;
+        sucursalId: number | null;
         createdAt: Date;
         updatedAt: Date;
+        sucursal: {
+            id: number;
+            nombre: string;
+            ciudad: string;
+        } | null;
     }>;
     update(id: number, body: {
         nombre?: string;
@@ -37,8 +49,14 @@ export declare class UsersController {
         nombre: string;
         rol: import(".prisma/client").$Enums.Rol;
         activo: boolean;
+        sucursalId: number | null;
         createdAt: Date;
         updatedAt: Date;
+        sucursal: {
+            id: number;
+            nombre: string;
+            ciudad: string;
+        } | null;
     }>;
     remove(id: number): Promise<{
         id: number;
@@ -46,5 +64,13 @@ export declare class UsersController {
         nombre: string;
         rol: import(".prisma/client").$Enums.Rol;
         activo: boolean;
+        sucursalId: number | null;
+        createdAt: Date;
+        updatedAt: Date;
+        sucursal: {
+            id: number;
+            nombre: string;
+            ciudad: string;
+        } | null;
     }>;
 }

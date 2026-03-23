@@ -15,6 +15,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.AuthController = void 0;
 const common_1 = require("@nestjs/common");
 const auth_service_js_1 = require("./auth.service.js");
+const jwt_auth_guard_js_1 = require("./jwt-auth.guard.js");
 const login_dto_js_1 = require("./dto/login.dto.js");
 const REFRESH_TOKEN_COOKIE = 'refreshToken';
 const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
@@ -42,6 +43,9 @@ let AuthController = class AuthController {
         const rawRefreshToken = req.cookies?.[REFRESH_TOKEN_COOKIE];
         await this.authService.logout(rawRefreshToken);
         res.clearCookie(REFRESH_TOKEN_COOKIE, { path: '/auth' });
+    }
+    me(req) {
+        return req.user;
     }
 };
 exports.AuthController = AuthController;
@@ -71,6 +75,14 @@ __decorate([
     __metadata("design:paramtypes", [Object, Object]),
     __metadata("design:returntype", Promise)
 ], AuthController.prototype, "logout", null);
+__decorate([
+    (0, common_1.UseGuards)(jwt_auth_guard_js_1.JwtAuthGuard),
+    (0, common_1.Get)('me'),
+    __param(0, (0, common_1.Req)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", void 0)
+], AuthController.prototype, "me", null);
 exports.AuthController = AuthController = __decorate([
     (0, common_1.Controller)('auth'),
     __metadata("design:paramtypes", [auth_service_js_1.AuthService])

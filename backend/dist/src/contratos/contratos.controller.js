@@ -22,6 +22,7 @@ let ContratosController = class ContratosController {
         this.svc = svc;
     }
     findAll() { return this.svc.findAll(); }
+    findAllGarantias() { return this.svc.findAllGarantias(); }
     findOne(id) { return this.svc.findOne(id); }
     create(body) { return this.svc.create(body); }
     update(id, body) { return this.svc.update(id, body); }
@@ -57,6 +58,12 @@ __decorate([
     __metadata("design:paramtypes", []),
     __metadata("design:returntype", void 0)
 ], ContratosController.prototype, "findAll", null);
+__decorate([
+    (0, common_1.Get)('garantias'),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", []),
+    __metadata("design:returntype", void 0)
+], ContratosController.prototype, "findAllGarantias", null);
 __decorate([
     (0, common_1.Get)(':id'),
     __param(0, (0, common_1.Param)('id', common_1.ParseIntPipe)),

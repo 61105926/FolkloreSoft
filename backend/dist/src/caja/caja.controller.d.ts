@@ -1,9 +1,28 @@
+import { Request } from 'express';
 import { CajaService } from './caja.service.js';
 import { TipoMovimiento, ConceptoCaja, FormaPago } from '@prisma/client';
+interface AuthUser {
+    id: number;
+    email: string;
+    nombre: string;
+    rol: string;
+    sucursalId: number | null;
+}
 export declare class CajaController {
     private readonly svc;
     constructor(svc: CajaService);
-    findAll(fechaDesde?: string, fechaHasta?: string, tipo?: TipoMovimiento, concepto?: ConceptoCaja, formaPago?: FormaPago, contratoId?: string): import(".prisma/client").Prisma.PrismaPromise<({
+    findAll(req: Request & {
+        user: AuthUser;
+    }, fechaDesde?: string, fechaHasta?: string, tipo?: TipoMovimiento, concepto?: ConceptoCaja, formaPago?: FormaPago, contratoId?: string): import(".prisma/client").Prisma.PrismaPromise<({
+        sucursal: {
+            id: number;
+            nombre: string;
+        } | null;
+        user: {
+            id: number;
+            nombre: string;
+            rol: import(".prisma/client").$Enums.Rol;
+        } | null;
         contrato: {
             id: number;
             codigo: string;
@@ -13,16 +32,20 @@ export declare class CajaController {
         } | null;
     } & {
         id: number;
+        sucursalId: number | null;
         createdAt: Date;
         tipo: import(".prisma/client").$Enums.TipoMovimiento;
         descripcion: string | null;
+        userId: number | null;
         contratoId: number | null;
         forma_pago: import(".prisma/client").$Enums.FormaPago;
         concepto: import(".prisma/client").$Enums.ConceptoCaja;
         monto: import("@prisma/client/runtime/library").Decimal;
         referencia: string | null;
     })[]>;
-    stats(): Promise<{
+    stats(req: Request & {
+        user: AuthUser;
+    }): Promise<{
         hoy: {
             ingresos: number;
             egresos: number;
@@ -59,7 +82,17 @@ export declare class CajaController {
         anticipo: import("@prisma/client/runtime/library").Decimal;
         total_pagado: import("@prisma/client/runtime/library").Decimal;
     }[]>;
-    create(body: {
+    recalcularPagados(req: Request & {
+        user: AuthUser;
+    }): Promise<{
+        id: number;
+        codigo: string;
+        antes: number;
+        despues: number;
+    }[]>;
+    create(req: Request & {
+        user: AuthUser;
+    }, body: {
         tipo: TipoMovimiento;
         concepto: ConceptoCaja;
         monto: number;
@@ -67,7 +100,16 @@ export declare class CajaController {
         forma_pago?: FormaPago;
         referencia?: string;
         contratoId?: number;
-    }): import(".prisma/client").Prisma.Prisma__MovimientoCajaClient<{
+    }): Promise<{
+        sucursal: {
+            id: number;
+            nombre: string;
+        } | null;
+        user: {
+            id: number;
+            nombre: string;
+            rol: import(".prisma/client").$Enums.Rol;
+        } | null;
         contrato: {
             id: number;
             codigo: string;
@@ -77,20 +119,24 @@ export declare class CajaController {
         } | null;
     } & {
         id: number;
+        sucursalId: number | null;
         createdAt: Date;
         tipo: import(".prisma/client").$Enums.TipoMovimiento;
         descripcion: string | null;
+        userId: number | null;
         contratoId: number | null;
         forma_pago: import(".prisma/client").$Enums.FormaPago;
         concepto: import(".prisma/client").$Enums.ConceptoCaja;
         monto: import("@prisma/client/runtime/library").Decimal;
         referencia: string | null;
-    }, never, import("@prisma/client/runtime/library").DefaultArgs>;
+    }>;
     remove(id: number): Promise<{
         id: number;
+        sucursalId: number | null;
         createdAt: Date;
         tipo: import(".prisma/client").$Enums.TipoMovimiento;
         descripcion: string | null;
+        userId: number | null;
         contratoId: number | null;
         forma_pago: import(".prisma/client").$Enums.FormaPago;
         concepto: import(".prisma/client").$Enums.ConceptoCaja;
@@ -98,3 +144,4 @@ export declare class CajaController {
         referencia: string | null;
     }>;
 }
+export {};

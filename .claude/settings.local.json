@@ -3,7 +3,14 @@
     "allow": [
       "Bash(npx prisma:*)",
       "Bash(ls /c/Users/Nicol/Desktop/FOLCKLORE/frontend/src/app/\\\\\\(app\\\\\\)/usuario/)",
-      "Bash(npm run:*)"
+      "Bash(npm run:*)",
+      "Bash(lsof -ti:3001)",
+      "Bash(xargs kill:*)",
+      "Bash(ls -la '/Users/user/Desktop/FolkloreSoft/frontend/src/app/\\(app\\)/')",
+      "Bash(find '/Users/user/Desktop/FolkloreSoft/frontend/src/app/\\(app\\)/dashboard' -type f)",
+      "Bash(npx tsc:*)",
+      "Bash(curl -s http://localhost:3001/contratos/garantias -H \"Authorization: Bearer test\")",
+      "Bash(node -e \":*)"
     ]
   }
 }

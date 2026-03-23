@@ -22,7 +22,9 @@ let CajaController = class CajaController {
     constructor(svc) {
         this.svc = svc;
     }
-    findAll(fechaDesde, fechaHasta, tipo, concepto, formaPago, contratoId) {
+    findAll(req, fechaDesde, fechaHasta, tipo, concepto, formaPago, contratoId) {
+        const { id, rol, sucursalId } = req.user;
+        const isAdmin = rol === 'ADMIN';
         return this.svc.findAll({
             fechaDesde,
             fechaHasta,
@@ -30,16 +32,34 @@ let CajaController = class CajaController {
             concepto,
             formaPago,
             contratoId: contratoId ? parseInt(contratoId) : undefined,
+            isAdmin,
+            userId: isAdmin ? undefined : id,
+            sucursalId: isAdmin ? undefined : (sucursalId ?? undefined),
         });
     }
-    stats() {
-        return this.svc.stats();
+    stats(req) {
+        const { id, rol, sucursalId } = req.user;
+        const isAdmin = rol === 'ADMIN';
+        return this.svc.stats({
+            isAdmin,
+            userId: isAdmin ? undefined : id,
+            sucursalId: isAdmin ? undefined : (sucursalId ?? undefined),
+        });
     }
     cuentasPorCobrar() {
         return this.svc.cuentasPorCobrar();
     }
-    create(body) {
-        return this.svc.create(body);
+    recalcularPagados(req) {
+        if (req.user.rol !== 'ADMIN')
+            throw new common_1.ForbiddenException('Solo administradores');
+        return this.svc.recalcularTodosPagados();
+    }
+    create(req, body) {
+        return this.svc.create({
+            ...body,
+            userId: req.user.id,
+            sucursalId: req.user.sucursalId ?? undefined,
+        });
     }
     remove(id) {
         return this.svc.remove(id);
@@ -48,20 +68,22 @@ let CajaController = class CajaController {
 exports.CajaController = CajaController;
 __decorate([
     (0, common_1.Get)(),
-    __param(0, (0, common_1.Query)('fechaDesde')),
-    __param(1, (0, common_1.Query)('fechaHasta')),
-    __param(2, (0, common_1.Query)('tipo')),
-    __param(3, (0, common_1.Query)('concepto')),
-    __param(4, (0, common_1.Query)('formaPago')),
-    __param(5, (0, common_1.Query)('contratoId')),
+    __param(0, (0, common_1.Req)()),
+    __param(1, (0, common_1.Query)('fechaDesde')),
+    __param(2, (0, common_1.Query)('fechaHasta')),
+    __param(3, (0, common_1.Query)('tipo')),
+    __param(4, (0, common_1.Query)('concepto')),
+    __param(5, (0, common_1.Query)('formaPago')),
+    __param(6, (0, common_1.Query)('contratoId')),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String, String, String, String, String, String]),
+    __metadata("design:paramtypes", [Object, String, String, String, String, String, String]),
     __metadata("design:returntype", void 0)
 ], CajaController.prototype, "findAll", null);
 __decorate([
     (0, common_1.Get)('stats'),
+    __param(0, (0, common_1.Req)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", []),
+    __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", void 0)
 ], CajaController.prototype, "stats", null);
 __decorate([
@@ -71,10 +93,18 @@ __decorate([
     __metadata("design:returntype", void 0)
 ], CajaController.prototype, "cuentasPorCobrar", null);
 __decorate([
-    (0, common_1.Post)(),
-    __param(0, (0, common_1.Body)()),
+    (0, common_1.Post)('recalcular-pagados'),
+    __param(0, (0, common_1.Req)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", void 0)
+], CajaController.prototype, "recalcularPagados", null);
+__decorate([
+    (0, common_1.Post)(),
+    __param(0, (0, common_1.Req)()),
+    __param(1, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, Object]),
     __metadata("design:returntype", void 0)
 ], CajaController.prototype, "create", null);
 __decorate([

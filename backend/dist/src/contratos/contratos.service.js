@@ -63,6 +63,20 @@ let ContratosService = class ContratosService {
         const count = await this.prisma.contratoAlquiler.count();
         return `CONT-${year}-${String(count + 1).padStart(4, '0')}`;
     }
+    findAllGarantias() {
+        return this.prisma.contratoGarantia.findMany({
+            include: {
+                contrato: {
+                    select: {
+                        id: true, codigo: true, estado: true,
+                        cliente: { select: { id: true, nombre: true, celular: true, ci: true } },
+                    },
+                },
+                participante: { select: { id: true, nombre: true, ci: true } },
+            },
+            orderBy: { createdAt: 'desc' },
+        });
+    }
     findAll() {
         return this.prisma.contratoAlquiler.findMany({
             include: INCLUDE_LIST,

@@ -19,15 +19,18 @@ enum Rol {
 }
 
 model User {
-  id            Int            @id @default(autoincrement())
-  nombre        String         @default("Sin nombre")
-  email         String         @unique
-  password_hash String
-  rol           Rol            @default(VENDEDOR)
-  activo        Boolean        @default(true)
-  createdAt     DateTime       @default(now())
-  updatedAt     DateTime       @updatedAt
-  refreshTokens RefreshToken[]
+  id              Int              @id @default(autoincrement())
+  nombre          String           @default("Sin nombre")
+  email           String           @unique
+  password_hash   String
+  rol             Rol              @default(VENDEDOR)
+  activo          Boolean          @default(true)
+  sucursalId      Int?
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  refreshTokens   RefreshToken[]
+  movimientosCaja MovimientoCaja[]
+  sucursal        Sucursal?        @relation(fields: [sucursalId], references: [id], onDelete: SetNull)
 }
 
 model RefreshToken {
@@ -55,6 +58,8 @@ model Sucursal {
   transferenciasOrigen    Transferencia[]     @relation("TransferenciaOrigen")
   transferenciasDestino   Transferencia[]     @relation("TransferenciaDestino")
   eventos                 EventoFolclorico[]
+  usuarios                User[]
+  movimientosCaja         MovimientoCaja[]
 }
 
 // ─────────────────────────────────────────
@@ -410,8 +415,12 @@ model MovimientoCaja {
   forma_pago  FormaPago         @default(EFECTIVO)
   referencia  String?
   contratoId  Int?
+  userId      Int?
+  sucursalId  Int?
   createdAt   DateTime          @default(now())
   contrato    ContratoAlquiler? @relation(fields: [contratoId], references: [id], onDelete: SetNull)
+  user        User?             @relation(fields: [userId], references: [id], onDelete: SetNull)
+  sucursal    Sucursal?         @relation(fields: [sucursalId], references: [id], onDelete: SetNull)
 }
 
 // ─────────────────────────────────────────

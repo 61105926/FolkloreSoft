@@ -7,6 +7,8 @@ import { UsersService } from '../users/users.service.js';
 interface JwtPayload {
   sub: number;
   email: string;
+  rol: string;
+  sucursalId: number | null;
 }
 
 @Injectable()
@@ -24,9 +26,13 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
 
   async validate(payload: JwtPayload) {
     const user = await this.usersService.findById(payload.sub);
-    if (!user) {
-      throw new UnauthorizedException('User no longer exists');
-    }
-    return { id: user.id, email: user.email, rol: user.rol };
+    if (!user) throw new UnauthorizedException('User no longer exists');
+    return {
+      id: user.id,
+      email: user.email,
+      nombre: user.nombre,
+      rol: user.rol,
+      sucursalId: (user as any).sucursalId ?? null,
+    };
   }
 }
