@@ -1,79 +1,117 @@
 "use client";
 
 import { useState } from "react";
-import type { UsuarioRow } from "../page";
+import type { UsuarioRow, SucursalOption } from "../page";
 
-const ROL_CONFIG: Record<string, { label: string; chip: string }> = {
-  ADMIN:     { label: "Admin",     chip: "bg-red-500/10 text-red-600 border-red-500/20" },
-  VENDEDOR:  { label: "Vendedor",  chip: "bg-blue-500/10 text-blue-600 border-blue-500/20" },
-  BODEGUERO: { label: "Bodeguero", chip: "bg-green-500/10 text-green-600 border-green-500/20" },
-  CAJERO:    { label: "Cajero",    chip: "bg-amber-500/10 text-amber-600 border-amber-500/20" },
+// ── Types & Constants ──────────────────────────────────────────────────────────
+
+type Rol = "ADMIN" | "VENDEDOR" | "BODEGUERO" | "CAJERO";
+
+const ROL_CONFIG: Record<Rol, { label: string; chip: string; desc: string; color: string }> = {
+  ADMIN:     { label: "Administrador", chip: "bg-red-500/10 text-red-600 border-red-500/20",       desc: "Acceso total al sistema. Gestiona usuarios, configuración y todos los módulos.", color: "#ef4444" },
+  VENDEDOR:  { label: "Vendedor",      chip: "bg-blue-500/10 text-blue-600 border-blue-500/20",    desc: "Crea y gestiona contratos, eventos y clientes. Puede registrar pagos.",          color: "#3b82f6" },
+  BODEGUERO: { label: "Bodeguero",     chip: "bg-emerald-500/10 text-emerald-600 border-emerald-500/20", desc: "Gestiona el inventario físico, armado de conjuntos y transferencias.", color: "#10b981" },
+  CAJERO:    { label: "Cajero",        chip: "bg-amber-500/10 text-amber-600 border-amber-500/20", desc: "Registra movimientos de caja, pagos y genera reportes financieros.",            color: "#f59e0b" },
 };
 
-const ROL_OPTIONS = ["ADMIN", "VENDEDOR", "BODEGUERO", "CAJERO"] as const;
+const ROL_OPTIONS: Rol[] = ["ADMIN", "VENDEDOR", "BODEGUERO", "CAJERO"];
+
+// ── Permissions matrix ─────────────────────────────────────────────────────────
+// [module, description, ADMIN, VENDEDOR, BODEGUERO, CAJERO]
+type PermLevel = "full" | "read" | "none";
+
+interface ModuloPermiso {
+  modulo: string;
+  descripcion: string;
+  permisos: Record<Rol, PermLevel>;
+}
+
+const PERMISOS_MATRIZ: ModuloPermiso[] = [
+  { modulo: "Dashboard",           descripcion: "Resumen general del sistema",               permisos: { ADMIN: "full", VENDEDOR: "read", BODEGUERO: "read", CAJERO: "read" } },
+  { modulo: "Conjuntos / Catálogo",descripcion: "Gestión del catálogo de danzas y conjuntos",permisos: { ADMIN: "full", VENDEDOR: "read", BODEGUERO: "read", CAJERO: "none" } },
+  { modulo: "Inventario Físico",   descripcion: "Instancias, armado y pool de prendas",      permisos: { ADMIN: "full", VENDEDOR: "read", BODEGUERO: "full", CAJERO: "none" } },
+  { modulo: "Sucursales",          descripcion: "Configuración y datos de sucursales",       permisos: { ADMIN: "full", VENDEDOR: "read", BODEGUERO: "read", CAJERO: "none" } },
+  { modulo: "Transferencias",      descripcion: "Transferencias de prendas entre sucursales",permisos: { ADMIN: "full", VENDEDOR: "none", BODEGUERO: "full", CAJERO: "none" } },
+  { modulo: "Contratos",           descripcion: "Creación y seguimiento de contratos",       permisos: { ADMIN: "full", VENDEDOR: "full", BODEGUERO: "read", CAJERO: "read" } },
+  { modulo: "Eventos Folklóricos", descripcion: "Gestión de eventos y sus contratos",        permisos: { ADMIN: "full", VENDEDOR: "full", BODEGUERO: "none", CAJERO: "none" } },
+  { modulo: "Caja",                descripcion: "Movimientos, ingresos y egresos",           permisos: { ADMIN: "full", VENDEDOR: "read", BODEGUERO: "none", CAJERO: "full" } },
+  { modulo: "Garantías",           descripcion: "Depósitos de seguridad de contratos",       permisos: { ADMIN: "full", VENDEDOR: "read", BODEGUERO: "none", CAJERO: "read" } },
+  { modulo: "Clientes",            descripcion: "Base de datos de clientes",                 permisos: { ADMIN: "full", VENDEDOR: "full", BODEGUERO: "none", CAJERO: "read" } },
+  { modulo: "Reportes",            descripcion: "Reportes financieros y operativos",         permisos: { ADMIN: "full", VENDEDOR: "read", BODEGUERO: "read", CAJERO: "full" } },
+  { modulo: "Usuarios",            descripcion: "Gestión de usuarios del sistema",           permisos: { ADMIN: "full", VENDEDOR: "none", BODEGUERO: "none", CAJERO: "none" } },
+  { modulo: "Configuración",       descripcion: "Configuración general del sistema",         permisos: { ADMIN: "full", VENDEDOR: "none", BODEGUERO: "none", CAJERO: "none" } },
+];
 
 const inp = "w-full rounded-xl border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 transition-all";
 
-// ── Modal ─────────────────────────────────────────────────────────────────────
+// ── PermBadge ──────────────────────────────────────────────────────────────────
 
-function UsuarioModal({
-  usuario,
-  token,
-  backendUrl,
-  onClose,
-  onSaved,
-}: {
-  usuario: UsuarioRow | null;
-  token: string;
-  backendUrl: string;
-  onClose: () => void;
-  onSaved: (u: UsuarioRow) => void;
+function PermBadge({ level }: { level: PermLevel }) {
+  if (level === "full")
+    return (
+      <div className="flex items-center justify-center">
+        <span className="inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-700 border border-emerald-500/20">
+          <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" /></svg>
+          Completo
+        </span>
+      </div>
+    );
+  if (level === "read")
+    return (
+      <div className="flex items-center justify-center">
+        <span className="inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-600 border border-blue-500/20">
+          <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
+          Solo lectura
+        </span>
+      </div>
+    );
+  return (
+    <div className="flex items-center justify-center">
+      <span className="inline-flex items-center gap-1 text-xs text-muted-foreground px-2 py-0.5 rounded-full bg-muted border border-border">
+        <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" /></svg>
+        Sin acceso
+      </span>
+    </div>
+  );
+}
+
+// ── UsuarioModal ───────────────────────────────────────────────────────────────
+
+function UsuarioModal({ usuario, token, backendUrl, sucursales, onClose, onSaved }: {
+  usuario: UsuarioRow | null; token: string; backendUrl: string;
+  sucursales: SucursalOption[];
+  onClose: () => void; onSaved: (u: UsuarioRow) => void;
 }) {
   const isEdit = !!usuario;
-  const [nombre, setNombre] = useState(usuario?.nombre ?? "");
-  const [email, setEmail] = useState(usuario?.email ?? "");
-  const [rol, setRol] = useState<string>(usuario?.rol ?? "VENDEDOR");
-  const [activo, setActivo] = useState(usuario?.activo ?? true);
-  const [password, setPassword] = useState("");
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [nombre,     setNombre]     = useState(usuario?.nombre ?? "");
+  const [email,      setEmail]      = useState(usuario?.email  ?? "");
+  const [rol,        setRol]        = useState<Rol>((usuario?.rol as Rol) ?? "VENDEDOR");
+  const [activo,     setActivo]     = useState(usuario?.activo ?? true);
+  const [sucursalId, setSucursalId] = useState<number | null>(usuario?.sucursalId ?? null);
+  const [password,   setPassword]   = useState("");
+  const [saving,     setSaving]     = useState(false);
+  const [error,      setError]      = useState<string | null>(null);
 
   const handleSave = async () => {
     if (!nombre.trim() || !email.trim()) { setError("Nombre y email son obligatorios"); return; }
     if (!isEdit && !password.trim()) { setError("La contraseña es obligatoria para nuevo usuario"); return; }
     setSaving(true); setError(null);
     try {
-      const url = isEdit ? `${backendUrl}/users/${usuario!.id}` : `${backendUrl}/users`;
+      const url    = isEdit ? `${backendUrl}/users/${usuario!.id}` : `${backendUrl}/users`;
       const method = isEdit ? "PATCH" : "POST";
-      const body: Record<string, unknown> = { nombre: nombre.trim(), email: email.trim(), rol, activo };
+      const body: Record<string, unknown> = { nombre: nombre.trim(), email: email.trim(), rol, activo, sucursalId: sucursalId ?? null };
       if (!isEdit) body.password = password;
+      else if (password.trim()) body.password = password;
       const res = await fetch(url, {
-        method,
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        method, headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify(body),
       });
-      if (res.ok) { onSaved(await res.json()); }
-      else {
-        const e = await res.json().catch(() => ({}));
-        setError(e?.message ?? "Error al guardar");
-        setSaving(false);
-      }
+      if (res.ok) { onSaved(await res.json() as UsuarioRow); }
+      else { const e = await res.json().catch(() => ({})) as { message?: string }; setError(e.message ?? "Error al guardar"); setSaving(false); }
     } catch { setError("Error de red"); setSaving(false); }
   };
 
-  const handleChangePassword = async () => {
-    if (!password.trim()) { setError("Ingresa la nueva contraseña"); return; }
-    setSaving(true); setError(null);
-    try {
-      const res = await fetch(`${backendUrl}/users/${usuario!.id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ password }),
-      });
-      if (res.ok) { setPassword(""); setError(null); setSaving(false); }
-      else { const e = await res.json().catch(() => ({})); setError(e?.message ?? "Error"); setSaving(false); }
-    } catch { setError("Error de red"); setSaving(false); }
-  };
+  const rolInfo = ROL_CONFIG[rol];
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
@@ -83,79 +121,71 @@ function UsuarioModal({
             {isEdit ? "Editar usuario" : "Nuevo usuario"}
           </h2>
           <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-xl hover:bg-muted transition-colors">
-            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            </svg>
+            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
           </button>
         </div>
 
         <div className="p-6 space-y-4">
-          {error && <p className="text-xs text-red-500 bg-red-500/10 rounded-lg px-3 py-2">{error}</p>}
+          {error && <p className="text-xs text-red-500 bg-red-500/10 rounded-xl px-3 py-2">{error}</p>}
 
           <div className="space-y-1">
-            <label className="text-xs text-muted-foreground">Nombre completo <span className="text-red-500">*</span></label>
+            <label className="text-xs font-semibold text-muted-foreground">Nombre completo *</label>
             <input className={inp} value={nombre} onChange={(e) => setNombre(e.target.value)} placeholder="Nombre completo" />
           </div>
-
           <div className="space-y-1">
-            <label className="text-xs text-muted-foreground">Email <span className="text-red-500">*</span></label>
+            <label className="text-xs font-semibold text-muted-foreground">Email *</label>
             <input className={inp} type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="correo@ejemplo.com" />
           </div>
 
+          {/* Rol con preview de permisos */}
+          <div className="space-y-2">
+            <label className="text-xs font-semibold text-muted-foreground">Rol</label>
+            <select className={`${inp} cursor-pointer`} value={rol} onChange={(e) => setRol(e.target.value as Rol)}>
+              {ROL_OPTIONS.map((r) => <option key={r} value={r}>{ROL_CONFIG[r].label}</option>)}
+            </select>
+            <div className="px-3 py-2.5 rounded-xl border text-xs" style={{ borderColor: `${rolInfo.color}30`, backgroundColor: `${rolInfo.color}08` }}>
+              <p className="font-semibold mb-1" style={{ color: rolInfo.color }}>{rolInfo.label}</p>
+              <p className="text-muted-foreground">{rolInfo.desc}</p>
+              <div className="mt-2 flex flex-wrap gap-1">
+                {PERMISOS_MATRIZ.filter((m) => m.permisos[rol] !== "none").map((m) => (
+                  <span key={m.modulo} className="px-1.5 py-0.5 rounded text-[10px] font-medium"
+                    style={{ background: `${rolInfo.color}15`, color: rolInfo.color }}>
+                    {m.modulo}
+                  </span>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Sucursal */}
           <div className="space-y-1">
-            <label className="text-xs text-muted-foreground">Rol</label>
-            <select className={`${inp} cursor-pointer`} value={rol} onChange={(e) => setRol(e.target.value)}>
-              {ROL_OPTIONS.map((r) => (
-                <option key={r} value={r}>{ROL_CONFIG[r].label}</option>
-              ))}
+            <label className="text-xs font-semibold text-muted-foreground">Sucursal asignada</label>
+            <select className={`${inp} cursor-pointer`} value={sucursalId ?? ""} onChange={(e) => setSucursalId(e.target.value ? Number(e.target.value) : null)}>
+              <option value="">Sin sucursal</option>
+              {sucursales.map((s) => <option key={s.id} value={s.id}>{s.nombre} — {s.ciudad}</option>)}
             </select>
           </div>
 
           {isEdit && (
-            <div className="flex items-center justify-between py-2">
+            <div className="flex items-center justify-between py-2 border-t border-border">
               <span className="text-sm text-muted-foreground">Usuario activo</span>
-              <button
-                onClick={() => setActivo((v) => !v)}
-                className={`relative w-10 h-6 rounded-full transition-colors ${activo ? "bg-primary" : "bg-muted-foreground/30"}`}
-              >
+              <button onClick={() => setActivo((v) => !v)}
+                className={`relative w-10 h-6 rounded-full transition-colors ${activo ? "bg-primary" : "bg-muted-foreground/30"}`}>
                 <span className={`absolute top-1 w-4 h-4 rounded-full bg-white shadow transition-transform ${activo ? "translate-x-5" : "translate-x-1"}`} />
               </button>
             </div>
           )}
 
-          {!isEdit && (
-            <div className="space-y-1">
-              <label className="text-xs text-muted-foreground">Contraseña <span className="text-red-500">*</span></label>
-              <input className={inp} type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" />
-            </div>
-          )}
-
-          {isEdit && (
-            <div className="space-y-2 pt-2 border-t border-border">
-              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Cambiar contraseña</p>
-              <div className="flex gap-2">
-                <input className={`${inp} flex-1`} type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Nueva contraseña" />
-                <button
-                  onClick={handleChangePassword}
-                  disabled={saving}
-                  className="px-3 py-2 text-xs rounded-xl bg-muted hover:bg-muted/80 border border-border transition-colors disabled:opacity-50"
-                >
-                  Cambiar
-                </button>
-              </div>
-            </div>
-          )}
+          <div className="space-y-1">
+            <label className="text-xs font-semibold text-muted-foreground">{isEdit ? "Nueva contraseña (dejar vacío para no cambiar)" : "Contraseña *"}</label>
+            <input className={inp} type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" />
+          </div>
         </div>
 
         <div className="flex gap-3 px-6 pb-6">
-          <button onClick={onClose} className="flex-1 py-2 rounded-xl border border-border text-sm hover:bg-muted transition-colors">
-            Cancelar
-          </button>
-          <button
-            onClick={handleSave}
-            disabled={saving}
-            className="flex-1 py-2 rounded-xl bg-primary text-primary-foreground text-sm hover:bg-primary/90 transition-colors disabled:opacity-50"
-          >
+          <button onClick={onClose} className="flex-1 py-2 rounded-xl border border-border text-sm hover:bg-muted transition-colors">Cancelar</button>
+          <button onClick={() => void handleSave()} disabled={saving}
+            className="flex-1 py-2 rounded-xl bg-primary text-primary-foreground text-sm hover:bg-primary/90 transition-colors disabled:opacity-50">
             {saving ? "Guardando…" : isEdit ? "Guardar cambios" : "Crear usuario"}
           </button>
         </div>
@@ -164,88 +194,108 @@ function UsuarioModal({
   );
 }
 
-// ── Main ──────────────────────────────────────────────────────────────────────
+// ── UsuariosTab ────────────────────────────────────────────────────────────────
 
-export function UsuariosClient({
-  initialUsuarios,
-  token,
-  backendUrl,
-}: {
-  initialUsuarios: UsuarioRow[];
-  token: string;
-  backendUrl: string;
+function UsuariosTab({ usuarios, sucursales, token, backendUrl, onSaved }: {
+  usuarios: UsuarioRow[]; sucursales: SucursalOption[]; token: string; backendUrl: string;
+  onSaved: (u: UsuarioRow) => void;
 }) {
-  const [usuarios, setUsuarios] = useState<UsuarioRow[]>(initialUsuarios);
   const [selected, setSelected] = useState<UsuarioRow | null | "new">(null);
+  const [search,   setSearch]   = useState("");
 
-  const handleSaved = (u: UsuarioRow) => {
-    setUsuarios((prev) => {
-      const idx = prev.findIndex((x) => x.id === u.id);
-      if (idx >= 0) { const next = [...prev]; next[idx] = u; return next; }
-      return [u, ...prev];
-    });
-    setSelected(null);
-  };
+  const filtered = usuarios.filter((u) => {
+    const q = search.toLowerCase();
+    return !q || u.nombre.toLowerCase().includes(q) || u.email.toLowerCase().includes(q);
+  });
+
+  const countByRol = ROL_OPTIONS.reduce<Record<string, number>>((acc, r) => {
+    acc[r] = usuarios.filter((u) => u.rol === r).length;
+    return acc;
+  }, {});
 
   return (
-    <div className="p-6 max-w-4xl mx-auto space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold" style={{ fontFamily: "var(--font-outfit)" }}>Usuarios</h1>
-          <p className="text-sm text-muted-foreground mt-0.5">Gestión de empleados y permisos del sistema</p>
-        </div>
-        <button
-          onClick={() => setSelected("new")}
-          className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-xl text-sm font-semibold hover:bg-primary/90 transition-colors"
-        >
-          <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-          </svg>
+    <div className="space-y-4">
+      {/* Role summary chips */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        {ROL_OPTIONS.map((r) => {
+          const cfg = ROL_CONFIG[r];
+          return (
+            <div key={r} className={`rounded-2xl border p-4 ${cfg.chip.replace("text-", "border-").split(" ").slice(-1)[0].replace("border-", "bg-").replace("/20", "/5")} border`}
+              style={{ borderColor: `${cfg.color}30`, backgroundColor: `${cfg.color}08` }}>
+              <p className="text-xl font-bold" style={{ color: cfg.color, fontFamily: "var(--font-outfit)" }}>{countByRol[r] ?? 0}</p>
+              <p className="text-xs font-semibold mt-0.5" style={{ color: cfg.color }}>{cfg.label}</p>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Filters + action */}
+      <div className="flex gap-2 flex-wrap items-center">
+        <input className="rounded-xl border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 flex-1 min-w-[180px]"
+          placeholder="Buscar por nombre o email…" value={search} onChange={(e) => setSearch(e.target.value)} />
+        <button onClick={() => setSelected("new")}
+          className="px-4 py-2 rounded-xl bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 transition-colors flex items-center gap-1.5">
+          <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" /></svg>
           Nuevo usuario
         </button>
       </div>
 
       {/* Table */}
       <div className="rounded-2xl border border-border bg-card overflow-hidden">
-        {usuarios.length === 0 ? (
-          <div className="py-16 text-center text-muted-foreground text-sm">No hay usuarios registrados</div>
+        {filtered.length === 0 ? (
+          <div className="py-14 text-center text-muted-foreground text-sm">Sin usuarios</div>
         ) : (
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-border bg-muted/30">
                 <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Usuario</th>
-                <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Email</th>
+                <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide hidden sm:table-cell">Email</th>
                 <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Rol</th>
+                <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide hidden md:table-cell">Accesos</th>
+                <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide hidden lg:table-cell">Sucursal</th>
                 <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Estado</th>
               </tr>
             </thead>
             <tbody>
-              {usuarios.map((u) => {
-                const cfg = ROL_CONFIG[u.rol] ?? { label: u.rol, chip: "bg-muted text-muted-foreground border-border" };
-                const inicial = u.nombre?.charAt(0).toUpperCase() ?? "?";
+              {filtered.map((u) => {
+                const cfg = ROL_CONFIG[u.rol as Rol] ?? ROL_CONFIG.VENDEDOR;
+                const accesos = PERMISOS_MATRIZ.filter((m) => m.permisos[u.rol as Rol] === "full").length;
+                const lecturas = PERMISOS_MATRIZ.filter((m) => m.permisos[u.rol as Rol] === "read").length;
                 return (
-                  <tr
-                    key={u.id}
-                    onClick={() => setSelected(u)}
-                    className="border-b border-border last:border-0 hover:bg-muted/30 cursor-pointer transition-colors"
-                  >
+                  <tr key={u.id} onClick={() => setSelected(u)}
+                    className="border-b border-border last:border-0 hover:bg-muted/20 cursor-pointer transition-colors">
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-bold shrink-0">
-                          {inicial}
+                        <div className="w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold shrink-0"
+                          style={{ backgroundColor: `${cfg.color}20`, color: cfg.color }}>
+                          {u.nombre?.charAt(0).toUpperCase() ?? "?"}
                         </div>
-                        <span className="font-medium">{u.nombre}</span>
+                        <div>
+                          <p className="font-semibold">{u.nombre}</p>
+                          <p className="text-xs text-muted-foreground sm:hidden">{u.email}</p>
+                        </div>
                       </div>
                     </td>
-                    <td className="px-4 py-3 text-muted-foreground">{u.email}</td>
+                    <td className="px-4 py-3 text-muted-foreground hidden sm:table-cell">{u.email}</td>
                     <td className="px-4 py-3">
-                      <span className={`text-xs font-semibold px-2 py-0.5 rounded-full border ${cfg.chip}`}>
-                        {cfg.label}
-                      </span>
+                      <span className={`text-xs font-semibold px-2 py-0.5 rounded-full border ${cfg.chip}`}>{cfg.label}</span>
+                    </td>
+                    <td className="px-4 py-3 hidden md:table-cell">
+                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                        <span className="text-emerald-600 font-semibold">{accesos} completo{accesos !== 1 ? "s" : ""}</span>
+                        <span>·</span>
+                        <span className="text-blue-600">{lecturas} solo lectura</span>
+                      </div>
+                    </td>
+                    <td className="px-4 py-3 hidden lg:table-cell text-xs text-muted-foreground">
+                      {u.sucursal ? (
+                        <span>{u.sucursal.nombre}</span>
+                      ) : (
+                        <span className="italic">Sin sucursal</span>
+                      )}
                     </td>
                     <td className="px-4 py-3">
-                      <span className={`text-xs font-semibold px-2 py-0.5 rounded-full border ${u.activo ? "bg-green-500/10 text-green-600 border-green-500/20" : "bg-muted text-muted-foreground border-border"}`}>
+                      <span className={`text-xs font-semibold px-2 py-0.5 rounded-full border ${u.activo ? "bg-emerald-500/10 text-emerald-700 border-emerald-500/20" : "bg-muted text-muted-foreground border-border"}`}>
                         {u.activo ? "Activo" : "Inactivo"}
                       </span>
                     </td>
@@ -255,18 +305,222 @@ export function UsuariosClient({
             </tbody>
           </table>
         )}
+        {filtered.length > 0 && (
+          <div className="px-4 py-2.5 border-t border-border bg-muted/20 text-xs text-muted-foreground">
+            {filtered.length} de {usuarios.length} usuario{usuarios.length !== 1 ? "s" : ""}
+          </div>
+        )}
       </div>
 
-      {/* Modal */}
       {selected !== null && (
         <UsuarioModal
           usuario={selected === "new" ? null : selected}
-          token={token}
-          backendUrl={backendUrl}
+          token={token} backendUrl={backendUrl}
+          sucursales={sucursales}
           onClose={() => setSelected(null)}
-          onSaved={handleSaved}
+          onSaved={(u) => { onSaved(u); setSelected(null); }}
         />
       )}
+    </div>
+  );
+}
+
+// ── RolesTab ───────────────────────────────────────────────────────────────────
+
+function RolesTab({ usuarios }: { usuarios: UsuarioRow[] }) {
+  const [highlightRol, setHighlightRol] = useState<Rol | null>(null);
+
+  const countByRol = ROL_OPTIONS.reduce<Record<string, number>>((acc, r) => {
+    acc[r] = usuarios.filter((u) => u.rol === r && u.activo).length;
+    return acc;
+  }, {});
+
+  return (
+    <div className="space-y-6">
+      {/* Role cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {ROL_OPTIONS.map((r) => {
+          const cfg = ROL_CONFIG[r];
+          const fullCount = PERMISOS_MATRIZ.filter((m) => m.permisos[r] === "full").length;
+          const readCount = PERMISOS_MATRIZ.filter((m) => m.permisos[r] === "read").length;
+          const isHigh = highlightRol === r;
+          return (
+            <button key={r} onClick={() => setHighlightRol(isHigh ? null : r)}
+              className={`text-left rounded-2xl border p-4 transition-all ${isHigh ? "ring-2" : "hover:shadow-sm"}`}
+              style={{ borderColor: isHigh ? cfg.color : undefined }}>
+              <div className="flex items-center justify-between mb-3">
+                <div className="w-9 h-9 rounded-xl flex items-center justify-center"
+                  style={{ backgroundColor: `${cfg.color}20` }}>
+                  <svg className="h-4.5 w-4.5" style={{ color: cfg.color }} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8}
+                      d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                  </svg>
+                </div>
+                <span className="text-xs font-semibold px-2 py-0.5 rounded-full" style={{ color: cfg.color, backgroundColor: `${cfg.color}15` }}>
+                  {countByRol[r] ?? 0} activo{(countByRol[r] ?? 0) !== 1 ? "s" : ""}
+                </span>
+              </div>
+              <p className="font-bold text-sm">{cfg.label}</p>
+              <p className="text-xs text-muted-foreground mt-1 leading-relaxed">{cfg.desc}</p>
+              <div className="mt-3 flex gap-3 text-xs">
+                <span className="text-emerald-600 font-semibold">{fullCount} completos</span>
+                <span className="text-blue-600">{readCount} lectura</span>
+              </div>
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Permissions matrix */}
+      <div className="rounded-2xl border border-border bg-card overflow-hidden">
+        <div className="px-5 py-4 border-b border-border flex items-center justify-between flex-wrap gap-2">
+          <div>
+            <p className="font-bold text-sm">Matriz de permisos</p>
+            <p className="text-xs text-muted-foreground mt-0.5">Acceso de cada rol a los módulos del sistema</p>
+          </div>
+          <div className="flex items-center gap-3 text-xs text-muted-foreground">
+            <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-emerald-500 inline-block" /> Acceso completo</span>
+            <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-blue-500 inline-block" /> Solo lectura</span>
+            <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-muted-foreground/40 inline-block" /> Sin acceso</span>
+          </div>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-border bg-muted/30">
+                <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide min-w-[180px]">Módulo</th>
+                {ROL_OPTIONS.map((r) => {
+                  const cfg = ROL_CONFIG[r];
+                  return (
+                    <th key={r} className="text-center px-4 py-3 min-w-[140px]">
+                      <button onClick={() => setHighlightRol(highlightRol === r ? null : r)}
+                        className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-xs font-semibold border transition-all ${highlightRol === r ? "" : "opacity-80 hover:opacity-100"}`}
+                        style={{ color: cfg.color, borderColor: `${cfg.color}30`, backgroundColor: highlightRol === r ? `${cfg.color}20` : `${cfg.color}10` }}>
+                        {cfg.label}
+                      </button>
+                    </th>
+                  );
+                })}
+              </tr>
+            </thead>
+            <tbody>
+              {PERMISOS_MATRIZ.map((m) => (
+                <tr key={m.modulo} className="border-b border-border last:border-0 hover:bg-muted/20 transition-colors">
+                  <td className="px-4 py-3">
+                    <p className="font-semibold text-sm">{m.modulo}</p>
+                    <p className="text-xs text-muted-foreground">{m.descripcion}</p>
+                  </td>
+                  {ROL_OPTIONS.map((r) => {
+                    const cfg = ROL_CONFIG[r];
+                    const isHigh = highlightRol === r;
+                    const level = m.permisos[r];
+                    return (
+                      <td key={r} className={`px-4 py-3 transition-colors ${isHigh ? "bg-opacity-5" : ""}`}
+                        style={{ backgroundColor: isHigh ? `${cfg.color}08` : undefined }}>
+                        <PermBadge level={level} />
+                      </td>
+                    );
+                  })}
+                </tr>
+              ))}
+            </tbody>
+            {/* Summary row */}
+            <tfoot>
+              <tr className="border-t-2 border-border bg-muted/30">
+                <td className="px-4 py-3 text-xs font-bold text-muted-foreground uppercase tracking-wide">Total módulos con acceso</td>
+                {ROL_OPTIONS.map((r) => {
+                  const full = PERMISOS_MATRIZ.filter((m) => m.permisos[r] === "full").length;
+                  const read = PERMISOS_MATRIZ.filter((m) => m.permisos[r] === "read").length;
+                  const cfg  = ROL_CONFIG[r];
+                  return (
+                    <td key={r} className="px-4 py-3 text-center">
+                      <p className="text-xs font-bold" style={{ color: cfg.color }}>{full + read} / {PERMISOS_MATRIZ.length}</p>
+                      <p className="text-[10px] text-muted-foreground">{full} compl. · {read} lectura</p>
+                    </td>
+                  );
+                })}
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+      </div>
+
+      {/* Users by role */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {ROL_OPTIONS.map((r) => {
+          const cfg = ROL_CONFIG[r];
+          const members = usuarios.filter((u) => u.rol === r);
+          return (
+            <div key={r} className="rounded-2xl border border-border bg-card p-4 space-y-3">
+              <p className="text-xs font-bold uppercase tracking-wide" style={{ color: cfg.color }}>{cfg.label}</p>
+              {members.length === 0 ? (
+                <p className="text-xs text-muted-foreground italic">Sin usuarios asignados</p>
+              ) : (
+                <div className="space-y-2">
+                  {members.map((u) => (
+                    <div key={u.id} className="flex items-center gap-2">
+                      <div className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold shrink-0"
+                        style={{ backgroundColor: `${cfg.color}20`, color: cfg.color }}>
+                        {u.nombre.charAt(0).toUpperCase()}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-xs font-semibold truncate">{u.nombre}</p>
+                        <p className="text-[10px] text-muted-foreground truncate">{u.email}</p>
+                      </div>
+                      {!u.activo && (
+                        <span className="text-[10px] text-muted-foreground border border-border rounded px-1">inactivo</span>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+// ── UsuariosClient (root) ──────────────────────────────────────────────────────
+
+export function UsuariosClient({ initialUsuarios, sucursales, token, backendUrl }: {
+  initialUsuarios: UsuarioRow[]; sucursales: SucursalOption[]; token: string; backendUrl: string;
+}) {
+  const [usuarios, setUsuarios] = useState<UsuarioRow[]>(initialUsuarios);
+  const [tab, setTab] = useState<"usuarios" | "roles">("usuarios");
+
+  const handleSaved = (u: UsuarioRow) => {
+    setUsuarios((prev) => {
+      const idx = prev.findIndex((x) => x.id === u.id);
+      if (idx >= 0) { const next = [...prev]; next[idx] = u; return next; }
+      return [u, ...prev];
+    });
+  };
+
+  const TABS = [
+    { id: "usuarios" as const, label: "Usuarios" },
+    { id: "roles"    as const, label: "Roles y Permisos" },
+  ];
+
+  return (
+    <div className="space-y-5">
+      <div>
+        <h1 className="text-2xl font-bold" style={{ fontFamily: "var(--font-outfit)" }}>Usuarios</h1>
+        <p className="text-sm text-muted-foreground mt-0.5">Gestión de empleados, roles y permisos del sistema</p>
+      </div>
+
+      <div className="flex border-b border-border gap-1">
+        {TABS.map((t) => (
+          <button key={t.id} onClick={() => setTab(t.id)}
+            className={`px-5 py-2.5 text-sm font-semibold border-b-2 -mb-px transition-colors ${tab === t.id ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground"}`}>
+            {t.label}
+          </button>
+        ))}
+      </div>
+
+      {tab === "usuarios" && <UsuariosTab usuarios={usuarios} sucursales={sucursales} token={token} backendUrl={backendUrl} onSaved={handleSaved} />}
+      {tab === "roles"    && <RolesTab    usuarios={usuarios} />}
     </div>
   );
 }

@@ -9,31 +9,41 @@ export interface UsuarioRow {
   email: string;
   rol: "ADMIN" | "VENDEDOR" | "BODEGUERO" | "CAJERO";
   activo: boolean;
+  sucursalId: number | null;
+  sucursal?: { id: number; nombre: string; ciudad: string } | null;
   createdAt: string;
   updatedAt: string;
 }
 
-async function getUsuarios(token: string): Promise<UsuarioRow[]> {
+export interface SucursalOption {
+  id: number;
+  nombre: string;
+  ciudad: string;
+}
+
+async function fetchJson<T>(url: string, token: string, fallback: T): Promise<T> {
   try {
-    const res = await fetch(`${BACKEND}/users`, {
-      headers: { Authorization: `Bearer ${token}` },
-      cache: "no-store",
-    });
-    if (!res.ok) return [];
+    const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` }, cache: "no-store" });
+    if (!res.ok) return fallback;
     return res.json();
   } catch {
-    return [];
+    return fallback;
   }
 }
 
 export default async function UsuariosPage() {
   const cookieStore = await cookies();
   const token = cookieStore.get("accessToken")?.value ?? "";
-  const usuarios = await getUsuarios(token);
+
+  const [usuarios, sucursales] = await Promise.all([
+    fetchJson<UsuarioRow[]>(`${BACKEND}/users`, token, []),
+    fetchJson<SucursalOption[]>(`${BACKEND}/sucursales`, token, []),
+  ]);
 
   return (
     <UsuariosClient
       initialUsuarios={usuarios}
+      sucursales={sucursales}
       token={token}
       backendUrl={BACKEND}
     />

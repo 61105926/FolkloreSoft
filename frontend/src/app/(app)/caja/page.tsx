@@ -26,10 +26,11 @@ export default async function CajaPage() {
   const cookieStore = await cookies();
   const token = cookieStore.get("accessToken")?.value ?? "";
 
-  const [movimientos, stats, cuentas] = await Promise.all([
+  const [movimientos, stats, cuentas, currentUser] = await Promise.all([
     fetchJson(`${BACKEND}/caja`, token, []),
     fetchJson(`${BACKEND}/caja/stats`, token, DEFAULT_STATS),
     fetchJson(`${BACKEND}/caja/cuentas-por-cobrar`, token, []),
+    fetchJson(`${BACKEND}/auth/me`, token, null),
   ]);
 
   return (
@@ -39,6 +40,7 @@ export default async function CajaPage() {
       initialCuentas={cuentas as any[]}
       token={token}
       backendUrl={BACKEND}
+      currentUser={currentUser as any}
     />
   );
 }

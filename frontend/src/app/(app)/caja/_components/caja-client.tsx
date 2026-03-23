@@ -176,21 +176,23 @@ function StatsCards({ stats }: { stats: CajaStats }) {
 // ── Registrar Movimiento Modal ────────────────────────────────────────────────
 
 function RegistrarMovimientoModal({
-  token, backendUrl, contratos, tipoInicial, onClose, onSaved,
+  token, backendUrl, contratos, tipoInicial, pagoPreset, onClose, onSaved,
 }: {
   token: string; backendUrl: string;
   contratos: CuentaPorCobrar[];
   tipoInicial?: TipoMovimiento;
+  pagoPreset?: CuentaPorCobrar | null;
   onClose: () => void;
   onSaved: (m: MovimientoCaja) => void;
 }) {
+  const deudaPreset = pagoPreset ? Number(pagoPreset.total) - Number(pagoPreset.total_pagado) : 0;
   const [tipo,        setTipo]       = useState<TipoMovimiento>(tipoInicial ?? "INGRESO");
-  const [concepto,    setConcepto]   = useState<ConceptoCaja>(tipoInicial === "EGRESO" ? "GASTO_OPERATIVO" : "ANTICIPO_CONTRATO");
-  const [monto,       setMonto]      = useState("");
+  const [concepto,    setConcepto]   = useState<ConceptoCaja>(tipoInicial === "EGRESO" ? "GASTO_OPERATIVO" : (pagoPreset ? "DEUDA_COBRADA" : "ANTICIPO_CONTRATO"));
+  const [monto,       setMonto]      = useState(pagoPreset ? deudaPreset.toFixed(2) : "");
   const [descripcion, setDescripcion]= useState("");
   const [formaPago,   setFormaPago]  = useState<FormaPago>("EFECTIVO");
   const [referencia,  setReferencia] = useState("");
-  const [contratoId,  setContratoId] = useState<number | "">("");
+  const [contratoId,  setContratoId] = useState<number | "">(pagoPreset?.id ?? "");
   const [saving,      setSaving]     = useState(false);
   const [error,       setError]      = useState<string | null>(null);
 
@@ -241,6 +243,19 @@ function RegistrarMovimientoModal({
         </div>
 
         <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4">
+          {/* Preset banner */}
+          {pagoPreset && (
+            <div className="flex items-start gap-3 px-3 py-2.5 rounded-xl bg-orange-500/8 border border-orange-400/30">
+              <svg className="h-4 w-4 text-orange-500 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+              <div className="text-xs">
+                <p className="font-semibold text-orange-700">{pagoPreset.cliente.nombre} · {pagoPreset.codigo}</p>
+                <p className="text-orange-600/80 mt-0.5">
+                  Deuda pendiente: <span className="font-bold">Bs. {deudaPreset.toFixed(2)}</span> — puedes ajustar el monto si es pago parcial
+                </p>
+              </div>
+            </div>
+          )}
+
           {/* Tipo toggle */}
           <div className="flex rounded-xl overflow-hidden border border-border">
             {(["INGRESO", "EGRESO"] as TipoMovimiento[]).map((t) => (
@@ -643,15 +658,24 @@ function PrintReport({
 
 // ── Main CajaClient ───────────────────────────────────────────────────────────
 
+export interface CurrentUser {
+  id: number;
+  nombre: string;
+  rol: string;
+  sucursalId: number | null;
+  sucursal?: { id: number; nombre: string; ciudad: string } | null;
+}
+
 interface Props {
   initialMovimientos: MovimientoCaja[];
   initialStats: CajaStats;
   initialCuentas: CuentaPorCobrar[];
   token: string;
   backendUrl: string;
+  currentUser?: CurrentUser | null;
 }
 
-export function CajaClient({ initialMovimientos, initialStats, initialCuentas, token, backendUrl }: Props) {
+export function CajaClient({ initialMovimientos, initialStats, initialCuentas, token, backendUrl, currentUser }: Props) {
   const [movimientos, setMovimientos] = useState<MovimientoCaja[]>(initialMovimientos);
   const [stats,       setStats]       = useState<CajaStats>(initialStats);
   const [cuentas,     setCuentas]     = useState<CuentaPorCobrar[]>(initialCuentas);
@@ -757,8 +781,17 @@ export function CajaClient({ initialMovimientos, initialStats, initialCuentas, t
         {/* Header */}
         <div className="flex items-center justify-between gap-3 flex-wrap no-print">
           <div>
-            <h1 className="text-xl font-bold" style={{ fontFamily: "var(--font-outfit)" }}>Caja</h1>
+            <h1 className="text-xl font-bold" style={{ fontFamily: "var(--font-outfit)" }}>
+              {currentUser?.rol === "ADMIN" ? "Caja — Vista global" : `Mi Caja`}
+            </h1>
             <p className="text-xs text-muted-foreground mt-0.5">
+              {currentUser ? (
+                <>
+                  {currentUser.nombre}
+                  {currentUser.sucursal ? ` · ${currentUser.sucursal.nombre}` : ""}
+                  {" · "}
+                </>
+              ) : null}
               {new Date().toLocaleDateString("es-BO", { weekday: "long", day: "2-digit", month: "long", year: "numeric" })}
             </p>
           </div>
@@ -913,6 +946,7 @@ export function CajaClient({ initialMovimientos, initialStats, initialCuentas, t
         <RegistrarMovimientoModal
           token={token} backendUrl={backendUrl} contratos={cuentas}
           tipoInicial={modalTipo}
+          pagoPreset={pagoPreset}
           onClose={() => { setShowModal(false); setPagoPreset(null); setModalTipo(undefined); }}
           onSaved={handleSaved}
         />

@@ -3,6 +3,7 @@
 import { useState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { ContratoModal } from "./contrato-modal";
+import { imprimirContrato } from "./print-contrato";
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
@@ -296,6 +297,17 @@ function ContratoCard({
   const vencido = isVencido(c);
   const activo  = !["CERRADO", "CANCELADO"].includes(c.estado);
   const [actioning, setActioning] = useState(false);
+  const [printing, setPrinting] = useState(false);
+
+  const handlePrint = async () => {
+    setPrinting(true);
+    try {
+      const res = await fetch(`${backendUrl}/contratos/${c.id}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (res.ok) imprimirContrato(await res.json() as Contrato);
+    } finally { setPrinting(false); }
+  };
 
   const quickAction = async (endpoint: string) => {
     setActioning(true);
@@ -435,6 +447,17 @@ function ContratoCard({
           })()}
         </div>
         <div className="flex items-center gap-1.5">
+          <button
+            onClick={() => void handlePrint()}
+            disabled={printing}
+            className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50"
+            title="Imprimir comprobante"
+          >
+            {printing
+              ? <svg className="h-3.5 w-3.5 animate-spin" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v4m0 8v4M4 12h4m8 0h4" /></svg>
+              : <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 9V2h12v7M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2M6 14h12v8H6v-8z" /></svg>
+            }
+          </button>
           <button
             onClick={onDelete}
             className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-crimson/10 text-muted-foreground hover:text-crimson transition-colors"
