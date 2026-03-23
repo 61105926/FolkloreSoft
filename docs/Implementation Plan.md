@@ -1,33 +1,56 @@
-# Sistema SaaS: Inicialización y Autenticación
+# Plan de Implementación Avanzado: SaaS Folklórico (IntiSoft)
 
-Este documento define el plan arquitectónico para la fase inicial del SaaS, enfocándose exclusivamente en la configuración de la estructura base y la implementación del sistema de autenticación seguro, según los requerimientos.
+En respuesta a la necesidad de sincronizar el desarrollo estrictamente con el sistema base de operaciones (IntiSoft), el frontend de Next.js y las APIs de NestJS mapearán fielmente la arquitectura de navegación oficial descrita en `docs/Mapa de Rutas Sidebar.md`.
 
-## Instalación y Setup
+El enfoque técnico se basará en **Eventos de Dominio (Event-Driven Architecture)** en Backend y **Experiencia de Usuario Interactiva (Optimistic UI + Drag & Drop)** en Frontend.
 
-Implementaremos la base aislada para Auth y Configuración Inicial.
+## 1. Arquitectura API y Base de Datos (NestJS & Prisma)
 
-### Fase 1: Inicialización
-- **Estructura Base:** Creación de directorios `/frontend` y `/backend`.
-- **Backend (NestJS):** Inicialización de la app Nest, configuración de Prisma y conexión inicial a MySQL.
-- **Frontend (Next.js):** Generación del boilerplate App Router con Tailwind CSS + shadcn/ui.
+### Implementación Orientada a Eventos (CQRS & Events)
+La lógica pesada ya no bloqueará el hilo principal. Se usará EventEmitter:
+- `ComponenteLiberadoEvent`: El sistema reacciona sumándolo al `Pool` de la sucursal de manera automática.
+- `ConjuntoCompletadoEvent`: Cambia el estado del traje armado (`InstanciaConjunto`) a `DISPONIBLE` al recibir el componente restante.
+- `TransferenciaIniciadaEvent`: Las prendas involucradas aplican lock de DB y estado `EN_TRANSFERENCIA`.
 
-### Fase 2: Autenticación (JWT + Refresh Tokens)
-- **Capa Base de Datos (Prisma):** Modelos de `User` (email, password_hash, rol) y `RefreshToken` (token, id_usuario, expiración).
-- **Capa Backend (NestJS):**
-  - Módulo `Auth` y `Users`.
-  - Rutas: `/auth/login`, `/auth/refresh`, `/auth/logout`.
-  - Seguridad: Protección de rutas con Access Tokens (corta vida).
-- **Capa Frontend (Next.js):**
-  - Manejo de login utilizando Server Actions.
-  - Almacenamiento seguro en Cookies HttpOnly.
-  - Middleware para evitar acceso a rutas protegidas sin token válido.
+### Estructura de Controladores (NestJS)
+Los Endpoints se mapearán 1:1 con los módulos operativos de IntiSoft:
+- `ConjuntosController` y `ComponentesController` para Operaciones de Catálogo.
+- `InstanciasController` para flujos de armado/desarmado y estado del inventario físico.
+- `SucursalInventarioController` para las rutas de inventario regional y el flujo de transferencias inter-sucursal.
+- Controladores transaccionales para `AlquileresController` y `CajaController`.
 
-## Plan de Verificación
+## 2. Arquitectura de Interfaces Frontend (Next.js App Router)
 
-### Pruebas Automatizadas
-- Ejecutar pruebas generadas de NestJS post-inicialización para asegurar el correcto renderizado del bootstrap y los servicios `Auth`.
+### Principios UX/UI:
+1. **Optimistic UI:** Server Actions en Next.js mutarán la caché nativa en UI antes de que el servidor responda, logrando "zero-lag" percibido (crucial para armado de trajes).
+2. **Interactividad Drag & Drop:** Uso de `@dnd-kit/core` para mover física digital (prendas) entre el pool y el traje.
 
-### Verificación Manual
-- Levantar MySQL local y aplicar esquema de Prisma (`prisma db push` o `prisma migrate dev`).
-- Probar un login manual usando la API, observando el seteo de las cookies o respuesta de tokens.
-- Probar el intento de acceder a un área del frontend autenticada y verificar el bloqueo/redirección por protección del middleware.
+### Construcción de Pantallas Clave (Alineado a IntiSoft):
+
+#### A. Sistema Folklórico: Inventario Físico (`/instancias`)
+**El Workspace de Armado de Trajes:**
+- Es la estación de trabajo central donde interactúa el Pool de prendas sueltas contra los trajes incompletos.
+- **Izquierda (Maniquí/Receta):** Lista visual de Componentes Requeridos para el traje.
+- **Derecha (Bodega/Pool):** Lista de `InstanciasComponentes` sueltas.
+- **Interacción:** El empleado arrastra una Pollera del Pool Hacia el traje. 
+
+#### B. Sistema Folklórico: Catálogos Base (`/conjuntos` y `/componentes`)
+- **Vistas E-Commerce:** Visualización en Grid (Cuadrícula). Las plantillas teóricas de los trajes y las prendas base mostradas de manera inmaculada con fotografías grandes estilo Pinterest.
+- *Nota: Aquí se crean "Ideas" de trajes, NO entran al almacén físico.*
+
+#### C. Sucursales Logística (`/sucursales/inventario`)
+**Tablero de Transferencias (Kanban Style):**
+- **Vista principal:** Inventario total perteneciente a la sucursal operante en lista.
+- **Vista interactiva (Transferencias):** Un flujo visual estilo Trello. Tarjetas visuales de envíos organizadas en columnas: `Solicitadas` ➜ `En Tránsito` ➜ `Recibición Confirmada`. Mover una tarjeta dispara mutaciones sobre los trajes.
+
+#### D. Operativas y Finanzas (`/alquiler`, `/venta`, `/caja`)
+- Interfaces orientadas a "Data Entry" ultrarrápido con uso intensivo de teclado numérico, atajos y validación estricta Zod en cliente.
+
+#### E. Configuración Maestra (`/configuracion`)
+- Un único macro-formulario "Single Page App" dividido en "Tabs" laterales (Empresa, Sucursales físicas conectadas al sistema, Parámetros Administrativos y Usuarios globales). 
+
+## 3. Próximos Pasos (Hoja de Ruta)
+1. Extender esquemas de `schema.prisma` agregando toda la lógica de modelos de IntiSoft (`Conjunto`, `Componente`, `InstanciaConjunto`, `Transferencia`).
+2. Actualizar la Migración e Inyectar Seeds (Categorías Base).
+3. Construir módulos CQRS core en NestJS.
+4. Generar la envolvente Next.js (`layout.tsx`) respetando el Sidebar de Navegación Oficial.

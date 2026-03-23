@@ -7,16 +7,24 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// ─────────────────────────────────────────
+// Auth
+// ─────────────────────────────────────────
+
 enum Rol {
   ADMIN
-  USER
+  VENDEDOR
+  BODEGUERO
+  CAJERO
 }
 
 model User {
   id            Int            @id @default(autoincrement())
+  nombre        String         @default("Sin nombre")
   email         String         @unique
   password_hash String
-  rol           Rol            @default(USER)
+  rol           Rol            @default(VENDEDOR)
+  activo        Boolean        @default(true)
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
   refreshTokens RefreshToken[]
@@ -29,4 +37,403 @@ model RefreshToken {
   expiresAt DateTime
   createdAt DateTime @default(now())
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+// ─────────────────────────────────────────
+// Sucursales
+// ─────────────────────────────────────────
+
+model Sucursal {
+  id                      Int                 @id @default(autoincrement())
+  nombre                  String
+  ciudad                  String
+  direccion               String?
+  createdAt               DateTime            @default(now())
+  updatedAt               DateTime            @updatedAt
+  instanciasConjunto      InstanciaConjunto[]
+  instanciasComponente    InstanciaComponente[]
+  transferenciasOrigen    Transferencia[]     @relation("TransferenciaOrigen")
+  transferenciasDestino   Transferencia[]     @relation("TransferenciaDestino")
+  eventos                 EventoFolclorico[]
+}
+
+// ─────────────────────────────────────────
+// Catálogo (plantillas / diseños)
+// ─────────────────────────────────────────
+
+model Conjunto {
+  id                  Int                  @id @default(autoincrement())
+  codigo              String?              @unique
+  nombre              String
+  danza               String               // categoría (Tinku, Morenada, Caporales…)
+  genero              String               @default("UNISEX")
+  descripcion         String?              @db.Text
+  imagen_url          String?
+  precio_base         Decimal              @db.Decimal(10, 2) // precio alquiler/día
+  precio_venta        Decimal?             @db.Decimal(10, 2)
+  disponible_venta    Boolean              @default(true)
+  disponible_alquiler Boolean              @default(true)
+  activo              Boolean              @default(true)
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @updatedAt
+  componentes         ConjuntoComponente[]
+  variaciones         VariacionConjunto[]
+  contratosPrendas    ContratoPrenda[]
+}
+
+model VariacionConjunto {
+  id               Int                 @id @default(autoincrement())
+  codigo_variacion String              @unique
+  nombre_variacion String
+  talla            String?
+  color            String?
+  estilo           String?
+  precio_venta     Decimal?            @db.Decimal(10, 2)
+  precio_alquiler  Decimal?            @db.Decimal(10, 2)
+  activa           Boolean             @default(true)
+  conjuntoId       Int
+  createdAt        DateTime            @default(now())
+  updatedAt        DateTime            @updatedAt
+  conjunto         Conjunto            @relation(fields: [conjuntoId], references: [id], onDelete: Cascade)
+  instancias       InstanciaConjunto[]
+  contratoPrendas  ContratoPrenda[]
+}
+
+model Componente {
+  id          Int                  @id @default(autoincrement())
+  nombre      String
+  tipo        String               // BLUSA | POLLERA | SOMBRERO | BOTAS | MASCARA | etc.
+  descripcion String?
+  createdAt   DateTime             @default(now())
+  updatedAt   DateTime             @updatedAt
+  conjuntos   ConjuntoComponente[]
+  instancias  InstanciaComponente[]
+}
+
+// Receta: qué componentes necesita un conjunto y en qué cantidad
+model ConjuntoComponente {
+  id                Int        @id @default(autoincrement())
+  conjuntoId        Int
+  componenteId      Int
+  cantidad          Int        @default(1)
+  es_obligatorio    Boolean    @default(true)
+  es_intercambiable Boolean    @default(false)
+  orden_ensamblaje  Int        @default(0)
+  conjunto          Conjunto   @relation(fields: [conjuntoId], references: [id], onDelete: Cascade)
+  componente        Componente @relation(fields: [componenteId], references: [id], onDelete: Cascade)
+
+  @@unique([conjuntoId, componenteId])
+}
+
+// ─────────────────────────────────────────
+// Inventario físico (instancias reales)
+// ─────────────────────────────────────────
+
+enum EstadoInstanciaConjunto {
+  DISPONIBLE
+  ALQUILADO
+  EN_TRANSFERENCIA
+  DADO_DE_BAJA
+}
+
+model InstanciaConjunto {
+  id                      Int                       @id @default(autoincrement())
+  codigo                  String                    @unique // Ej: "CAP-001"
+  variacionId             Int
+  sucursalId              Int
+  estado                  EstadoInstanciaConjunto   @default(DISPONIBLE)
+  notas                   String?                   @db.Text
+  createdAt               DateTime                  @default(now())
+  updatedAt               DateTime                  @updatedAt
+  variacion               VariacionConjunto         @relation(fields: [variacionId], references: [id])
+  sucursal                Sucursal                  @relation(fields: [sucursalId], references: [id])
+  componentes             InstanciaComponente[]
+  transferencias          Transferencia[]
+  contratoParticipantes   ContratoParticipante[]
+  historial               MovimientoInstancia[]
+}
+
+model MovimientoInstancia {
+  id            Int                       @id @default(autoincrement())
+  instanciaId   Int
+  tipo          String                    // CREADO | ESTADO_CAMBIO | NOTA | DADO_DE_BAJA
+  estadoAntes   EstadoInstanciaConjunto?
+  estadoDespues EstadoInstanciaConjunto?
+  notas         String?                   @db.Text
+  createdAt     DateTime                  @default(now())
+  instancia     InstanciaConjunto         @relation(fields: [instanciaId], references: [id], onDelete: Cascade)
+}
+
+enum EstadoInstanciaComponente {
+  DISPONIBLE_POOL
+  ASIGNADO
+  DANADO
+  EN_TRANSFERENCIA
+}
+
+model InstanciaComponente {
+  id                  Int                        @id @default(autoincrement())
+  serial              String                     @unique           // Ej: "SOMB-042"
+  talla               String?
+  componenteId        Int
+  sucursalId          Int
+  instanciaConjuntoId Int?
+  estado              EstadoInstanciaComponente  @default(DISPONIBLE_POOL)
+  notas               String?
+  createdAt           DateTime                   @default(now())
+  updatedAt           DateTime                   @updatedAt
+  componente          Componente                 @relation(fields: [componenteId], references: [id])
+  sucursal            Sucursal                   @relation(fields: [sucursalId], references: [id])
+  instanciaConjunto   InstanciaConjunto?         @relation(fields: [instanciaConjuntoId], references: [id])
+}
+
+// ─────────────────────────────────────────
+// Eventos Folklóricos (agrupadores simples)
+// ─────────────────────────────────────────
+
+enum TipoEvento {
+  FESTIVAL
+  CONCURSO
+  DESFILE
+  CEREMONIA
+  OTRO
+}
+
+enum EstadoEvento {
+  PLANIFICADO
+  CONFIRMADO
+  EN_CURSO
+  FINALIZADO
+  CANCELADO
+}
+
+model EventoFolclorico {
+  id           Int               @id @default(autoincrement())
+  nombre       String
+  descripcion  String?           @db.Text
+  tipo         TipoEvento        @default(FESTIVAL)
+  estado       EstadoEvento      @default(PLANIFICADO)
+  fecha_inicio DateTime
+  fecha_fin    DateTime?
+  lugar        String?
+  sucursalId   Int?
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
+  sucursal     Sucursal?         @relation(fields: [sucursalId], references: [id])
+  contratos    ContratoAlquiler[]
+}
+
+// ─────────────────────────────────────────
+// Clientes
+// ─────────────────────────────────────────
+
+model Cliente {
+  id        Int                @id @default(autoincrement())
+  nombre    String
+  celular   String?
+  ci        String?
+  email     String?
+  rol       String             @default("OTRO") // padre, docente, organizador, otro
+  createdAt DateTime           @default(now())
+  updatedAt DateTime           @updatedAt
+  contratos ContratoAlquiler[]
+}
+
+// ─────────────────────────────────────────
+// Contratos de Alquiler
+// ─────────────────────────────────────────
+
+enum TipoContrato {
+  DIRECTO
+  RESERVA
+}
+
+enum EstadoContrato {
+  RESERVADO
+  CONFIRMADO
+  ENTREGADO
+  EN_USO
+  DEVUELTO
+  CERRADO
+  CON_DEUDA
+  CON_GARANTIA_RETENIDA
+  CANCELADO
+}
+
+enum CiudadContrato {
+  LA_PAZ
+  EL_ALTO
+  INTERIOR
+}
+
+enum TipoGarantia {
+  EFECTIVO
+  DOCUMENTO_CARNET
+  CARTA_INSTITUCIONAL
+  OTRO
+}
+
+enum FormaPago {
+  EFECTIVO
+  TRANSFERENCIA
+  QR
+  TARJETA
+}
+
+enum TipoParticipante {
+  HOMBRE
+  CHOLITA
+  MACHA
+  NINO
+  OTRO
+}
+
+model ContratoAlquiler {
+  id                    Int                    @id @default(autoincrement())
+  codigo                String                 @unique
+  tipo                  TipoContrato           @default(DIRECTO)
+  estado                EstadoContrato         @default(RESERVADO)
+  eventoId              Int?
+  clienteId             Int
+  nombre_evento_ext     String?
+  institucion           String?
+  ubicacion             String?
+  ciudad                CiudadContrato         @default(LA_PAZ)
+  fecha_contrato        DateTime               @default(now())
+  fecha_entrega         DateTime
+  fecha_devolucion      DateTime
+  fecha_entrega_real    DateTime?
+  fecha_devolucion_real DateTime?
+  total                 Decimal                @default(0) @db.Decimal(10, 2)
+  anticipo              Decimal                @default(0) @db.Decimal(10, 2)
+  total_pagado          Decimal                @default(0) @db.Decimal(10, 2)
+  forma_pago            FormaPago?
+  observaciones         String?                @db.Text
+  condiciones           String?                @db.Text
+  createdAt             DateTime               @default(now())
+  updatedAt             DateTime               @updatedAt
+  evento                EventoFolclorico?      @relation(fields: [eventoId], references: [id])
+  cliente               Cliente                @relation(fields: [clienteId], references: [id])
+  prendas               ContratoPrenda[]
+  garantias             ContratoGarantia[]
+  participantes         ContratoParticipante[]
+  historial             ContratoHistorial[]
+  movimientosCaja       MovimientoCaja[]
+}
+
+model ContratoHistorial {
+  id          Int              @id @default(autoincrement())
+  contratoId  Int
+  tipo        String           // CREADO, CONFIRMADO, ENTREGADO, EN_USO, DEVUELTO, CON_DEUDA, CERRADO, CANCELADO, GARANTIA_RETENIDA, PRENDA_AGREGADA, PRENDA_REMOVIDA, PARTICIPANTE_AGREGADO, PARTICIPANTE_DEVOLVIO, PARTICIPANTE_REMOVIDO, GARANTIA_AGREGADA, GARANTIA_REMOVIDA
+  descripcion String?          @db.Text
+  createdAt   DateTime         @default(now())
+  contrato    ContratoAlquiler @relation(fields: [contratoId], references: [id], onDelete: Cascade)
+}
+
+model ContratoPrenda {
+  id                Int                    @id @default(autoincrement())
+  contratoId        Int
+  modelo            String
+  conjuntoId        Int?
+  variacionId       Int?
+  cantidad_hombres  Int                    @default(0)
+  cantidad_cholitas Int                    @default(0)
+  cantidad_machas   Int                    @default(0)
+  cantidad_ninos    Int                    @default(0)
+  total             Int
+  costo_unitario    Decimal                @db.Decimal(10, 2)
+  subtotal          Decimal                @db.Decimal(10, 2)
+  contrato          ContratoAlquiler       @relation(fields: [contratoId], references: [id], onDelete: Cascade)
+  conjunto          Conjunto?              @relation(fields: [conjuntoId], references: [id])
+  variacion         VariacionConjunto?     @relation(fields: [variacionId], references: [id], onDelete: SetNull)
+  participantes     ContratoParticipante[]
+}
+
+model ContratoGarantia {
+  id               Int                   @id @default(autoincrement())
+  contratoId       Int
+  participanteId   Int?
+  tipo             TipoGarantia
+  descripcion      String?
+  valor            Decimal?              @db.Decimal(10, 2)
+  retenida         Boolean               @default(false)
+  motivo_retencion String?
+  createdAt        DateTime              @default(now())
+  contrato         ContratoAlquiler      @relation(fields: [contratoId], references: [id], onDelete: Cascade)
+  participante     ContratoParticipante? @relation(fields: [participanteId], references: [id], onDelete: SetNull)
+}
+
+model ContratoParticipante {
+  id                  Int                @id @default(autoincrement())
+  contratoId          Int
+  prendaId            Int?
+  instanciaConjuntoId Int?
+  nombre              String
+  ci                  String?
+  tipo                TipoParticipante   @default(OTRO)
+  notas               String?            @db.Text
+  devuelto            Boolean            @default(false)
+  fecha_devolucion    DateTime?
+  createdAt           DateTime           @default(now())
+  contrato            ContratoAlquiler   @relation(fields: [contratoId], references: [id], onDelete: Cascade)
+  prenda              ContratoPrenda?    @relation(fields: [prendaId], references: [id], onDelete: SetNull)
+  instanciaConjunto   InstanciaConjunto? @relation(fields: [instanciaConjuntoId], references: [id], onDelete: SetNull)
+  garantias           ContratoGarantia[]
+}
+
+// ─────────────────────────────────────────
+// Caja
+// ─────────────────────────────────────────
+
+enum TipoMovimiento {
+  INGRESO
+  EGRESO
+}
+
+enum ConceptoCaja {
+  ANTICIPO_CONTRATO
+  PAGO_SALDO_CONTRATO
+  DEUDA_COBRADA
+  GARANTIA_EFECTIVO
+  DEVOLUCION_GARANTIA
+  GASTO_OPERATIVO
+  OTRO_INGRESO
+  OTRO_EGRESO
+}
+
+model MovimientoCaja {
+  id          Int               @id @default(autoincrement())
+  tipo        TipoMovimiento
+  concepto    ConceptoCaja
+  monto       Decimal           @db.Decimal(10, 2)
+  descripcion String?           @db.Text
+  forma_pago  FormaPago         @default(EFECTIVO)
+  referencia  String?
+  contratoId  Int?
+  createdAt   DateTime          @default(now())
+  contrato    ContratoAlquiler? @relation(fields: [contratoId], references: [id], onDelete: SetNull)
+}
+
+// ─────────────────────────────────────────
+// Transferencias entre sucursales
+// ─────────────────────────────────────────
+
+enum EstadoTransferencia {
+  SOLICITADO
+  EN_TRANSITO
+  RECIBIDO
+}
+
+model Transferencia {
+  id                  Int                  @id @default(autoincrement())
+  instanciaConjuntoId Int
+  sucursalOrigenId    Int
+  sucursalDestinoId   Int
+  estado              EstadoTransferencia  @default(SOLICITADO)
+  notas               String?              @db.Text
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @updatedAt
+  instanciaConjunto   InstanciaConjunto    @relation(fields: [instanciaConjuntoId], references: [id])
+  sucursalOrigen      Sucursal             @relation("TransferenciaOrigen", fields: [sucursalOrigenId], references: [id])
+  sucursalDestino     Sucursal             @relation("TransferenciaDestino", fields: [sucursalDestinoId], references: [id])
 }

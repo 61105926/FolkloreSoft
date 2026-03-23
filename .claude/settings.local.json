@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx prisma:*)",
+      "Bash(ls /c/Users/Nicol/Desktop/FOLCKLORE/frontend/src/app/\\\\\\(app\\\\\\)/usuario/)",
+      "Bash(npm run:*)"
+    ]
+  }
+}
