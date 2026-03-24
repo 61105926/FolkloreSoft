@@ -10,6 +10,8 @@ RUN npm ci
 COPY backend/ .
 RUN npx prisma generate
 RUN npm run build
+# Compilar el seed separadamente para producción
+RUN npx tsc prisma/seed.ts --outDir dist/prisma --module commonjs --target ES2020 --esModuleInterop --skipLibCheck
 
 
 # ═══════════════════════════════════════════════════════════════════
@@ -53,6 +55,8 @@ COPY --from=backend-builder /app/backend/dist                  ./dist
 COPY --from=backend-builder /app/backend/node_modules/.prisma  ./node_modules/.prisma
 COPY --from=backend-builder /app/backend/node_modules/@prisma  ./node_modules/@prisma
 COPY backend/prisma ./prisma
+# Seed compilado (dist/prisma/seed.js)
+COPY --from=backend-builder /app/backend/dist/prisma/seed.js   ./dist/prisma/seed.js
 
 # ── Frontend ─────────────────────────────────────────────────────────
 WORKDIR /app/frontend
