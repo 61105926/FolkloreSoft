@@ -35,6 +35,10 @@ FROM node:20-alpine AS runner
 # Instalar MariaDB (compatible MySQL) + supervisord
 RUN apk add --no-cache supervisor mariadb mariadb-client
 
+# Alpine trae skip-networking por defecto — lo sobreescribimos para habilitar TCP
+RUN printf '[mysqld]\nskip-networking=OFF\nbind-address=0.0.0.0\nport=3306\n' \
+    > /etc/my.cnf.d/99-folklosoft.cnf
+
 # Directorios de MySQL
 RUN mkdir -p /var/lib/mysql /run/mysqld && \
     chown -R mysql:mysql /var/lib/mysql /run/mysqld

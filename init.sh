@@ -2,7 +2,7 @@
 set -e
 
 # ── Contraseña de la base de datos (puede cambiarse desde Coolify) ──────────
-DB_PASSWORD="${DB_PASSWORD:-folklosoft_2024}"
+export DB_PASSWORD="${DB_PASSWORD:-folklosoft_2024}"
 DB_NAME="folklosoft"
 DB_USER="folklosoft"
 
