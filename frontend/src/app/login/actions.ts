@@ -44,7 +44,7 @@ export async function loginAction(
       if (match) {
         cookieStore.set("refreshToken", match[1], {
           httpOnly: true,
-          secure: process.env.NODE_ENV === "production",
+          secure: process.env.COOKIE_SECURE === "true",
           sameSite: "strict",
           maxAge: 60 * 60 * 24 * 7,
           path: "/",
@@ -54,7 +54,7 @@ export async function loginAction(
 
     cookieStore.set("accessToken", data.accessToken, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
+      secure: process.env.COOKIE_SECURE === "true",
       sameSite: "strict",
       maxAge: 60 * 15,
       path: "/",
