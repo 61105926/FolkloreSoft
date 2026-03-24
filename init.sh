@@ -32,8 +32,10 @@ if [ ! -d "/var/lib/mysql/mysql" ]; then
 CREATE DATABASE IF NOT EXISTS \`${DB_NAME}\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 CREATE USER IF NOT EXISTS '${DB_USER}'@'localhost'  IDENTIFIED BY '${DB_PASSWORD}';
 CREATE USER IF NOT EXISTS '${DB_USER}'@'127.0.0.1' IDENTIFIED BY '${DB_PASSWORD}';
+CREATE USER IF NOT EXISTS '${DB_USER}'@'%'          IDENTIFIED BY '${DB_PASSWORD}';
 GRANT ALL PRIVILEGES ON \`${DB_NAME}\`.* TO '${DB_USER}'@'localhost';
 GRANT ALL PRIVILEGES ON \`${DB_NAME}\`.* TO '${DB_USER}'@'127.0.0.1';
+GRANT ALL PRIVILEGES ON \`${DB_NAME}\`.* TO '${DB_USER}'@'%';
 FLUSH PRIVILEGES;
 SQL
 
@@ -45,6 +47,18 @@ SQL
 else
   echo "==> [init] Base de datos ya existe, omitiendo inicialización."
 fi
+
+# ── Asegurar permisos remotos siempre (por si el volumen es antiguo) ─────────
+mysqld --user=mysql --skip-networking --socket=/run/mysqld/mysqld.sock &
+MYSQL_PID2=$!
+until mysqladmin --socket=/run/mysqld/mysqld.sock ping --silent 2>/dev/null; do sleep 1; done
+mysql --socket=/run/mysqld/mysqld.sock -u root <<SQL
+CREATE USER IF NOT EXISTS '${DB_USER}'@'%' IDENTIFIED BY '${DB_PASSWORD}';
+GRANT ALL PRIVILEGES ON \`${DB_NAME}\`.* TO '${DB_USER}'@'%';
+FLUSH PRIVILEGES;
+SQL
+mysqladmin --socket=/run/mysqld/mysqld.sock -u root shutdown
+wait $MYSQL_PID2
 
 # ── Pasar DATABASE_URL a supervisord ────────────────────────────────────────
 # supervisord hereda el entorno del proceso que lo inicia
