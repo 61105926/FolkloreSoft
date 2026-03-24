@@ -35,9 +35,10 @@ FROM node:20-alpine AS runner
 # Instalar MariaDB (compatible MySQL) + supervisord + OpenSSL (requerido por Prisma)
 RUN apk add --no-cache supervisor mariadb mariadb-client openssl
 
-# Alpine trae skip-networking por defecto — lo sobreescribimos para habilitar TCP
-RUN printf '[mysqld]\nskip-networking=OFF\nbind-address=0.0.0.0\nport=3306\n' \
-    > /etc/my.cnf.d/99-folklosoft.cnf
+# Alpine trae mariadb-server.cnf con skip-networking — lo eliminamos y ponemos el nuestro
+RUN rm -f /etc/my.cnf.d/mariadb-server.cnf && \
+    printf '[mysqld]\nskip_networking=0\nbind-address=0.0.0.0\nport=3306\nsocket=/run/mysqld/mysqld.sock\n' \
+    > /etc/my.cnf.d/folklosoft.cnf
 
 # Directorios de MySQL
 RUN mkdir -p /var/lib/mysql /run/mysqld && \
