@@ -1,0 +1,56 @@
+services:
+
+  # ── Base de datos ────────────────────────────────────────────────────────────
+  db:
+    image: mysql:8.0
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+      MYSQL_DATABASE: folklosoft
+      MYSQL_USER: folklosoft
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - db_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${DB_ROOT_PASSWORD}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+  # ── Backend (NestJS) ─────────────────────────────────────────────────────────
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    restart: always
+    environment:
+      DATABASE_URL: mysql://folklosoft:${DB_PASSWORD}@db:3306/folklosoft
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_ACCESS_EXPIRES_IN: ${JWT_ACCESS_EXPIRES_IN:-15m}
+      FRONTEND_URL: ${FRONTEND_URL}
+      PORT: 9001
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "9001:9001"
+
+  # ── Frontend (Next.js) ───────────────────────────────────────────────────────
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        BACKEND_URL: http://backend:9001
+    restart: always
+    environment:
+      BACKEND_URL: http://backend:9001
+      NODE_ENV: production
+    depends_on:
+      - backend
+    ports:
+      - "9002:3000"
+
+volumes:
+  db_data:

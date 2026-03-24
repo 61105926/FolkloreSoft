@@ -6,7 +6,7 @@ import {
 import { WeeklyChart, type ChartDay } from "@/components/charts/weekly-chart";
 import type { ReactNode } from "react";
 
-const BACKEND = process.env.NEXT_PUBLIC_BACKEND_URL ?? "http://localhost:3001";
+const BACKEND = process.env.BACKEND_URL ?? "http://localhost:3001";
 
 async function fetchJson<T>(url: string, token: string): Promise<T> {
   const res = await fetch(url, {

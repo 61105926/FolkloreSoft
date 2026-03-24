@@ -12,10 +12,13 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.CatalogoService = void 0;
 const common_1 = require("@nestjs/common");
 const prisma_service_js_1 = require("../prisma/prisma.service.js");
+const imagen_auto_service_js_1 = require("./imagen-auto.service.js");
 let CatalogoService = class CatalogoService {
     prisma;
-    constructor(prisma) {
+    imagenAuto;
+    constructor(prisma, imagenAuto) {
         this.prisma = prisma;
+        this.imagenAuto = imagenAuto;
     }
     findAllConjuntos() {
         return this.prisma.conjunto.findMany({
@@ -45,11 +48,13 @@ let CatalogoService = class CatalogoService {
             throw new common_1.NotFoundException(`Conjunto #${id} no encontrado`);
         return c;
     }
-    createConjunto(data) {
+    async createConjunto(data) {
         const { componentes, variaciones, ...rest } = data;
+        const imagen_url = await this.imagenAuto.resolverImagen(data.nombre, data.danza, data.imagen_url ?? undefined);
         return this.prisma.conjunto.create({
             data: {
                 ...rest,
+                imagen_url: imagen_url ?? undefined,
                 componentes: componentes ? { create: componentes } : undefined,
                 variaciones: variaciones ? { create: variaciones } : undefined,
             },
@@ -117,6 +122,7 @@ let CatalogoService = class CatalogoService {
 exports.CatalogoService = CatalogoService;
 exports.CatalogoService = CatalogoService = __decorate([
     (0, common_1.Injectable)(),
-    __metadata("design:paramtypes", [prisma_service_js_1.PrismaService])
+    __metadata("design:paramtypes", [prisma_service_js_1.PrismaService,
+        imagen_auto_service_js_1.ImagenAutoService])
 ], CatalogoService);
 //# sourceMappingURL=catalogo.service.js.map

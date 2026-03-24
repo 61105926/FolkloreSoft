@@ -1,7 +1,7 @@
 import { cookies } from "next/headers";
 import { GarantiasClient } from "./_components/garantias-client";
 
-const BACKEND = process.env.NEXT_PUBLIC_BACKEND_URL ?? "http://localhost:3001";
+const BACKEND = process.env.BACKEND_URL ?? "http://localhost:3001";
 
 export default async function GarantiasPage() {
   const cookieStore = await cookies();

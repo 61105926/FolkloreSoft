@@ -1,7 +1,7 @@
 import { cookies } from "next/headers";
 import { TransferenciasKanban } from "./_components/transferencias-kanban";
 
-const BACKEND = process.env.NEXT_PUBLIC_BACKEND_URL ?? "http://localhost:3001";
+const BACKEND = process.env.BACKEND_URL ?? "http://localhost:3001";
 
 export interface Transferencia {
   id: number;

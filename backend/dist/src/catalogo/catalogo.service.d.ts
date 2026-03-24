@@ -1,7 +1,9 @@
 import { PrismaService } from '../prisma/prisma.service.js';
+import { ImagenAutoService } from './imagen-auto.service.js';
 export declare class CatalogoService {
     private readonly prisma;
-    constructor(prisma: PrismaService);
+    private readonly imagenAuto;
+    constructor(prisma: PrismaService, imagenAuto: ImagenAutoService);
     findAllConjuntos(): import(".prisma/client").Prisma.PrismaPromise<({
         componentes: ({
             componente: {
@@ -167,7 +169,7 @@ export declare class CatalogoService {
             precio_venta?: number;
             precio_alquiler?: number;
         }[];
-    }): import(".prisma/client").Prisma.Prisma__ConjuntoClient<{
+    }): Promise<{
         componentes: ({
             componente: {
                 id: number;
@@ -201,7 +203,7 @@ export declare class CatalogoService {
         precio_venta: import("@prisma/client/runtime/library").Decimal | null;
         disponible_venta: boolean;
         disponible_alquiler: boolean;
-    }, never, import("@prisma/client/runtime/library").DefaultArgs>;
+    }>;
     updateConjunto(id: number, data: {
         codigo?: string;
         nombre?: string;

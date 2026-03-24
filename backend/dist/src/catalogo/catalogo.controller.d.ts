@@ -140,7 +140,7 @@ export declare class CatalogoController {
         disponible_venta: boolean;
         disponible_alquiler: boolean;
     }>;
-    createConjunto(body: any): import(".prisma/client").Prisma.Prisma__ConjuntoClient<{
+    createConjunto(body: any): Promise<{
         componentes: ({
             componente: {
                 id: number;
@@ -174,7 +174,7 @@ export declare class CatalogoController {
         precio_venta: import("@prisma/client/runtime/library").Decimal | null;
         disponible_venta: boolean;
         disponible_alquiler: boolean;
-    }, never, import("@prisma/client/runtime/library").DefaultArgs>;
+    }>;
     updateConjunto(id: number, body: any): import(".prisma/client").Prisma.Prisma__ConjuntoClient<{
         id: number;
         nombre: string;

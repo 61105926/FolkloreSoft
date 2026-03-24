@@ -1,7 +1,7 @@
 import { cookies } from "next/headers";
 import { CajaClient } from "./_components/caja-client";
 
-const BACKEND = process.env.NEXT_PUBLIC_BACKEND_URL ?? "http://localhost:3001";
+const BACKEND = process.env.BACKEND_URL ?? "http://localhost:3001";
 
 async function fetchJson<T>(url: string, token: string, fallback: T): Promise<T> {
   try {

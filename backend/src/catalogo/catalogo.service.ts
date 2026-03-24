@@ -1,9 +1,13 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service.js';
+import { ImagenAutoService } from './imagen-auto.service.js';
 
 @Injectable()
 export class CatalogoService {
-  constructor(private readonly prisma: PrismaService) { }
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly imagenAuto: ImagenAutoService,
+  ) { }
 
   // ── Conjuntos ──
   findAllConjuntos() {
@@ -35,7 +39,7 @@ export class CatalogoService {
     return c;
   }
 
-  createConjunto(data: {
+  async createConjunto(data: {
     codigo?: string;
     nombre: string;
     danza: string;
@@ -64,9 +68,11 @@ export class CatalogoService {
     }[];
   }) {
     const { componentes, variaciones, ...rest } = data;
+    const imagen_url = await this.imagenAuto.resolverImagen(data.nombre, data.danza, data.imagen_url ?? undefined);
     return this.prisma.conjunto.create({
       data: {
         ...rest,
+        imagen_url: imagen_url ?? undefined,
         componentes: componentes ? { create: componentes } : undefined,
         variaciones: variaciones ? { create: variaciones } : undefined,
       },

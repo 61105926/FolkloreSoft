@@ -10,12 +10,13 @@ exports.CatalogoModule = void 0;
 const common_1 = require("@nestjs/common");
 const catalogo_service_js_1 = require("./catalogo.service.js");
 const catalogo_controller_js_1 = require("./catalogo.controller.js");
+const imagen_auto_service_js_1 = require("./imagen-auto.service.js");
 let CatalogoModule = class CatalogoModule {
 };
 exports.CatalogoModule = CatalogoModule;
 exports.CatalogoModule = CatalogoModule = __decorate([
     (0, common_1.Module)({
-        providers: [catalogo_service_js_1.CatalogoService],
+        providers: [catalogo_service_js_1.CatalogoService, imagen_auto_service_js_1.ImagenAutoService],
         controllers: [catalogo_controller_js_1.CatalogoController],
         exports: [catalogo_service_js_1.CatalogoService],
     })
