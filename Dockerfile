@@ -23,25 +23,28 @@ RUN npm ci
 
 COPY frontend/ .
 
-# En el mismo contenedor el backend corre en localhost:9001
 ENV BACKEND_URL=http://localhost:9001
 RUN npm run build
 
 
 # ═══════════════════════════════════════════════════════════════════
-#  Stage 3 – Imagen final
+#  Stage 3 – Imagen final (app + base de datos todo en uno)
 # ═══════════════════════════════════════════════════════════════════
 FROM node:20-alpine AS runner
 
-# supervisord para correr backend + frontend en paralelo
-RUN apk add --no-cache supervisor
+# Instalar MariaDB (compatible MySQL) + supervisord
+RUN apk add --no-cache supervisor mariadb mariadb-client
 
-# ── Backend ─────────────────────────────────────────────────────────
+# Directorios de MySQL
+RUN mkdir -p /var/lib/mysql /run/mysqld && \
+    chown -R mysql:mysql /var/lib/mysql /run/mysqld
+
+# ── Backend ──────────────────────────────────────────────────────────
 WORKDIR /app/backend
 COPY backend/package*.json ./
 RUN npm ci --omit=dev
 
-COPY --from=backend-builder /app/backend/dist            ./dist
+COPY --from=backend-builder /app/backend/dist                  ./dist
 COPY --from=backend-builder /app/backend/node_modules/.prisma  ./node_modules/.prisma
 COPY --from=backend-builder /app/backend/node_modules/@prisma  ./node_modules/@prisma
 COPY backend/prisma ./prisma
@@ -52,12 +55,14 @@ COPY --from=frontend-builder /app/frontend/.next/standalone ./
 COPY --from=frontend-builder /app/frontend/.next/static     ./.next/static
 COPY --from=frontend-builder /app/frontend/public           ./public
 
-# ── Supervisord config ───────────────────────────────────────────────
+# ── Scripts de arranque ──────────────────────────────────────────────
 COPY supervisord.conf /etc/supervisord.conf
+COPY init.sh /init.sh
+RUN chmod +x /init.sh
 
 WORKDIR /app
 
-# Backend: 9001  |  Frontend: 9002
-EXPOSE 9001 9002
+# Frontend: 9002 | Backend: 9001 | MySQL: 9003 (acceso externo opcional)
+EXPOSE 9001 9002 9003
 
-CMD ["/usr/bin/supervisord", "-c", "/etc/supervisord.conf"]
+ENTRYPOINT ["/init.sh"]
