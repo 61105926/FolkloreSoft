@@ -32,8 +32,8 @@ RUN npm run build
 # ═══════════════════════════════════════════════════════════════════
 FROM node:20-alpine AS runner
 
-# Instalar MariaDB (compatible MySQL) + supervisord
-RUN apk add --no-cache supervisor mariadb mariadb-client
+# Instalar MariaDB (compatible MySQL) + supervisord + OpenSSL (requerido por Prisma)
+RUN apk add --no-cache supervisor mariadb mariadb-client openssl
 
 # Alpine trae skip-networking por defecto — lo sobreescribimos para habilitar TCP
 RUN printf '[mysqld]\nskip-networking=OFF\nbind-address=0.0.0.0\nport=3306\n' \
