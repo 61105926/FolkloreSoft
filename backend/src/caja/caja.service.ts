@@ -145,7 +145,7 @@ export class CajaService {
       include: MOV_INCLUDE,
     });
 
-    // Si es un pago vinculado a un contrato, actualizar total_pagado
+    // Si es un pago vinculado a un contrato, actualizar total_pagado + registrar en historial
     if (
       data.contratoId &&
       data.tipo === 'INGRESO' &&
@@ -155,6 +155,24 @@ export class CajaService {
         where: { id: data.contratoId },
         data: { total_pagado: { increment: data.monto } },
       });
+
+      // Obtener nombre del usuario que registró
+      const userName = movimiento.user?.nombre ?? 'Sistema';
+      const formaPagoLabel = data.forma_pago ?? 'EFECTIVO';
+      const conceptoLabel: Record<string, string> = {
+        ANTICIPO_CONTRATO:    'Anticipo',
+        PAGO_SALDO_CONTRATO:  'Pago de saldo',
+        DEUDA_COBRADA:        'Deuda cobrada',
+      };
+      const label = conceptoLabel[data.concepto] ?? 'Pago';
+
+      await this.prisma.contratoHistorial.create({
+        data: {
+          contratoId:  data.contratoId,
+          tipo:        'PAGO_REGISTRADO',
+          descripcion: `${label} de Bs. ${Number(data.monto).toFixed(2)} registrado en caja (${formaPagoLabel}) — cobrado por ${userName}`,
+        },
+      });
     }
 
     return movimiento;
@@ -163,7 +181,10 @@ export class CajaService {
   // ── Remove ────────────────────────────────────────────────────────────────
 
   async remove(id: number) {
-    const m = await this.prisma.movimientoCaja.findUnique({ where: { id } });
+    const m = await this.prisma.movimientoCaja.findUnique({
+      where: { id },
+      include: { user: { select: { nombre: true } } },
+    });
     if (!m) throw new NotFoundException(`Movimiento #${id} no encontrado`);
 
     // Revertir el pago del contrato si aplica
@@ -175,6 +196,13 @@ export class CajaService {
       await this.prisma.contratoAlquiler.update({
         where: { id: m.contratoId },
         data: { total_pagado: { decrement: Number(m.monto) } },
+      });
+      await this.prisma.contratoHistorial.create({
+        data: {
+          contratoId:  m.contratoId,
+          tipo:        'PAGO_REGISTRADO',
+          descripcion: `Pago de Bs. ${Number(m.monto).toFixed(2)} eliminado de caja — anulado`,
+        },
       });
     }
 
