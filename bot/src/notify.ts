@@ -42,7 +42,8 @@ type NotifyPayload =
   | { type: 'COMPROBANTE_ENTREGA';      to: string; contrato: Contrato }
   | { type: 'PRENDA_LISTA';             to: string; data: { clienteNombre: string; contratoCode: string; participanteNombre: string; instanciaCodigo: string; prendaModelo: string } }
   | { type: 'DEVOLUCION_PARTICIPANTE';  to: string; data: { clienteNombre: string; contratoCode: string; participanteNombre: string; instanciaCodigo?: string | null } }
-  | { type: 'RECORDATORIO_DEVOLUCION'; to: string; data: { clienteNombre: string; contratoCode: string; fechaDevolucion: string; pendientes: string[] } };
+  | { type: 'RECORDATORIO_DEVOLUCION';  to: string; data: { clienteNombre: string; contratoCode: string; fechaDevolucion: string; pendientes: string[] } }
+  | { type: 'CONFIRMACION_RESERVA';     to: string; data: { clienteNombre: string; contratoCode: string; eventoNombre: string; fechaEntrega: string; fechaDevolucion: string; totalPrendas: number } };
 
 // ── Formateadores ─────────────────────────────────────────────────────────────
 
@@ -154,6 +155,26 @@ export async function handleNotify(body: unknown, provider: SendWaveProvider) {
           `La fecha de devolución es *${data.fechaDevolucion}*.\n\n` +
           `Prendas pendientes de devolver:\n${pendientesTxt}\n\n` +
           `Por favor acérquese a nuestra sede a tiempo para evitar cargos adicionales.\n` +
+          `📞 Consultas: escriba *menú* a este número.`,
+      });
+      break;
+    }
+
+    case 'CONFIRMACION_RESERVA': {
+      const { data } = payload;
+      const to = normalizePhone(payload.to);
+      await provider.sendText({
+        from: to,
+        text:
+          `✅ *¡Reserva confirmada! — ${data.contratoCode}*\n\n` +
+          `Hola *${data.clienteNombre}* 👋\n\n` +
+          `Tu reserva ha sido *confirmada* por FolkloreSoft Bolivia.\n\n` +
+          `📋 Contrato: *${data.contratoCode}*\n` +
+          `🎪 Evento: ${data.eventoNombre}\n` +
+          `📅 Entrega: ${fmtDate(data.fechaEntrega)}\n` +
+          `📅 Devolución: ${fmtDate(data.fechaDevolucion)}\n` +
+          `👕 Prendas reservadas: ${data.totalPrendas}\n\n` +
+          `_Presentarse puntualmente en nuestra sede el día de la entrega._\n` +
           `📞 Consultas: escriba *menú* a este número.`,
       });
       break;

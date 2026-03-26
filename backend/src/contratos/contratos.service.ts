@@ -365,6 +365,16 @@ export class ContratosService {
       include: INCLUDE_FULL,
     });
     await this.log(id, 'CONFIRMADO', 'Reserva confirmada');
+    const c = result as unknown as { codigo: string; cliente: { nombre: string; celular?: string | null }; evento?: { nombre: string } | null; nombre_evento_ext?: string | null; fecha_entrega: Date; fecha_devolucion: Date; prendas: unknown[] };
+    void this.botNotify.notificarConfirmacion({
+      clienteCelular:  c.cliente.celular,
+      clienteNombre:   c.cliente.nombre,
+      contratoCode:    c.codigo,
+      eventoNombre:    c.evento?.nombre ?? c.nombre_evento_ext ?? '—',
+      fechaEntrega:    c.fecha_entrega.toLocaleDateString('es-BO'),
+      fechaDevolucion: c.fecha_devolucion.toLocaleDateString('es-BO'),
+      totalPrendas:    c.prendas.length,
+    });
     return result;
   }
 

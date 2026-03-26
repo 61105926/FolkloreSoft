@@ -80,6 +80,20 @@ export class BotNotifyService {
     await this.send({ type: 'DEVOLUCION_PARTICIPANTE', to: data.clienteCelular, data });
   }
 
+  // ── Confirmación de reserva ───────────────────────────────────────────────
+  async notificarConfirmacion(data: {
+    clienteCelular?: string | null;
+    clienteNombre: string;
+    contratoCode: string;
+    eventoNombre: string;
+    fechaEntrega: string;
+    fechaDevolucion: string;
+    totalPrendas: number;
+  }) {
+    if (!data.clienteCelular) return;
+    await this.send({ type: 'CONFIRMACION_RESERVA', to: data.clienteCelular, data });
+  }
+
   // ── Recordatorio de devolución (puede llamarse desde un cron) ─────────────
   async notificarRecordatorio(data: {
     clienteCelular?: string | null;
