@@ -7,79 +7,36 @@ import { consultaFlow }   from './consulta.flow.js';
 import { cotizacionFlow } from './cotizacion.flow.js';
 import { cancelarFlow }   from './cancelar.flow.js';
 import { adminFlow }      from './admin.flow.js';
-import { detectIntent, responderLibre } from '../ia.js';
 
 type Ctx = { from: string; body: string };
-type RouteHandlers = { gotoFlow: (f: unknown) => void; provider: Provider };
 
 function saludoPorHora(): string {
-  const hora = new Date().toLocaleString('es-BO', {
-    timeZone: 'America/La_Paz', hour: 'numeric', hour12: false,
-  });
-  const h = parseInt(hora);
+  const h = new Date().getHours();
   if (h >= 6  && h < 12) return '¡Buenos días!';
   if (h >= 12 && h < 19) return '¡Buenas tardes!';
   return '¡Buenas noches!';
 }
 
-async function enviarMenu(ctx: Ctx, provider: Provider) {
+export async function enviarMenu(ctx: Ctx, provider: Provider) {
   await provider.sendText({
     from: ctx.from,
     text:
-      `🎭 *FolkloreSoft Bolivia — ${saludoPorHora()}*\n` +
-      `¿En qué te puedo ayudar?\n\n` +
-      `1️⃣ Ver disponibilidad de trajes\n` +
-      `2️⃣ Cotizar precio\n` +
-      `3️⃣ Hacer una reserva\n` +
-      `4️⃣ Consultar mi reserva\n` +
-      `5️⃣ Cancelar reserva\n` +
-      `6️⃣ Hablar con un asesor\n\n` +
+      `🎭 *FolkloreSoft Bolivia — ${saludoPorHora()}*\n\n` +
+      `1️⃣  Ver disponibilidad de trajes\n` +
+      `2️⃣  Cotizar precio\n` +
+      `3️⃣  Hacer una reserva\n` +
+      `4️⃣  Consultar mi reserva\n` +
+      `5️⃣  Cancelar reserva\n` +
+      `6️⃣  Hablar con un asesor\n\n` +
       `_Responde con el número o escribe tu consulta._`,
   });
 }
 
-async function routeOption(opt: string, ctx: Ctx, { gotoFlow, provider }: RouteHandlers) {
-  const o = opt.toLowerCase().trim();
-
-  if (o === '1' || o.includes('disponibilidad') || o.includes('trajes') || o.includes('stock'))
-    return gotoFlow(stockFlow);
-  if (o === '2' || o.includes('cotizar') || o.includes('precio'))
-    return gotoFlow(cotizacionFlow);
-  if (o === '3' || (o.includes('reserva') && !o.includes('consultar') && !o.includes('cancelar')))
-    return gotoFlow(reservaFlow);
-  if (o === '4' || o.includes('consultar') || o.includes('mi reserva'))
-    return gotoFlow(consultaFlow);
-  if (o === '5' || o.includes('cancelar'))
-    return gotoFlow(cancelarFlow);
-  if (o === '6' || o.includes('asesor') || o.includes('hablar'))
-    return gotoFlow(contactoFlow);
-  if (o === 'admin' || o === '/admin')
-    return gotoFlow(adminFlow);
-
-  // Fallback: detectar intención con IA
-  const intent = await detectIntent(opt);
-  switch (intent) {
-    case 'STOCK':      return gotoFlow(stockFlow);
-    case 'COTIZACION': return gotoFlow(cotizacionFlow);
-    case 'RESERVA':    return gotoFlow(reservaFlow);
-    case 'CONSULTA':   return gotoFlow(consultaFlow);
-    case 'CANCELAR':   return gotoFlow(cancelarFlow);
-    case 'ASESOR':     return gotoFlow(contactoFlow);
-    default: {
-      const respuesta = await responderLibre(opt);
-      await provider.sendText({ from: ctx.from, text: respuesta });
-      await enviarMenu(ctx, provider);
-    }
-  }
-}
-
-// ── Bienvenida ────────────────────────────────────────────────────────────────
+// ── Bienvenida — solo envía el menú, sin capture ─────────────────────────────
+// (sin capture:true, el queue item completa inmediatamente)
 export const menuFlow = addKeyword<Provider>(EVENTS.WELCOME)
   .addAction(async (ctx, { provider }) => {
     await enviarMenu(ctx, provider);
-  })
-  .addAction({ capture: true }, async (ctx, { gotoFlow, provider }) => {
-    await routeOption(ctx.body.trim(), ctx, { gotoFlow, provider });
   });
 
 // ── Volver al menú ────────────────────────────────────────────────────────────
@@ -89,12 +46,41 @@ export const volverFlow = addKeyword<Provider>([
 ])
   .addAction(async (ctx, { provider }) => {
     await enviarMenu(ctx, provider);
-  })
-  .addAction({ capture: true }, async (ctx, { gotoFlow, provider }) => {
-    await routeOption(ctx.body.trim(), ctx, { gotoFlow, provider });
   });
 
-// ── Cierre por inactividad (Queue Flow) ──────────────────────────────────────
+// ── Opciones del menú (números 1-6 y palabras clave directas) ─────────────────
+export const opcionFlow = addKeyword<Provider>([
+  '1', '2', '3', '4', '5', '6',
+  'disponibilidad', 'trajes', 'catalogo', 'catálogo', 'stock',
+  'cotizar', 'cotizacion', 'cotización', 'precio', 'precios',
+  'reservar', 'reserva', 'alquilar',
+  'consultar', 'mi reserva', 'ver reserva',
+  'cancelar', 'anular',
+  'asesor', 'hablar',
+  'admin', '/admin',
+])
+  .addAction(async (ctx, { gotoFlow, provider }) => {
+    const o = ctx.body.trim().toLowerCase();
+
+    if (o === '1' || o.includes('disponibilidad') || o.includes('trajes') || o.includes('stock') || o.includes('catalogo') || o.includes('catálogo'))
+      return gotoFlow(stockFlow);
+    if (o === '2' || o.includes('cotizar') || o.includes('precio'))
+      return gotoFlow(cotizacionFlow);
+    if (o === '3' || o.includes('reservar') || o.includes('alquilar') || (o.includes('reserva') && !o.includes('consultar') && !o.includes('cancelar') && !o.includes('mi')))
+      return gotoFlow(reservaFlow);
+    if (o === '4' || o.includes('consultar') || o.includes('mi reserva') || o.includes('ver reserva'))
+      return gotoFlow(consultaFlow);
+    if (o === '5' || o.includes('cancelar') || o.includes('anular'))
+      return gotoFlow(cancelarFlow);
+    if (o === '6' || o.includes('asesor') || o.includes('hablar'))
+      return gotoFlow(contactoFlow);
+    if (o === 'admin' || o === '/admin')
+      return gotoFlow(adminFlow);
+
+    await enviarMenu(ctx, provider);
+  });
+
+// ── Cierre de sesión por inactividad (Queue Flow) ─────────────────────────────
 export const endFlow = addKeyword<Provider>(utils.setEvent('END_FLOW'))
   .addAction(async (ctx, { endFlow: end, provider }) => {
     provider.forceClearUser(ctx.from);
