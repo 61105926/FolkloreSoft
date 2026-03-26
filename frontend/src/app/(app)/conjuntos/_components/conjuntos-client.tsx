@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 
@@ -2066,6 +2066,32 @@ export function ConjuntosClient({ initialConjuntos, componentes, sucursales, tok
   const [eliminando, setEliminando] = useState<Conjunto | null>(null);
   const [instanciando, setInstanciando] = useState<Conjunto | null>(null);
   const [viendo, setViendo] = useState<Conjunto | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
+
+  const refreshConjuntos = useCallback(async () => {
+    setRefreshing(true);
+    try {
+      const res = await fetch(`${backendUrl}/catalogo/conjuntos`, {
+        headers: { Authorization: `Bearer ${token}` },
+        cache: "no-store",
+      });
+      if (res.ok) {
+        const data: Conjunto[] = await res.json();
+        setConjuntos(data);
+      }
+    } catch { /* silent */ } finally {
+      setRefreshing(false);
+    }
+  }, [backendUrl, token]);
+
+  // Refresh when tab becomes visible (user returns from another page)
+  useEffect(() => {
+    const onFocus = () => void refreshConjuntos();
+    document.addEventListener("visibilitychange", () => {
+      if (document.visibilityState === "visible") onFocus();
+    });
+    return () => document.removeEventListener("visibilitychange", onFocus);
+  }, [refreshConjuntos]);
 
   const handleEditConjunto = (c: Conjunto, tab: ModalTab = "general") => {
     setEditandoInitialTab(tab);
@@ -2118,16 +2144,30 @@ export function ConjuntosClient({ initialConjuntos, componentes, sucursales, tok
             {conjuntos.length} conjunto{conjuntos.length !== 1 ? "s" : ""} en catálogo
           </p>
         </div>
-        <Button
-          onClick={() => setShowCrear(true)}
-          className="bg-primary text-primary-foreground"
-          size="sm"
-        >
-          <svg className="h-4 w-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-          </svg>
-          Nuevo conjunto
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => void refreshConjuntos()}
+            disabled={refreshing}
+            title="Actualizar disponibilidad"
+            className="text-muted-foreground hover:text-foreground"
+          >
+            <svg className={`h-4 w-4 ${refreshing ? "animate-spin" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            </svg>
+          </Button>
+          <Button
+            onClick={() => setShowCrear(true)}
+            className="bg-primary text-primary-foreground"
+            size="sm"
+          >
+            <svg className="h-4 w-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+            </svg>
+            Nuevo conjunto
+          </Button>
+        </div>
       </div>
 
       {/* Stats */}
