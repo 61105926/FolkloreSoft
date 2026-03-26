@@ -45,10 +45,11 @@ async function main() {
   // ── Conjuntos (plantillas) ──
   const caporal = await prisma.conjunto.upsert({
     where: { id: 1 },
-    update: {},
+    update: { imagen_url: 'https://upload.wikimedia.org/wikipedia/commons/0/00/Caporales_Or%C3%ADgenes_San_Andres.JPG' },
     create: {
       nombre: 'Traje Caporal Clásico', danza: 'Caporales',
       descripcion: 'Traje completo de Caporal con bordados en dorado. Incluye chaqueta, pantalón y sombrero característico.',
+      imagen_url: 'https://upload.wikimedia.org/wikipedia/commons/0/00/Caporales_Or%C3%ADgenes_San_Andres.JPG',
       precio_base: 350,
       componentes: {
         create: [
@@ -63,10 +64,11 @@ async function main() {
 
   const morenada = await prisma.conjunto.upsert({
     where: { id: 2 },
-    update: {},
+    update: { imagen_url: 'https://upload.wikimedia.org/wikipedia/commons/4/46/Desfile_de_morenada_02_Carnaval_de_Oruro_2012.JPG' },
     create: {
       nombre: 'Traje Moreno Bordado', danza: 'Morenada',
       descripcion: 'Lujoso traje de Morenada con máscara, capa de lentejuelas y pollera bordada a mano.',
+      imagen_url: 'https://upload.wikimedia.org/wikipedia/commons/4/46/Desfile_de_morenada_02_Carnaval_de_Oruro_2012.JPG',
       precio_base: 480,
       componentes: {
         create: [
@@ -81,10 +83,11 @@ async function main() {
 
   const tinku = await prisma.conjunto.upsert({
     where: { id: 3 },
-    update: {},
+    update: { imagen_url: 'https://upload.wikimedia.org/wikipedia/commons/0/03/Tinkus_San_Sim%C3%B3n_Arica.JPG' },
     create: {
       nombre: 'Indumentaria Tinku Damas', danza: 'Tinku',
       descripcion: 'Traje femenino de Tinku con blusa bordada, pollera amplia y sombrero montera.',
+      imagen_url: 'https://upload.wikimedia.org/wikipedia/commons/0/03/Tinkus_San_Sim%C3%B3n_Arica.JPG',
       precio_base: 220,
       componentes: {
         create: [
