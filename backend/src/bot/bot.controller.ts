@@ -45,4 +45,10 @@ export class BotController {
     verifyKey(body.key);
     return this.svc.cancelarReserva(body.codigo, body.ci);
   }
+
+  @Get('catalogo')
+  catalogo(@Query('key') key: string) {
+    verifyKey(key);
+    return this.svc.getCatalogo();
+  }
 }

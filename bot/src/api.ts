@@ -18,7 +18,10 @@ const HTTP_TIMEOUT = 8000; // 8 s — nunca bloquear el queue de BuilderBot
 
 export async function getConjuntos(): Promise<ConjuntoResumen[]> {
   try {
-    const { data } = await axios.get<ConjuntoResumen[]>(`${API}/catalogo/conjuntos`, { timeout: HTTP_TIMEOUT });
+    const { data } = await axios.get<ConjuntoResumen[]>(
+      `${API}/bot/catalogo`,
+      { params: { key: BOT_KEY }, timeout: HTTP_TIMEOUT },
+    );
     return data;
   } catch {
     return [];

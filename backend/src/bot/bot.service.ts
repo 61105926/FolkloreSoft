@@ -163,4 +163,25 @@ export class BotService {
     });
     return contrato;
   }
+
+  // ── Catálogo para el bot (sin JWT) ────────────────────────────────────────
+  async getCatalogo() {
+    return this.prisma.conjunto.findMany({
+      select: {
+        id: true,
+        nombre: true,
+        danza: true,
+        precio_base: true,
+        imagen_url: true,
+        variaciones: {
+          select: {
+            instancias: {
+              select: { estado: true },
+            },
+          },
+        },
+      },
+      orderBy: [{ danza: 'asc' }, { nombre: 'asc' }],
+    });
+  }
 }
