@@ -103,9 +103,13 @@ export class CajaService {
 
   // ── Cuentas por cobrar ────────────────────────────────────────────────────
 
-  async cuentasPorCobrar() {
+  async cuentasPorCobrar(filter?: { isAdmin?: boolean; sucursalId?: number }) {
+    const where: Record<string, unknown> = { estado: { notIn: ['CERRADO', 'CANCELADO'] } };
+    if (!filter?.isAdmin && filter?.sucursalId) {
+      where['sucursalId'] = filter.sucursalId;
+    }
     const contratos = await this.prisma.contratoAlquiler.findMany({
-      where: { estado: { notIn: ['CERRADO', 'CANCELADO'] } },
+      where,
       select: {
         id: true, codigo: true, estado: true, fecha_devolucion: true,
         total: true, total_pagado: true, anticipo: true,

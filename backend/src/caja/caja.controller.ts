@@ -28,7 +28,7 @@ export class CajaController {
     @Query('contratoId') contratoId?: string,
   ) {
     const { id, rol, sucursalId } = req.user;
-    const isAdmin = rol === 'ADMIN';
+    const isAdmin = rol === 'ADMIN' || rol === 'SUPERADMIN';
     return this.svc.findAll({
       fechaDesde,
       fechaHasta,
@@ -45,7 +45,7 @@ export class CajaController {
   @Get('stats')
   stats(@Req() req: Request & { user: AuthUser }) {
     const { id, rol, sucursalId } = req.user;
-    const isAdmin = rol === 'ADMIN';
+    const isAdmin = rol === 'ADMIN' || rol === 'SUPERADMIN';
     return this.svc.stats({
       isAdmin,
       userId: isAdmin ? undefined : id,
@@ -54,8 +54,10 @@ export class CajaController {
   }
 
   @Get('cuentas-por-cobrar')
-  cuentasPorCobrar() {
-    return this.svc.cuentasPorCobrar();
+  cuentasPorCobrar(@Req() req: Request & { user: AuthUser }) {
+    const { rol, sucursalId } = req.user;
+    const isAdmin = rol === 'ADMIN' || rol === 'SUPERADMIN';
+    return this.svc.cuentasPorCobrar({ isAdmin, sucursalId: isAdmin ? undefined : (sucursalId ?? undefined) });
   }
 
   @Post('recalcular-pagados')

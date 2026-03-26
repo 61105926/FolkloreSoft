@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
+import { Injectable, NotFoundException, ConflictException, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service.js';
 import type { User } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
@@ -23,6 +23,7 @@ export class UsersService {
 
   async findAll() {
     return this.prisma.user.findMany({
+      where: { rol: { not: 'SUPERADMIN' } },
       select: USER_SELECT,
       orderBy: { nombre: 'asc' },
     });
@@ -51,6 +52,7 @@ export class UsersService {
   }) {
     const user = await this.prisma.user.findUnique({ where: { id } });
     if (!user) throw new NotFoundException(`Usuario #${id} no encontrado`);
+    if (user.rol === 'SUPERADMIN') throw new ForbiddenException('No se puede modificar este usuario');
 
     const updateData: Record<string, unknown> = {};
     if (data.nombre    !== undefined) updateData.nombre    = data.nombre;
@@ -66,6 +68,7 @@ export class UsersService {
   async remove(id: number) {
     const user = await this.prisma.user.findUnique({ where: { id } });
     if (!user) throw new NotFoundException(`Usuario #${id} no encontrado`);
+    if (user.rol === 'SUPERADMIN') throw new ForbiddenException('No se puede eliminar este usuario');
     return this.prisma.user.update({
       where: { id },
       data: { activo: false },

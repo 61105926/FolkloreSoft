@@ -36,7 +36,7 @@ export default async function SucursalesGestionPage() {
   const cookieStore = await cookies();
   const token = cookieStore.get("accessToken")?.value ?? "";
   const rol = decodeRol(token);
-  if (rol !== "ADMIN") redirect("/dashboard");
+  if (rol !== "SUPERADMIN") redirect("/dashboard");
 
   const sucursales = await getSucursales(token);
 

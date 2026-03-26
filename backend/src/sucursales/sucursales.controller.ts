@@ -12,15 +12,15 @@ export class SucursalesController {
   @Get()      findAll() { return this.svc.findAll(); }
   @Get(':id') findOne(@Param('id', ParseIntPipe) id: number) { return this.svc.findOne(id); }
 
-  @UseGuards(RolesGuard) @Roles('ADMIN')
+  @UseGuards(RolesGuard) @Roles('SUPERADMIN')
   @Post()
   create(@Body() body: { nombre: string; ciudad: string; direccion?: string }) { return this.svc.create(body); }
 
-  @UseGuards(RolesGuard) @Roles('ADMIN')
+  @UseGuards(RolesGuard) @Roles('SUPERADMIN')
   @Patch(':id')
   update(@Param('id', ParseIntPipe) id: number, @Body() body: { nombre?: string; ciudad?: string; direccion?: string }) { return this.svc.update(id, body); }
 
-  @UseGuards(RolesGuard) @Roles('ADMIN')
+  @UseGuards(RolesGuard) @Roles('SUPERADMIN')
   @Delete(':id')
   remove(@Param('id', ParseIntPipe) id: number) { return this.svc.remove(id); }
 }

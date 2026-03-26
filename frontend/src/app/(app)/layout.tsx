@@ -13,7 +13,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { SidebarNav, type NavSectionItem } from "@/components/sidebar-nav";
 
-type Rol = "ADMIN" | "VENDEDOR" | "BODEGUERO" | "CAJERO";
+type Rol = "SUPERADMIN" | "ADMIN" | "VENDEDOR" | "BODEGUERO" | "CAJERO";
 
 function decodeJwt(token: string): { nombre?: string; email?: string; rol?: string; sub?: number } | null {
   try {
@@ -25,11 +25,12 @@ function decodeJwt(token: string): { nombre?: string; email?: string; rol?: stri
   }
 }
 
-const ALL: Rol[]              = ["ADMIN", "VENDEDOR", "BODEGUERO", "CAJERO"];
-const ADMIN_ONLY: Rol[]       = ["ADMIN"];
-const NO_CAJERO: Rol[]        = ["ADMIN", "VENDEDOR", "BODEGUERO"];
-const NO_BODEGUERO: Rol[]     = ["ADMIN", "VENDEDOR", "CAJERO"];
-const ADMIN_VENDEDOR: Rol[]   = ["ADMIN", "VENDEDOR"];
+const ALL: Rol[]              = ["SUPERADMIN", "ADMIN", "VENDEDOR", "BODEGUERO", "CAJERO"];
+const ADMIN_ONLY: Rol[]       = ["SUPERADMIN", "ADMIN"];
+const SUPERADMIN_ONLY: Rol[]  = ["SUPERADMIN"];
+const NO_CAJERO: Rol[]        = ["SUPERADMIN", "ADMIN", "VENDEDOR", "BODEGUERO"];
+const NO_BODEGUERO: Rol[]     = ["SUPERADMIN", "ADMIN", "VENDEDOR", "CAJERO"];
+const ADMIN_VENDEDOR: Rol[]   = ["SUPERADMIN", "ADMIN", "VENDEDOR"];
 
 interface RawNavLink {
   href: string;
@@ -74,7 +75,7 @@ const NAV_SECTIONS: RawNavSection[] = [
         icon: <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" /></svg>,
       },
       {
-        href: "/sucursales/gestion", label: "Sucursales", roles: ADMIN_ONLY,
+        href: "/sucursales/gestion", label: "Sucursales", roles: SUPERADMIN_ONLY,
         icon: <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" /></svg>,
       },
     ],

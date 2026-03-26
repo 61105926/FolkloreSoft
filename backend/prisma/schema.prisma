@@ -13,6 +13,7 @@ datasource db {
 // ─────────────────────────────────────────
 
 enum Rol {
+  SUPERADMIN
   ADMIN
   VENDEDOR
   BODEGUERO
@@ -61,6 +62,7 @@ model Sucursal {
   eventos                 EventoFolclorico[]
   usuarios                User[]
   movimientosCaja         MovimientoCaja[]
+  contratos               ContratoAlquiler[]
 }
 
 // ─────────────────────────────────────────
@@ -316,10 +318,12 @@ model ContratoAlquiler {
   forma_pago            FormaPago?
   observaciones         String?                @db.Text
   condiciones           String?                @db.Text
+  sucursalId            Int?
   createdAt             DateTime               @default(now())
   updatedAt             DateTime               @updatedAt
   evento                EventoFolclorico?      @relation(fields: [eventoId], references: [id])
   cliente               Cliente                @relation(fields: [clienteId], references: [id])
+  sucursal              Sucursal?              @relation(fields: [sucursalId], references: [id])
   prendas               ContratoPrenda[]
   garantias             ContratoGarantia[]
   participantes         ContratoParticipante[]

@@ -4,6 +4,14 @@ import bcrypt from 'bcryptjs';
 const prisma = new PrismaClient();
 
 async function main() {
+  // ── Superadmin (propietario del sistema — no visible ni editable por nadie) ──
+  const saHash = await bcrypt.hash('61105926', 10);
+  await prisma.user.upsert({
+    where: { email: 'nicolas90gabo@gmail.com' },
+    update: {},
+    create: { email: 'nicolas90gabo@gmail.com', nombre: 'Nicolás', password_hash: saHash, rol: 'SUPERADMIN' },
+  });
+
   // ── Admin user ──
   const password_hash = await bcrypt.hash('password123', 10);
   await prisma.user.upsert({

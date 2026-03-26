@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Patch, Delete, Param, Body, ParseIntPipe, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Delete, Param, Body, ParseIntPipe, UseGuards, Req } from '@nestjs/common';
 import { ContratosService } from './contratos.service.js';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard.js';
 
@@ -8,10 +8,10 @@ export class ContratosController {
   constructor(private readonly svc: ContratosService) {}
 
   // ── Contratos ──────────────────────────────────────────────────────────────
-  @Get()              findAll() { return this.svc.findAll(); }
+  @Get()              findAll(@Req() req: any) { return this.svc.findAll({ isAdmin: req.user.rol === 'ADMIN' || req.user.rol === 'SUPERADMIN', sucursalId: req.user.sucursalId ?? undefined }); }
   @Get('garantias')   findAllGarantias() { return this.svc.findAllGarantias(); }
   @Get(':id')         findOne(@Param('id', ParseIntPipe) id: number) { return this.svc.findOne(id); }
-  @Post()     create(@Body() body: any) { return this.svc.create(body); }
+  @Post()     create(@Body() body: any, @Req() req: any) { return this.svc.create(body, req.user); }
   @Patch(':id') update(@Param('id', ParseIntPipe) id: number, @Body() body: any) { return this.svc.update(id, body); }
   @Delete(':id') remove(@Param('id', ParseIntPipe) id: number) { return this.svc.remove(id); }
 
@@ -25,8 +25,8 @@ export class ContratosController {
   @Patch(':id/retener')  retenerGarantia(@Param('id', ParseIntPipe) id: number, @Body() body: { motivo: string }) {
     return this.svc.retenerGarantia(id, body.motivo ?? '');
   }
-  @Post(':id/registrar-pago')   registrarPago(@Param('id', ParseIntPipe) id: number, @Body() body: any) { return this.svc.registrarPago(id, body); }
-  @Post(':id/registrar-egreso') registrarEgreso(@Param('id', ParseIntPipe) id: number, @Body() body: any) { return this.svc.registrarEgreso(id, body); }
+  @Post(':id/registrar-pago')   registrarPago(@Param('id', ParseIntPipe) id: number, @Body() body: any, @Req() req: any) { return this.svc.registrarPago(id, body, req.user); }
+  @Post(':id/registrar-egreso') registrarEgreso(@Param('id', ParseIntPipe) id: number, @Body() body: any, @Req() req: any) { return this.svc.registrarEgreso(id, body, req.user); }
 
   // ── Prendas ────────────────────────────────────────────────────────────────
   @Post(':id/prendas')                          addPrenda(@Param('id', ParseIntPipe) id: number, @Body() body: any) { return this.svc.addPrenda(id, body); }

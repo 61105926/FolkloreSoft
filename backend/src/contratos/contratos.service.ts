@@ -76,8 +76,13 @@ export class ContratosService {
     });
   }
 
-  findAll() {
+  findAll(filter?: { isAdmin?: boolean; sucursalId?: number }) {
+    const where: Record<string, unknown> = {};
+    if (!filter?.isAdmin && filter?.sucursalId) {
+      where['sucursalId'] = filter.sucursalId;
+    }
     return this.prisma.contratoAlquiler.findMany({
+      where,
       include: INCLUDE_LIST,
       orderBy: { createdAt: 'desc' },
     });
@@ -123,7 +128,7 @@ export class ContratosService {
       valor?: number;
       participanteId?: number;
     }[];
-  }) {
+  }, actor?: { id?: number; nombre?: string; sucursalId?: number | null }) {
     const codigo = await this.generarCodigo();
     // Never trust total_pagado from frontend — derive it from anticipo
     const { prendas, garantias, ...rest } = data;
@@ -158,13 +163,15 @@ export class ContratosService {
         fecha_entrega: new Date(data.fecha_entrega),
         fecha_devolucion: new Date(data.fecha_devolucion),
         total: data.total ?? totalAuto,
-        total_pagado: anticipoVal,           // always derived from anticipo, never from body
+        total_pagado: anticipoVal,
+        sucursalId: actor?.sucursalId ?? null,
         prendas: prendaCreate.length > 0 ? { create: prendaCreate } : undefined,
         garantias: garantias ? { create: garantias } : undefined,
       },
       include: INCLUDE_FULL,
     });
-    await this.log(contrato.id, 'CREADO', `Contrato ${contrato.codigo} creado`);
+    const userName = actor?.nombre ?? 'Sistema';
+    await this.log(contrato.id, 'CREADO', `Contrato ${contrato.codigo} creado — por ${userName}`);
 
     const clienteNombre = (contrato.cliente as { nombre: string }).nombre;
 
@@ -178,10 +185,11 @@ export class ContratosService {
           descripcion: `Anticipo — ${contrato.codigo} (${clienteNombre})`,
           forma_pago: data.forma_pago ?? 'EFECTIVO',
           contratoId: contrato.id,
+          userId: actor?.id ?? null,
         },
       });
       await this.log(contrato.id, 'PAGO_REGISTRADO',
-        `Anticipo de Bs. ${anticipoVal.toFixed(2)} registrado en caja (${data.forma_pago ?? 'EFECTIVO'})`);
+        `Anticipo de Bs. ${anticipoVal.toFixed(2)} registrado en caja (${data.forma_pago ?? 'EFECTIVO'}) — cobrado por ${userName}`);
     }
 
     // Auto-register cash guarantees in caja
@@ -197,13 +205,14 @@ export class ContratosService {
           descripcion: `Garantía en efectivo — ${contrato.codigo} (${clienteNombre})`,
           forma_pago: 'EFECTIVO',
           contratoId: contrato.id,
+          userId: actor?.id ?? null,
         },
       });
     }
     if (garantiasEfectivo.length > 0) {
       const totalGar = garantiasEfectivo.reduce((s, g) => s + g.valor!, 0);
       await this.log(contrato.id, 'PAGO_REGISTRADO',
-        `Garantía(s) en efectivo de Bs. ${totalGar.toFixed(2)} registradas en caja`);
+        `Garantía(s) en efectivo de Bs. ${totalGar.toFixed(2)} registradas en caja — cobrado por ${userName}`);
     }
 
     return contrato;
@@ -671,12 +680,14 @@ export class ContratosService {
     referencia?: string;
     descripcion?: string;
     concepto?: 'DEVOLUCION_GARANTIA' | 'OTRO_EGRESO';
-  }) {
+  }, actor?: { id?: number; nombre?: string }) {
     const contrato = await this.prisma.contratoAlquiler.findUniqueOrThrow({
       where: { id: contratoId },
       select: { id: true, codigo: true, cliente: { select: { nombre: true } } },
     });
     const concepto = body.concepto ?? 'DEVOLUCION_GARANTIA';
+
+    const userName = actor?.nombre ?? 'Sistema';
 
     await this.prisma.movimientoCaja.create({
       data: {
@@ -687,6 +698,7 @@ export class ContratosService {
         forma_pago: body.forma_pago ?? 'EFECTIVO',
         referencia: body.referencia,
         contratoId,
+        userId: actor?.id ?? null,
       },
     });
 
@@ -695,7 +707,7 @@ export class ContratosService {
       OTRO_EGRESO: 'Egreso registrado',
     };
     await this.log(contratoId, 'GARANTIA_DEVUELTA',
-      `${CONCEPTO_LABELS[concepto] ?? concepto}: Bs. ${body.monto.toFixed(2)} en ${body.forma_pago ?? 'EFECTIVO'}${body.referencia ? ` — Ref: ${body.referencia}` : ''}`);
+      `${CONCEPTO_LABELS[concepto] ?? concepto}: Bs. ${body.monto.toFixed(2)} en ${body.forma_pago ?? 'EFECTIVO'}${body.referencia ? ` — Ref: ${body.referencia}` : ''} — registrado por ${userName}`);
 
     return this.findOne(contratoId);
   }
@@ -708,7 +720,7 @@ export class ContratosService {
     referencia?: string;
     descripcion?: string;
     concepto?: 'PAGO_SALDO_CONTRATO' | 'DEUDA_COBRADA' | 'ANTICIPO_CONTRATO';
-  }) {
+  }, actor?: { id?: number; nombre?: string }) {
     const contrato = await this.prisma.contratoAlquiler.findUniqueOrThrow({
       where: { id: contratoId },
       select: {
@@ -728,6 +740,8 @@ export class ContratosService {
       include: INCLUDE_FULL,
     });
 
+    const userName = actor?.nombre ?? 'Sistema';
+
     // Create caja movement
     await this.prisma.movimientoCaja.create({
       data: {
@@ -738,6 +752,7 @@ export class ContratosService {
         forma_pago: body.forma_pago ?? 'EFECTIVO',
         referencia: body.referencia,
         contratoId,
+        userId: actor?.id ?? null,
       },
     });
 
@@ -747,7 +762,7 @@ export class ContratosService {
       DEUDA_COBRADA:       'Deuda cobrada',
     };
     await this.log(contratoId, 'PAGO_REGISTRADO',
-      `${CONCEPTO_LABELS[concepto] ?? concepto}: Bs. ${body.monto.toFixed(2)} en ${body.forma_pago ?? 'EFECTIVO'}${body.referencia ? ` — Ref: ${body.referencia}` : ''}`);
+      `${CONCEPTO_LABELS[concepto] ?? concepto}: Bs. ${body.monto.toFixed(2)} en ${body.forma_pago ?? 'EFECTIVO'}${body.referencia ? ` — Ref: ${body.referencia}` : ''} — cobrado por ${userName}`);
 
     return updated;
   }
