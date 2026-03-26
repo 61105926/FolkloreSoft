@@ -275,6 +275,18 @@ export class ContratosService {
     // Auto-detect si queda deuda basado en los pagos reales en caja
     const contrato = await this.findOne(id);
     const conDeuda = Number(contrato.total_pagado) < Number(contrato.total);
+
+    // Liberar todas las instancias asignadas a participantes
+    const instanciaIds = (contrato.participantes ?? [])
+      .map((p) => (p as { instanciaConjuntoId?: number }).instanciaConjuntoId)
+      .filter((iid): iid is number => !!iid);
+    if (instanciaIds.length > 0) {
+      await this.prisma.instanciaConjunto.updateMany({
+        where: { id: { in: instanciaIds }, estado: EstadoInstanciaConjunto.ALQUILADO },
+        data: { estado: EstadoInstanciaConjunto.DISPONIBLE },
+      });
+    }
+
     const result = await this.prisma.contratoAlquiler.update({
       where: { id },
       data: {
@@ -304,7 +316,17 @@ export class ContratosService {
   }
 
   async cerrar(id: number) {
-    await this.findOne(id);
+    const contrato = await this.findOne(id);
+    // Liberar instancias que pudieran quedar ALQUILADO
+    const instanciaIds = (contrato.participantes ?? [])
+      .map((p) => (p as { instanciaConjuntoId?: number }).instanciaConjuntoId)
+      .filter((iid): iid is number => !!iid);
+    if (instanciaIds.length > 0) {
+      await this.prisma.instanciaConjunto.updateMany({
+        where: { id: { in: instanciaIds }, estado: EstadoInstanciaConjunto.ALQUILADO },
+        data: { estado: EstadoInstanciaConjunto.DISPONIBLE },
+      });
+    }
     const result = await this.prisma.contratoAlquiler.update({
       where: { id },
       data: { estado: EstadoContrato.CERRADO },
@@ -350,7 +372,17 @@ export class ContratosService {
   }
 
   async remove(id: number) {
-    await this.findOne(id);
+    const contrato = await this.findOne(id);
+    // Liberar instancias antes de borrar
+    const instanciaIds = (contrato.participantes ?? [])
+      .map((p) => (p as { instanciaConjuntoId?: number }).instanciaConjuntoId)
+      .filter((iid): iid is number => !!iid);
+    if (instanciaIds.length > 0) {
+      await this.prisma.instanciaConjunto.updateMany({
+        where: { id: { in: instanciaIds }, estado: EstadoInstanciaConjunto.ALQUILADO },
+        data: { estado: EstadoInstanciaConjunto.DISPONIBLE },
+      });
+    }
     await this.prisma.movimientoCaja.deleteMany({ where: { contratoId: id } });
     return this.prisma.contratoAlquiler.delete({ where: { id } });
   }
