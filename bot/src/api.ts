@@ -14,9 +14,11 @@ export interface ConjuntoResumen {
   variaciones: { instancias: { estado: string }[] }[];
 }
 
+const HTTP_TIMEOUT = 8000; // 8 s — nunca bloquear el queue de BuilderBot
+
 export async function getConjuntos(): Promise<ConjuntoResumen[]> {
   try {
-    const { data } = await axios.get<ConjuntoResumen[]>(`${API}/catalogo/conjuntos`);
+    const { data } = await axios.get<ConjuntoResumen[]>(`${API}/catalogo/conjuntos`, { timeout: HTTP_TIMEOUT });
     return data;
   } catch {
     return [];
@@ -69,7 +71,7 @@ export async function consultarReserva(q: string): Promise<ReservaConsulta | nul
   try {
     const { data } = await axios.get<ReservaConsulta | null>(
       `${API}/bot/consulta-reserva`,
-      { params: { q, key: BOT_KEY } },
+      { params: { q, key: BOT_KEY }, timeout: HTTP_TIMEOUT },
     );
     return data;
   } catch {
@@ -93,7 +95,7 @@ export async function cotizar(conjuntoId: number, cantidad: number, dias: number
   try {
     const { data } = await axios.get<CotizacionResult | null>(
       `${API}/bot/cotizacion`,
-      { params: { conjuntoId, cantidad, dias, key: BOT_KEY } },
+      { params: { conjuntoId, cantidad, dias, key: BOT_KEY }, timeout: HTTP_TIMEOUT },
     );
     return data;
   } catch {
@@ -114,7 +116,7 @@ export async function statsHoy(): Promise<StatsHoy> {
   try {
     const { data } = await axios.get<StatsHoy>(
       `${API}/bot/stats-hoy`,
-      { params: { key: BOT_KEY } },
+      { params: { key: BOT_KEY }, timeout: HTTP_TIMEOUT },
     );
     return data;
   } catch {
@@ -133,7 +135,7 @@ export async function porVencer(horas = 48): Promise<ContratoVencer[]> {
   try {
     const { data } = await axios.get<ContratoVencer[]>(
       `${API}/bot/por-vencer`,
-      { params: { horas, key: BOT_KEY } },
+      { params: { horas, key: BOT_KEY }, timeout: HTTP_TIMEOUT },
     );
     return data;
   } catch {
@@ -149,6 +151,7 @@ export async function cancelarReserva(
     const { data } = await axios.post(
       `${API}/bot/cancelar-reserva`,
       { codigo, ci, key: BOT_KEY },
+      { timeout: HTTP_TIMEOUT },
     );
     return data;
   } catch {

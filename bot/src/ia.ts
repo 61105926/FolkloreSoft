@@ -1,6 +1,9 @@
 import Anthropic from '@anthropic-ai/sdk';
 
-const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY ?? '' });
+const anthropic = new Anthropic({
+  apiKey: process.env.ANTHROPIC_API_KEY ?? '',
+  timeout: 10_000, // 10 s máximo — no bloquear el queue de BuilderBot
+});
 
 export type Intent =
   | 'STOCK'
