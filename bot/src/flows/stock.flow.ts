@@ -2,75 +2,75 @@ import { addKeyword } from '@builderbot/bot';
 import { SendWaveProvider as Provider } from '@gamastudio/sendwave-provider';
 import { getConjuntos, calcularStock } from '../api.js';
 
-export const stockFlow = addKeyword<Provider>(['1', '2', 'stock', 'disponible', 'trajes', 'precio', 'precios', 'danza', 'disponibilidad'])
+export const stockFlow = addKeyword<Provider>([
+  '1', 'stock', 'disponible', 'trajes', 'disponibilidad', 'catálogo', 'catalogo',
+])
   .addAction(async (ctx, { provider }) => {
-    await provider.sendList({
+    await provider.sendText({
       from: ctx.from,
-      list: {
-        title: '🎭 Catálogo de trajes',
-        description: '¿Qué danza te interesa?',
-        button: 'Elegir danza',
-        content: [
-          '🎶 Tinku',
-          '🕺 Caporales',
-          '👑 Morenada',
-          '😈 Diablada',
-          '🌟 Saya',
-          '🎵 Kullawada',
-          '📋 Ver todos',
-        ],
-      },
+      text:
+        '🎭 *Catálogo de trajes*\n\n' +
+        '¿Qué danza te interesa? Escribe el nombre o escribe *todos* para ver todo el catálogo.\n\n' +
+        '_Ejemplos: Tinku, Caporales, Morenada, Diablada, Saya…_\n\n' +
+        '_(Escribe *cancelar* para salir)_',
     });
   })
-  .addAction({ capture: true }, async (ctx, { provider, flowDynamic }) => {
-    const input = ctx.body.trim().toLowerCase().replace(/^(🎶|🕺|👑|😈|🌟|🎵|📋)\s*/u, '');
+  .addAction({ capture: true }, async (ctx, { provider, endFlow }) => {
+    const input = ctx.body.trim().toLowerCase();
+
+    if (input === 'cancelar') {
+      return endFlow('Escribe *menú* cuando quieras. 👋');
+    }
+
     const conjuntos = await getConjuntos();
 
     if (!conjuntos.length) {
-      await provider.sendText({ from: ctx.from, text: '⚠️ No pude conectarme al sistema. Intenta en un momento.\n\nEscribe *menú* para volver.' });
-      return;
+      await provider.sendText({
+        from: ctx.from,
+        text: '⚠️ No pude conectarme al sistema. Intenta en un momento.\n\nEscribe *menú* para volver.',
+      });
+      return endFlow();
     }
 
-    const lista = (input === 'ver todos' || input === 'todos')
+    const lista = (input === 'todos' || input === 'ver todos')
       ? conjuntos
       : conjuntos.filter((c) =>
-          c.danza.toLowerCase().includes(input) ||
-          c.nombre.toLowerCase().includes(input)
+          c.danza.toLowerCase().includes(input) || c.nombre.toLowerCase().includes(input),
         );
 
     if (!lista.length) {
       const danzas = [...new Set(conjuntos.map((c) => c.danza))].join(', ');
       await provider.sendText({
         from: ctx.from,
-        text: `No encontré trajes para *${ctx.body.trim()}*.\n\nDanzas disponibles:\n${danzas}\n\nEscribe *menú* para volver.`,
-      });
-      return;
-    }
-
-    for (const c of lista) {
-      const { disponibles, reservados, alquilados, total } = calcularStock(c);
-      const estadoEmoji = disponibles > 0 ? '✅' : '❌';
-      await provider.sendText({
-        from: ctx.from,
         text:
-          `${estadoEmoji} *${c.nombre}*\n` +
-          `   Danza: ${c.danza}\n` +
-          `   💰 Bs. ${parseFloat(c.precio_base).toFixed(0)} por evento\n` +
-          `   📦 ${disponibles} disponibles de ${total}\n` +
-          (reservados > 0 ? `   🔵 ${reservados} reservados\n` : '') +
-          (alquilados  > 0 ? `   🟡 ${alquilados} en uso\n`    : ''),
+          `No encontré trajes para *${ctx.body.trim()}*.\n\n` +
+          `Danzas disponibles:\n${danzas}\n\n` +
+          `Escribe *menú* para volver.`,
       });
+      return endFlow();
     }
 
-    await provider.sendButton({
-      from: ctx.from,
-      title: '¿Qué deseas hacer?',
-      body: 'Puedes hacer una reserva o volver al menú principal.',
-      description: '',
-      footer: 'FolkloreSoft Bolivia',
-      buttons: [
-        { type: 'reply', text: '📋 Hacer reserva' },
-        { type: 'reply', text: '🔙 Menú principal' },
-      ],
+    const lineas = lista.map((c) => {
+      const { disponibles, reservados, alquilados, total } = calcularStock(c);
+      const estado = disponibles > 0 ? '✅' : '❌';
+      return (
+        `${estado} *${c.nombre}* — ${c.danza}\n` +
+        `   💰 Bs. ${parseFloat(c.precio_base).toFixed(0)} · ` +
+        `📦 ${disponibles} disp. de ${total}` +
+        (reservados > 0 ? ` · 🔵 ${reservados} reserv.` : '') +
+        (alquilados  > 0 ? ` · 🟡 ${alquilados} en uso` : '')
+      );
     });
+
+    await provider.sendText({
+      from: ctx.from,
+      text:
+        `📦 *Disponibilidad de trajes*\n` +
+        `━━━━━━━━━━━━━━━━━━━━━━━━\n` +
+        lineas.join('\n') +
+        `\n━━━━━━━━━━━━━━━━━━━━━━━━\n` +
+        `Escribe *reservar* para hacer una reserva o *menú* para volver.`,
+    });
+
+    endFlow();
   });

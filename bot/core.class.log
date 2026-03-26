@@ -1,0 +1,1090 @@
+[handleMsg]:  {
+  fromMe: false,
+  remoteJid: '59161105926@s.whatsapp.net',
+  messageId: '3A9ED2EFA0B77350D9B8',
+  from: '184417456791639@lid',
+  to: 'dev',
+  name: 'Habo',
+  body: 'Hola',
+  type: 'conversation',
+  media: undefined,
+  caption: undefined,
+  sessionId: 'cmn73k1nf00ge57quf78vwezk',
+  originalPayload: {
+    key: {
+      remoteJid: '59161105926@s.whatsapp.net',
+      remoteJidAlt: '59161105926@s.whatsapp.net',
+      fromMe: false,
+      id: '3A9ED2EFA0B77350D9B8',
+      participant: '',
+      addressingMode: 'lid'
+    },
+    pushName: 'Habo',
+    status: 'DELIVERY_ACK',
+    message: { conversation: 'Hola', messageContextInfo: [Object] },
+    messageType: 'conversation',
+    messageTimestamp: 1774535615,
+    instanceId: '99e5d22a-1f88-486e-90ac-8c897242f391',
+    source: 'ios',
+    from: '184417456791639@lid'
+  },
+  host: 'undefined'
+}
+[QUEUE_SE_ENVIO]:  {
+  ref: 'ans_697c27c2-c6bc-4a1b-ad75-561d1c7b2a54',
+  keyword: 'key_50568237-28eb-4c79-9acf-8bab6e7851bb',
+  answer: '__call_action__',
+  options: {
+    media: undefined,
+    buttons: [],
+    capture: false,
+    delay: 0,
+    idle: undefined,
+    ref: undefined,
+    nested: [],
+    keyword: {},
+    callback: true
+  },
+  refSerialize: '12d595c127b4a05f9823b6d81c66e2a9'
+}
+[QUEUE_SE_ENVIO]:  {
+  ref: 'ans_a9342370-b4d3-4d5c-bcc1-4b767f7dc116',
+  keyword: 'ans_697c27c2-c6bc-4a1b-ad75-561d1c7b2a54',
+  answer: '__capture_only_intended__',
+  options: {
+    media: undefined,
+    buttons: [],
+    capture: true,
+    delay: 0,
+    idle: undefined,
+    ref: undefined,
+    nested: [],
+    keyword: {},
+    callback: true
+  },
+  refSerialize: '5ee4e095c479ad513be22ca9ea9960d7'
+}
+[handleMsg]:  {
+  fromMe: false,
+  remoteJid: '59161105926@s.whatsapp.net',
+  messageId: '3A9ED2EFA0B77350D9B8',
+  from: '59161105926@s.whatsapp.net',
+  to: 'dev',
+  name: '',
+  body: 'Hola',
+  type: 'conversation',
+  media: undefined,
+  caption: undefined,
+  sessionId: 'cmn73k1nf00ge57quf78vwezk',
+  originalPayload: {
+    key: {
+      remoteJid: '59161105926@s.whatsapp.net',
+      fromMe: false,
+      id: '3A9ED2EFA0B77350D9B8'
+    },
+    pushName: null,
+    status: 'DELIVERY_ACK',
+    message: { conversation: 'Hola', messageContextInfo: [Object] },
+    messageType: 'conversation',
+    messageTimestamp: 1774535610,
+    instanceId: '99e5d22a-1f88-486e-90ac-8c897242f391',
+    source: 'ios'
+  },
+  host: 'undefined'
+}
+[QUEUE_SE_ENVIO]:  {
+  ref: 'ans_697c27c2-c6bc-4a1b-ad75-561d1c7b2a54',
+  keyword: 'key_50568237-28eb-4c79-9acf-8bab6e7851bb',
+  answer: '__call_action__',
+  options: {
+    media: undefined,
+    buttons: [],
+    capture: false,
+    delay: 0,
+    idle: undefined,
+    ref: undefined,
+    nested: [],
+    keyword: {},
+    callback: true
+  },
+  refSerialize: '12d595c127b4a05f9823b6d81c66e2a9'
+}
+[QUEUE_SE_ENVIO]:  {
+  ref: 'ans_a9342370-b4d3-4d5c-bcc1-4b767f7dc116',
+  keyword: 'ans_697c27c2-c6bc-4a1b-ad75-561d1c7b2a54',
+  answer: '__capture_only_intended__',
+  options: {
+    media: undefined,
+    buttons: [],
+    capture: true,
+    delay: 0,
+    idle: undefined,
+    ref: undefined,
+    nested: [],
+    keyword: {},
+    callback: true
+  },
+  refSerialize: '5ee4e095c479ad513be22ca9ea9960d7'
+}
+[handleMsg]:  {
+  fromMe: false,
+  remoteJid: '59161105926@s.whatsapp.net',
+  messageId: '3AF39B26BD5219B0A010',
+  from: '184417456791639@lid',
+  to: 'dev',
+  name: 'Habo',
+  body: 'Menú',
+  type: 'conversation',
+  media: undefined,
+  caption: undefined,
+  sessionId: 'cmn7lg8vn000457tjdytw861g',
+  originalPayload: {
+    key: {
+      remoteJid: '59161105926@s.whatsapp.net',
+      remoteJidAlt: '59161105926@s.whatsapp.net',
+      fromMe: false,
+      id: '3AF39B26BD5219B0A010',
+      participant: '',
+      addressingMode: 'lid'
+    },
+    pushName: 'Habo',
+    status: 'DELIVERY_ACK',
+    message: { conversation: 'Menú', messageContextInfo: [Object] },
+    messageType: 'conversation',
+    messageTimestamp: 1774536896,
+    instanceId: '99e5d22a-1f88-486e-90ac-8c897242f391',
+    source: 'ios',
+    from: '184417456791639@lid'
+  },
+  host: 'undefined'
+}
+[QUEUE_SE_ENVIO]:  {
+  ref: 'ans_697c27c2-c6bc-4a1b-ad75-561d1c7b2a54',
+  keyword: 'key_50568237-28eb-4c79-9acf-8bab6e7851bb',
+  answer: '__call_action__',
+  options: {
+    media: undefined,
+    buttons: [],
+    capture: false,
+    delay: 0,
+    idle: undefined,
+    ref: undefined,
+    nested: [],
+    keyword: {},
+    callback: true
+  },
+  refSerialize: '12d595c127b4a05f9823b6d81c66e2a9'
+}
+[QUEUE_SE_ENVIO]:  {
+  ref: 'ans_a9342370-b4d3-4d5c-bcc1-4b767f7dc116',
+  keyword: 'ans_697c27c2-c6bc-4a1b-ad75-561d1c7b2a54',
+  answer: '__capture_only_intended__',
+  options: {
+    media: undefined,
+    buttons: [],
+    capture: true,
+    delay: 0,
+    idle: undefined,
+    ref: undefined,
+    nested: [],
+    keyword: {},
+    callback: true
+  },
+  refSerialize: '5ee4e095c479ad513be22ca9ea9960d7'
+}
+[handleMsg]:  {
+  fromMe: false,
+  remoteJid: '59161105926@s.whatsapp.net',
+  messageId: '3AFC1A6A0D3A69A0F263',
+  from: '184417456791639@lid',
+  to: 'dev',
+  name: 'Habo',
+  body: 'Dame el menú',
+  type: 'conversation',
+  media: undefined,
+  caption: undefined,
+  sessionId: 'cmn7lg8vn000457tjdytw861g',
+  originalPayload: {
+    key: {
+      remoteJid: '59161105926@s.whatsapp.net',
+      remoteJidAlt: '59161105926@s.whatsapp.net',
+      fromMe: false,
+      id: '3AFC1A6A0D3A69A0F263',
+      participant: '',
+      addressingMode: 'lid'
+    },
+    pushName: 'Habo',
+    status: 'DELIVERY_ACK',
+    message: { conversation: 'Dame el menú', messageContextInfo: [Object] },
+    messageType: 'conversation',
+    messageTimestamp: 1774536923,
+    instanceId: '99e5d22a-1f88-486e-90ac-8c897242f391',
+    source: 'ios',
+    from: '184417456791639@lid'
+  },
+  host: 'undefined'
+}
+[QUEUE_SE_ENVIO]:  {
+  ref: 'ans_697c27c2-c6bc-4a1b-ad75-561d1c7b2a54',
+  keyword: 'key_50568237-28eb-4c79-9acf-8bab6e7851bb',
+  answer: '__call_action__',
+  options: {
+    media: undefined,
+    buttons: [],
+    capture: false,
+    delay: 0,
+    idle: undefined,
+    ref: undefined,
+    nested: [],
+    keyword: {},
+    callback: true
+  },
+  refSerialize: '12d595c127b4a05f9823b6d81c66e2a9'
+}
+[QUEUE_SE_ENVIO]:  {
+  ref: 'ans_a9342370-b4d3-4d5c-bcc1-4b767f7dc116',
+  keyword: 'ans_697c27c2-c6bc-4a1b-ad75-561d1c7b2a54',
+  answer: '__capture_only_intended__',
+  options: {
+    media: undefined,
+    buttons: [],
+    capture: true,
+    delay: 0,
+    idle: undefined,
+    ref: undefined,
+    nested: [],
+    keyword: {},
+    callback: true
+  },
+  refSerialize: '5ee4e095c479ad513be22ca9ea9960d7'
+}
+[handleMsg]:  {
+  fromMe: false,
+  remoteJid: '59161105926@s.whatsapp.net',
+  messageId: '3AB4CC13E95694FA48E1',
+  from: '184417456791639@lid',
+  to: 'dev',
+  name: 'Habo',
+  body: '1',
+  type: 'conversation',
+  media: undefined,
+  caption: undefined,
+  sessionId: 'cmn7lg8vn000457tjdytw861g',
+  originalPayload: {
+    key: {
+      remoteJid: '59161105926@s.whatsapp.net',
+      remoteJidAlt: '59161105926@s.whatsapp.net',
+      fromMe: false,
+      id: '3AB4CC13E95694FA48E1',
+      participant: '',
+      addressingMode: 'lid'
+    },
+    pushName: 'Habo',
+    status: 'DELIVERY_ACK',
+    message: { conversation: '1', messageContextInfo: [Object] },
+    messageType: 'conversation',
+    messageTimestamp: 1774536930,
+    instanceId: '99e5d22a-1f88-486e-90ac-8c897242f391',
+    source: 'ios',
+    from: '184417456791639@lid'
+  },
+  host: 'undefined'
+}
+[handleMsg]:  {
+  fromMe: false,
+  remoteJid: '59161105926@s.whatsapp.net',
+  messageId: '3AC7D83992BE7F0C1E0C',
+  from: '184417456791639@lid',
+  to: 'dev',
+  name: 'Habo',
+  body: 'Menú',
+  type: 'conversation',
+  media: undefined,
+  caption: undefined,
+  sessionId: 'cmn7lg8vn000457tjdytw861g',
+  originalPayload: {
+    key: {
+      remoteJid: '59161105926@s.whatsapp.net',
+      remoteJidAlt: '59161105926@s.whatsapp.net',
+      fromMe: false,
+      id: '3AC7D83992BE7F0C1E0C',
+      participant: '',
+      addressingMode: 'lid'
+    },
+    pushName: 'Habo',
+    status: 'DELIVERY_ACK',
+    message: { conversation: 'Menú', messageContextInfo: [Object] },
+    messageType: 'conversation',
+    messageTimestamp: 1774537074,
+    instanceId: '99e5d22a-1f88-486e-90ac-8c897242f391',
+    source: 'ios',
+    from: '184417456791639@lid'
+  },
+  host: 'undefined'
+}
+[QUEUE_SE_ENVIO]:  {
+  ref: 'ans_697c27c2-c6bc-4a1b-ad75-561d1c7b2a54',
+  keyword: 'key_50568237-28eb-4c79-9acf-8bab6e7851bb',
+  answer: '__call_action__',
+  options: {
+    media: undefined,
+    buttons: [],
+    capture: false,
+    delay: 0,
+    idle: undefined,
+    ref: undefined,
+    nested: [],
+    keyword: {},
+    callback: true
+  },
+  refSerialize: '12d595c127b4a05f9823b6d81c66e2a9'
+}
+[QUEUE_SE_ENVIO]:  {
+  ref: 'ans_a9342370-b4d3-4d5c-bcc1-4b767f7dc116',
+  keyword: 'ans_697c27c2-c6bc-4a1b-ad75-561d1c7b2a54',
+  answer: '__capture_only_intended__',
+  options: {
+    media: undefined,
+    buttons: [],
+    capture: true,
+    delay: 0,
+    idle: undefined,
+    ref: undefined,
+    nested: [],
+    keyword: {},
+    callback: true
+  },
+  refSerialize: '5ee4e095c479ad513be22ca9ea9960d7'
+}
+[handleMsg]:  {
+  fromMe: false,
+  remoteJid: '59161105926@s.whatsapp.net',
+  messageId: '3AA2EDB62A2203C44F82',
+  from: '184417456791639@lid',
+  to: 'dev',
+  name: 'Habo',
+  body: 'Menú',
+  type: 'conversation',
+  media: undefined,
+  caption: undefined,
+  sessionId: 'cmn7lg8vn000457tjdytw861g',
+  originalPayload: {
+    key: {
+      remoteJid: '59161105926@s.whatsapp.net',
+      remoteJidAlt: '59161105926@s.whatsapp.net',
+      fromMe: false,
+      id: '3AA2EDB62A2203C44F82',
+      participant: '',
+      addressingMode: 'lid'
+    },
+    pushName: 'Habo',
+    status: 'DELIVERY_ACK',
+    message: { conversation: 'Menú', messageContextInfo: [Object] },
+    messageType: 'conversation',
+    messageTimestamp: 1774537085,
+    instanceId: '99e5d22a-1f88-486e-90ac-8c897242f391',
+    source: 'ios',
+    from: '184417456791639@lid'
+  },
+  host: 'undefined'
+}
+[QUEUE_SE_ENVIO]:  {
+  ref: 'ans_697c27c2-c6bc-4a1b-ad75-561d1c7b2a54',
+  keyword: 'key_50568237-28eb-4c79-9acf-8bab6e7851bb',
+  answer: '__call_action__',
+  options: {
+    media: undefined,
+    buttons: [],
+    capture: false,
+    delay: 0,
+    idle: undefined,
+    ref: undefined,
+    nested: [],
+    keyword: {},
+    callback: true
+  },
+  refSerialize: '12d595c127b4a05f9823b6d81c66e2a9'
+}
+[QUEUE_SE_ENVIO]:  {
+  ref: 'ans_a9342370-b4d3-4d5c-bcc1-4b767f7dc116',
+  keyword: 'ans_697c27c2-c6bc-4a1b-ad75-561d1c7b2a54',
+  answer: '__capture_only_intended__',
+  options: {
+    media: undefined,
+    buttons: [],
+    capture: true,
+    delay: 0,
+    idle: undefined,
+    ref: undefined,
+    nested: [],
+    keyword: {},
+    callback: true
+  },
+  refSerialize: '5ee4e095c479ad513be22ca9ea9960d7'
+}
+[handleMsg]:  {
+  fromMe: false,
+  remoteJid: '59161105926@s.whatsapp.net',
+  messageId: '3A18B56B17CC4F5D749D',
+  from: '184417456791639@lid',
+  to: 'dev',
+  name: 'Habo',
+  body: 'Hola',
+  type: 'conversation',
+  media: undefined,
+  caption: undefined,
+  sessionId: 'cmn7lg8vn000457tjdytw861g',
+  originalPayload: {
+    key: {
+      remoteJid: '59161105926@s.whatsapp.net',
+      remoteJidAlt: '59161105926@s.whatsapp.net',
+      fromMe: false,
+      id: '3A18B56B17CC4F5D749D',
+      participant: '',
+      addressingMode: 'lid'
+    },
+    pushName: 'Habo',
+    status: 'DELIVERY_ACK',
+    message: { conversation: 'Hola', messageContextInfo: [Object] },
+    messageType: 'conversation',
+    messageTimestamp: 1774538953,
+    instanceId: '99e5d22a-1f88-486e-90ac-8c897242f391',
+    source: 'ios',
+    from: '184417456791639@lid'
+  },
+  host: 'undefined'
+}
+[QUEUE_SE_ENVIO]:  {
+  ref: 'ans_697c27c2-c6bc-4a1b-ad75-561d1c7b2a54',
+  keyword: 'key_50568237-28eb-4c79-9acf-8bab6e7851bb',
+  answer: '__call_action__',
+  options: {
+    media: undefined,
+    buttons: [],
+    capture: false,
+    delay: 0,
+    idle: undefined,
+    ref: undefined,
+    nested: [],
+    keyword: {},
+    callback: true
+  },
+  refSerialize: '12d595c127b4a05f9823b6d81c66e2a9'
+}
+[QUEUE_SE_ENVIO]:  {
+  ref: 'ans_a9342370-b4d3-4d5c-bcc1-4b767f7dc116',
+  keyword: 'ans_697c27c2-c6bc-4a1b-ad75-561d1c7b2a54',
+  answer: '__capture_only_intended__',
+  options: {
+    media: undefined,
+    buttons: [],
+    capture: true,
+    delay: 0,
+    idle: undefined,
+    ref: undefined,
+    nested: [],
+    keyword: {},
+    callback: true
+  },
+  refSerialize: '5ee4e095c479ad513be22ca9ea9960d7'
+}
+[handleMsg]:  {
+  fromMe: false,
+  remoteJid: '59161105926@s.whatsapp.net',
+  messageId: '3A1145047D367FC178BD',
+  from: '184417456791639@lid',
+  to: 'dev',
+  name: 'Habo',
+  body: '3',
+  type: 'conversation',
+  media: undefined,
+  caption: undefined,
+  sessionId: 'cmn7lg8vn000457tjdytw861g',
+  originalPayload: {
+    key: {
+      remoteJid: '59161105926@s.whatsapp.net',
+      remoteJidAlt: '59161105926@s.whatsapp.net',
+      fromMe: false,
+      id: '3A1145047D367FC178BD',
+      participant: '',
+      addressingMode: 'lid'
+    },
+    pushName: 'Habo',
+    status: 'DELIVERY_ACK',
+    message: { conversation: '3', messageContextInfo: [Object] },
+    messageType: 'conversation',
+    messageTimestamp: 1774538967,
+    instanceId: '99e5d22a-1f88-486e-90ac-8c897242f391',
+    source: 'ios',
+    from: '184417456791639@lid'
+  },
+  host: 'undefined'
+}
+[handleMsg]:  {
+  fromMe: false,
+  remoteJid: '59161105926@s.whatsapp.net',
+  messageId: '3AC845020778C73FBF7D',
+  from: '184417456791639@lid',
+  to: 'dev',
+  name: 'Habo',
+  body: 'Gabriel Roman',
+  type: 'conversation',
+  media: undefined,
+  caption: undefined,
+  sessionId: 'cmn7lg8vn000457tjdytw861g',
+  originalPayload: {
+    key: {
+      remoteJid: '59161105926@s.whatsapp.net',
+      remoteJidAlt: '59161105926@s.whatsapp.net',
+      fromMe: false,
+      id: '3AC845020778C73FBF7D',
+      participant: '',
+      addressingMode: 'lid'
+    },
+    pushName: 'Habo',
+    status: 'DELIVERY_ACK',
+    message: { conversation: 'Gabriel Roman', messageContextInfo: [Object] },
+    messageType: 'conversation',
+    messageTimestamp: 1774538977,
+    instanceId: '99e5d22a-1f88-486e-90ac-8c897242f391',
+    source: 'ios',
+    from: '184417456791639@lid'
+  },
+  host: 'undefined'
+}
+[QUEUE_SE_ENVIO]:  {
+  ref: 'ans_ff0bdb45-e199-42ce-822c-fd284e6fafe5',
+  keyword: 'ans_76c889b0-896e-45d8-ba1a-abcd38c25dc1',
+  answer: '__capture_only_intended__',
+  options: {
+    media: undefined,
+    buttons: [],
+    capture: true,
+    delay: 0,
+    idle: undefined,
+    ref: undefined,
+    nested: [],
+    keyword: {},
+    callback: true
+  },
+  refSerialize: '9dab6668e24f8de007baf40a2ea8ae36'
+}
+[handleMsg]:  {
+  fromMe: false,
+  remoteJid: '59161105926@s.whatsapp.net',
+  messageId: '3A1D8D9ECBD4BFA1D408',
+  from: '184417456791639@lid',
+  to: 'dev',
+  name: 'Habo',
+  body: '13676038',
+  type: 'conversation',
+  media: undefined,
+  caption: undefined,
+  sessionId: 'cmn7lg8vn000457tjdytw861g',
+  originalPayload: {
+    key: {
+      remoteJid: '59161105926@s.whatsapp.net',
+      remoteJidAlt: '59161105926@s.whatsapp.net',
+      fromMe: false,
+      id: '3A1D8D9ECBD4BFA1D408',
+      participant: '',
+      addressingMode: 'lid'
+    },
+    pushName: 'Habo',
+    status: 'DELIVERY_ACK',
+    message: { conversation: '13676038', messageContextInfo: [Object] },
+    messageType: 'conversation',
+    messageTimestamp: 1774538983,
+    instanceId: '99e5d22a-1f88-486e-90ac-8c897242f391',
+    source: 'ios',
+    from: '184417456791639@lid'
+  },
+  host: 'undefined'
+}
+[QUEUE_SE_ENVIO]:  {
+  ref: 'ans_20152792-1de8-49e4-8ecd-f4d6aabb3ff6',
+  keyword: 'ans_ff0bdb45-e199-42ce-822c-fd284e6fafe5',
+  answer: '__capture_only_intended__',
+  options: {
+    media: undefined,
+    buttons: [],
+    capture: true,
+    delay: 0,
+    idle: undefined,
+    ref: undefined,
+    nested: [],
+    keyword: {},
+    callback: true
+  },
+  refSerialize: 'd836c4e5d28a626fca235a4bd680e984'
+}
+[handleMsg]:  {
+  fromMe: false,
+  remoteJid: '59161105926@s.whatsapp.net',
+  messageId: '3A0BC2A246087E443616',
+  from: '184417456791639@lid',
+  to: 'dev',
+  name: 'Habo',
+  body: '61105926',
+  type: 'conversation',
+  media: undefined,
+  caption: undefined,
+  sessionId: 'cmn7lg8vn000457tjdytw861g',
+  originalPayload: {
+    key: {
+      remoteJid: '59161105926@s.whatsapp.net',
+      remoteJidAlt: '59161105926@s.whatsapp.net',
+      fromMe: false,
+      id: '3A0BC2A246087E443616',
+      participant: '',
+      addressingMode: 'lid'
+    },
+    pushName: 'Habo',
+    status: 'DELIVERY_ACK',
+    message: { conversation: '61105926', messageContextInfo: [Object] },
+    messageType: 'conversation',
+    messageTimestamp: 1774538988,
+    instanceId: '99e5d22a-1f88-486e-90ac-8c897242f391',
+    source: 'ios',
+    from: '184417456791639@lid'
+  },
+  host: 'undefined'
+}
+Error al encolar (ID ans_84aa23b3-cf4b-41f2-b672-27e6dcedfb63): Error: Queue item timeout after 50000ms
+    at Timeout._onTimeout (C:\Users\Nicol\Desktop\FOLCKLORE\bot\node_modules\@builderbot\bot\dist\index.cjs:845:24)
+    at listOnTimeout (node:internal/timers:573:17)
+    at process.processTimers (node:internal/timers:514:7)
+[QUEUE_SE_ENVIO]:  {
+  ref: 'ans_20152792-1de8-49e4-8ecd-f4d6aabb3ff6',
+  keyword: 'ans_ff0bdb45-e199-42ce-822c-fd284e6fafe5',
+  answer: '__capture_only_intended__',
+  options: {
+    media: undefined,
+    buttons: [],
+    capture: true,
+    delay: 0,
+    idle: undefined,
+    ref: undefined,
+    nested: [],
+    keyword: {},
+    callback: true
+  },
+  refSerialize: 'd836c4e5d28a626fca235a4bd680e984'
+}
+[QUEUE_SE_ENVIO]:  {
+  ref: 'ans_84aa23b3-cf4b-41f2-b672-27e6dcedfb63',
+  keyword: 'key_fe0d9b2a-4080-440c-828d-5a48457c8af6',
+  answer: '__call_action__',
+  options: {
+    media: undefined,
+    buttons: [],
+    capture: false,
+    delay: 0,
+    idle: undefined,
+    ref: undefined,
+    nested: [],
+    keyword: {},
+    callback: true
+  },
+  refSerialize: 'f9f61be85d1afe10d6f519308bb57abe'
+}
+[QUEUE_SE_ENVIO]:  {
+  ref: 'ans_84aa23b3-cf4b-41f2-b672-27e6dcedfb63',
+  keyword: 'key_fe0d9b2a-4080-440c-828d-5a48457c8af6',
+  answer: '__call_action__',
+  options: {
+    media: undefined,
+    buttons: [],
+    capture: false,
+    delay: 0,
+    idle: undefined,
+    ref: undefined,
+    nested: [],
+    keyword: {},
+    callback: true
+  },
+  refSerialize: 'f9f61be85d1afe10d6f519308bb57abe'
+}
+[QUEUE_SE_ENVIO]:  {
+  ref: 'ans_87329072-cddc-4c0f-9df7-67cc234acdb0',
+  keyword: 'ans_84aa23b3-cf4b-41f2-b672-27e6dcedfb63',
+  answer: '__capture_only_intended__',
+  options: {
+    media: undefined,
+    buttons: [],
+    capture: true,
+    delay: 0,
+    idle: undefined,
+    ref: undefined,
+    nested: [],
+    keyword: {},
+    callback: true
+  },
+  refSerialize: 'ccdb7a29ac402e613959a4363e11fbfe'
+}
+[handleMsg]:  {
+  fromMe: false,
+  remoteJid: '59161105926@s.whatsapp.net',
+  messageId: '3AF485E2A9F7969B28E1',
+  from: '184417456791639@lid',
+  to: 'dev',
+  name: 'Habo',
+  body: 'Hola',
+  type: 'conversation',
+  media: undefined,
+  caption: undefined,
+  sessionId: 'cmn7lg8vn000457tjdytw861g',
+  originalPayload: {
+    key: {
+      remoteJid: '59161105926@s.whatsapp.net',
+      remoteJidAlt: '59161105926@s.whatsapp.net',
+      fromMe: false,
+      id: '3AF485E2A9F7969B28E1',
+      participant: '',
+      addressingMode: 'lid'
+    },
+    pushName: 'Habo',
+    status: 'DELIVERY_ACK',
+    message: { conversation: 'Hola', messageContextInfo: [Object] },
+    messageType: 'conversation',
+    messageTimestamp: 1774539214,
+    instanceId: '99e5d22a-1f88-486e-90ac-8c897242f391',
+    source: 'ios',
+    from: '184417456791639@lid'
+  },
+  host: 'undefined'
+}
+[QUEUE_SE_ENVIO]:  {
+  ref: 'ans_697c27c2-c6bc-4a1b-ad75-561d1c7b2a54',
+  keyword: 'key_50568237-28eb-4c79-9acf-8bab6e7851bb',
+  answer: '__call_action__',
+  options: {
+    media: undefined,
+    buttons: [],
+    capture: false,
+    delay: 0,
+    idle: undefined,
+    ref: undefined,
+    nested: [],
+    keyword: {},
+    callback: true
+  },
+  refSerialize: '12d595c127b4a05f9823b6d81c66e2a9'
+}
+[QUEUE_SE_ENVIO]:  {
+  ref: 'ans_a9342370-b4d3-4d5c-bcc1-4b767f7dc116',
+  keyword: 'ans_697c27c2-c6bc-4a1b-ad75-561d1c7b2a54',
+  answer: '__capture_only_intended__',
+  options: {
+    media: undefined,
+    buttons: [],
+    capture: true,
+    delay: 0,
+    idle: undefined,
+    ref: undefined,
+    nested: [],
+    keyword: {},
+    callback: true
+  },
+  refSerialize: '5ee4e095c479ad513be22ca9ea9960d7'
+}
+[handleMsg]:  {
+  fromMe: false,
+  remoteJid: '59161105926@s.whatsapp.net',
+  messageId: '3A46363DEEA8C323F126',
+  from: '184417456791639@lid',
+  to: 'dev',
+  name: 'Habo',
+  body: 'Menú',
+  type: 'conversation',
+  media: undefined,
+  caption: undefined,
+  sessionId: 'cmn7lg8vn000457tjdytw861g',
+  originalPayload: {
+    key: {
+      remoteJid: '59161105926@s.whatsapp.net',
+      remoteJidAlt: '59161105926@s.whatsapp.net',
+      fromMe: false,
+      id: '3A46363DEEA8C323F126',
+      participant: '',
+      addressingMode: 'lid'
+    },
+    pushName: 'Habo',
+    status: 'DELIVERY_ACK',
+    message: { conversation: 'Menú', messageContextInfo: [Object] },
+    messageType: 'conversation',
+    messageTimestamp: 1774539220,
+    instanceId: '99e5d22a-1f88-486e-90ac-8c897242f391',
+    source: 'ios',
+    from: '184417456791639@lid'
+  },
+  host: 'undefined'
+}
+[QUEUE_SE_ENVIO]:  {
+  ref: 'ans_697c27c2-c6bc-4a1b-ad75-561d1c7b2a54',
+  keyword: 'key_50568237-28eb-4c79-9acf-8bab6e7851bb',
+  answer: '__call_action__',
+  options: {
+    media: undefined,
+    buttons: [],
+    capture: false,
+    delay: 0,
+    idle: undefined,
+    ref: undefined,
+    nested: [],
+    keyword: {},
+    callback: true
+  },
+  refSerialize: '12d595c127b4a05f9823b6d81c66e2a9'
+}
+[QUEUE_SE_ENVIO]:  {
+  ref: 'ans_a9342370-b4d3-4d5c-bcc1-4b767f7dc116',
+  keyword: 'ans_697c27c2-c6bc-4a1b-ad75-561d1c7b2a54',
+  answer: '__capture_only_intended__',
+  options: {
+    media: undefined,
+    buttons: [],
+    capture: true,
+    delay: 0,
+    idle: undefined,
+    ref: undefined,
+    nested: [],
+    keyword: {},
+    callback: true
+  },
+  refSerialize: '5ee4e095c479ad513be22ca9ea9960d7'
+}
+[handleMsg]:  {
+  fromMe: false,
+  remoteJid: '59161105926@s.whatsapp.net',
+  messageId: '3AC45E2CD727429C366E',
+  from: '184417456791639@lid',
+  to: 'dev',
+  name: 'Habo',
+  body: '3',
+  type: 'conversation',
+  media: undefined,
+  caption: undefined,
+  sessionId: 'cmn7lg8vn000457tjdytw861g',
+  originalPayload: {
+    key: {
+      remoteJid: '59161105926@s.whatsapp.net',
+      remoteJidAlt: '59161105926@s.whatsapp.net',
+      fromMe: false,
+      id: '3AC45E2CD727429C366E',
+      participant: '',
+      addressingMode: 'lid'
+    },
+    pushName: 'Habo',
+    status: 'DELIVERY_ACK',
+    message: { conversation: '3', messageContextInfo: [Object] },
+    messageType: 'conversation',
+    messageTimestamp: 1774539224,
+    instanceId: '99e5d22a-1f88-486e-90ac-8c897242f391',
+    source: 'ios',
+    from: '184417456791639@lid'
+  },
+  host: 'undefined'
+}
+[handleMsg]:  {
+  fromMe: false,
+  remoteJid: '59161105926@s.whatsapp.net',
+  messageId: '3A0B2C2B9245380B7829',
+  from: '184417456791639@lid',
+  to: 'dev',
+  name: 'Habo',
+  body: 'Gabriel Roma',
+  type: 'conversation',
+  media: undefined,
+  caption: undefined,
+  sessionId: 'cmn7lg8vn000457tjdytw861g',
+  originalPayload: {
+    key: {
+      remoteJid: '59161105926@s.whatsapp.net',
+      remoteJidAlt: '59161105926@s.whatsapp.net',
+      fromMe: false,
+      id: '3A0B2C2B9245380B7829',
+      participant: '',
+      addressingMode: 'lid'
+    },
+    pushName: 'Habo',
+    status: 'DELIVERY_ACK',
+    message: { conversation: 'Gabriel Roma', messageContextInfo: [Object] },
+    messageType: 'conversation',
+    messageTimestamp: 1774539231,
+    instanceId: '99e5d22a-1f88-486e-90ac-8c897242f391',
+    source: 'ios',
+    from: '184417456791639@lid'
+  },
+  host: 'undefined'
+}
+[QUEUE_SE_ENVIO]:  {
+  ref: 'ans_ff0bdb45-e199-42ce-822c-fd284e6fafe5',
+  keyword: 'ans_76c889b0-896e-45d8-ba1a-abcd38c25dc1',
+  answer: '__capture_only_intended__',
+  options: {
+    media: undefined,
+    buttons: [],
+    capture: true,
+    delay: 0,
+    idle: undefined,
+    ref: undefined,
+    nested: [],
+    keyword: {},
+    callback: true
+  },
+  refSerialize: '9dab6668e24f8de007baf40a2ea8ae36'
+}
+[handleMsg]:  {
+  fromMe: false,
+  remoteJid: '59161105926@s.whatsapp.net',
+  messageId: '3A9BFDEF0E176FF2FB3A',
+  from: '184417456791639@lid',
+  to: 'dev',
+  name: 'Habo',
+  body: '13676038',
+  type: 'conversation',
+  media: undefined,
+  caption: undefined,
+  sessionId: 'cmn7lg8vn000457tjdytw861g',
+  originalPayload: {
+    key: {
+      remoteJid: '59161105926@s.whatsapp.net',
+      remoteJidAlt: '59161105926@s.whatsapp.net',
+      fromMe: false,
+      id: '3A9BFDEF0E176FF2FB3A',
+      participant: '',
+      addressingMode: 'lid'
+    },
+    pushName: 'Habo',
+    status: 'DELIVERY_ACK',
+    message: { conversation: '13676038', messageContextInfo: [Object] },
+    messageType: 'conversation',
+    messageTimestamp: 1774539237,
+    instanceId: '99e5d22a-1f88-486e-90ac-8c897242f391',
+    source: 'ios',
+    from: '184417456791639@lid'
+  },
+  host: 'undefined'
+}
+[QUEUE_SE_ENVIO]:  {
+  ref: 'ans_20152792-1de8-49e4-8ecd-f4d6aabb3ff6',
+  keyword: 'ans_ff0bdb45-e199-42ce-822c-fd284e6fafe5',
+  answer: '__capture_only_intended__',
+  options: {
+    media: undefined,
+    buttons: [],
+    capture: true,
+    delay: 0,
+    idle: undefined,
+    ref: undefined,
+    nested: [],
+    keyword: {},
+    callback: true
+  },
+  refSerialize: 'd836c4e5d28a626fca235a4bd680e984'
+}
+[handleMsg]:  {
+  fromMe: false,
+  remoteJid: '59161105926@s.whatsapp.net',
+  messageId: '3ACB5E976BBFB023E7E6',
+  from: '184417456791639@lid',
+  to: 'dev',
+  name: 'Habo',
+  body: '61105926',
+  type: 'conversation',
+  media: undefined,
+  caption: undefined,
+  sessionId: 'cmn7lg8vn000457tjdytw861g',
+  originalPayload: {
+    key: {
+      remoteJid: '59161105926@s.whatsapp.net',
+      remoteJidAlt: '59161105926@s.whatsapp.net',
+      fromMe: false,
+      id: '3ACB5E976BBFB023E7E6',
+      participant: '',
+      addressingMode: 'lid'
+    },
+    pushName: 'Habo',
+    status: 'DELIVERY_ACK',
+    message: { conversation: '61105926', messageContextInfo: [Object] },
+    messageType: 'conversation',
+    messageTimestamp: 1774539243,
+    instanceId: '99e5d22a-1f88-486e-90ac-8c897242f391',
+    source: 'ios',
+    from: '184417456791639@lid'
+  },
+  host: 'undefined'
+}
+Error al encolar (ID ans_84aa23b3-cf4b-41f2-b672-27e6dcedfb63): Error: Queue item timeout after 50000ms
+    at Timeout._onTimeout (C:\Users\Nicol\Desktop\FOLCKLORE\bot\node_modules\@builderbot\bot\dist\index.cjs:845:24)
+    at listOnTimeout (node:internal/timers:573:17)
+    at process.processTimers (node:internal/timers:514:7)
+[QUEUE_SE_ENVIO]:  {
+  ref: 'ans_20152792-1de8-49e4-8ecd-f4d6aabb3ff6',
+  keyword: 'ans_ff0bdb45-e199-42ce-822c-fd284e6fafe5',
+  answer: '__capture_only_intended__',
+  options: {
+    media: undefined,
+    buttons: [],
+    capture: true,
+    delay: 0,
+    idle: undefined,
+    ref: undefined,
+    nested: [],
+    keyword: {},
+    callback: true
+  },
+  refSerialize: 'd836c4e5d28a626fca235a4bd680e984'
+}
+[QUEUE_SE_ENVIO]:  {
+  ref: 'ans_84aa23b3-cf4b-41f2-b672-27e6dcedfb63',
+  keyword: 'key_fe0d9b2a-4080-440c-828d-5a48457c8af6',
+  answer: '__call_action__',
+  options: {
+    media: undefined,
+    buttons: [],
+    capture: false,
+    delay: 0,
+    idle: undefined,
+    ref: undefined,
+    nested: [],
+    keyword: {},
+    callback: true
+  },
+  refSerialize: 'f9f61be85d1afe10d6f519308bb57abe'
+}
+[QUEUE_SE_ENVIO]:  {
+  ref: 'ans_84aa23b3-cf4b-41f2-b672-27e6dcedfb63',
+  keyword: 'key_fe0d9b2a-4080-440c-828d-5a48457c8af6',
+  answer: '__call_action__',
+  options: {
+    media: undefined,
+    buttons: [],
+    capture: false,
+    delay: 0,
+    idle: undefined,
+    ref: undefined,
+    nested: [],
+    keyword: {},
+    callback: true
+  },
+  refSerialize: 'f9f61be85d1afe10d6f519308bb57abe'
+}
+[QUEUE_SE_ENVIO]:  {
+  ref: 'ans_87329072-cddc-4c0f-9df7-67cc234acdb0',
+  keyword: 'ans_84aa23b3-cf4b-41f2-b672-27e6dcedfb63',
+  answer: '__capture_only_intended__',
+  options: {
+    media: undefined,
+    buttons: [],
+    capture: true,
+    delay: 0,
+    idle: undefined,
+    ref: undefined,
+    nested: [],
+    keyword: {},
+    callback: true
+  },
+  refSerialize: 'ccdb7a29ac402e613959a4363e11fbfe'
+}

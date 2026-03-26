@@ -2,27 +2,21 @@ import { addKeyword } from '@builderbot/bot';
 import { SendWaveProvider as Provider } from '@gamastudio/sendwave-provider';
 import { consultarReserva } from '../api.js';
 
-function fmt(n: number | string) {
-  return parseFloat(String(n)).toFixed(2);
-}
-
+function fmt(n: number | string) { return parseFloat(String(n)).toFixed(2); }
 function fmtDate(d: string) {
-  try {
-    return new Date(d).toLocaleDateString('es-BO', {
-      day: '2-digit', month: '2-digit', year: 'numeric',
-    });
-  } catch { return d; }
+  try { return new Date(d).toLocaleDateString('es-BO', { day: '2-digit', month: '2-digit', year: 'numeric' }); }
+  catch { return d; }
 }
 
 const ESTADO_LABEL: Record<string, string> = {
-  RESERVADO:   '🔵 Reservado',
-  CONFIRMADO:  '✅ Confirmado',
-  ENTREGADO:   '📦 Entregado (en uso)',
-  EN_USO:      '📦 En uso',
-  DEVUELTO:    '🔄 Devuelto',
-  CON_DEUDA:   '⚠️ Con deuda pendiente',
-  CANCELADO:   '❌ Cancelado',
-  CERRADO:     '✅ Cerrado',
+  RESERVADO:  '🔵 Reservado',
+  CONFIRMADO: '✅ Confirmado',
+  ENTREGADO:  '📦 Entregado (en uso)',
+  EN_USO:     '📦 En uso',
+  DEVUELTO:   '🔄 Devuelto',
+  CON_DEUDA:  '⚠️ Con deuda pendiente',
+  CANCELADO:  '❌ Cancelado',
+  CERRADO:    '✅ Cerrado',
 };
 
 export const consultaFlow = addKeyword<Provider>([
@@ -40,9 +34,8 @@ export const consultaFlow = addKeyword<Provider>([
   })
   .addAction({ capture: true }, async (ctx, { provider, endFlow }) => {
     const input = ctx.body.trim();
-    if (input.toLowerCase() === 'cancelar') {
-      return endFlow('👋 De acuerdo. Escribe *menú* cuando quieras.');
-    }
+    if (input.toLowerCase() === 'cancelar')
+      return endFlow('Escribe *menú* cuando quieras. 👋');
 
     const contrato = await consultarReserva(input);
 
@@ -51,7 +44,7 @@ export const consultaFlow = addKeyword<Provider>([
         from: ctx.from,
         text:
           `❌ No encontré ninguna reserva activa con *${input}*.\n\n` +
-          `Verifica que el dato sea correcto e inténtalo de nuevo, o escribe *menú* para volver.`,
+          `Verifica el dato e inténtalo de nuevo, o escribe *menú* para volver.`,
       });
       return endFlow();
     }
@@ -62,7 +55,9 @@ export const consultaFlow = addKeyword<Provider>([
 
     const prendasTxt = contrato.prendas
       .map((p) => {
-        const v = p.variacion ? ` (${p.variacion.nombre_variacion}${p.variacion.talla ? ` · ${p.variacion.talla}` : ''})` : '';
+        const v = p.variacion
+          ? ` (${p.variacion.nombre_variacion}${p.variacion.talla ? ` · ${p.variacion.talla}` : ''})`
+          : '';
         return `  • ${p.modelo}${v} × ${p.total} — Bs. ${fmt(p.subtotal)}`;
       })
       .join('\n');
@@ -81,7 +76,7 @@ export const consultaFlow = addKeyword<Provider>([
         `📅 Entrega: ${fmtDate(contrato.fecha_entrega)}\n` +
         `📅 Devolución: ${fmtDate(contrato.fecha_devolucion)}\n` +
         `━━━━━━━━━━━━━━━━━━━━━━━━\n` +
-        `👕 *Prendas:*\n${prendasTxt}\n` +
+        `👕 Prendas:\n${prendasTxt}\n` +
         `━━━━━━━━━━━━━━━━━━━━━━━━\n` +
         `💰 Total: Bs. ${fmt(contrato.total)}\n` +
         `✅ Pagado: Bs. ${fmt(contrato.total_pagado)}\n` +
