@@ -2,6 +2,7 @@ import { cookies } from "next/headers";
 import { ContratosClient } from "./_components/eventos-client";
 
 const BACKEND = process.env.BACKEND_URL ?? "http://localhost:3001";
+const CLIENT_BACKEND = "/api/backend";
 
 async function fetchJson<T>(url: string, token: string): Promise<T> {
   try {
@@ -36,7 +37,7 @@ export default async function ContratosPage() {
       sucursales={sucursales as any[]}
       conjuntos={conjuntos as any[]}
       token={token}
-      backendUrl={BACKEND}
+      backendUrl={CLIENT_BACKEND}
     />
   );
 }

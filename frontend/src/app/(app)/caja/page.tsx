@@ -2,6 +2,7 @@ import { cookies } from "next/headers";
 import { CajaClient } from "./_components/caja-client";
 
 const BACKEND = process.env.BACKEND_URL ?? "http://localhost:3001";
+const CLIENT_BACKEND = "/api/backend";
 
 async function fetchJson<T>(url: string, token: string, fallback: T): Promise<T> {
   try {
@@ -39,7 +40,7 @@ export default async function CajaPage() {
       initialStats={stats as any}
       initialCuentas={cuentas as any[]}
       token={token}
-      backendUrl={BACKEND}
+      backendUrl={CLIENT_BACKEND}
       currentUser={currentUser as any}
     />
   );

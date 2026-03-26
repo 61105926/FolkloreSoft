@@ -2,6 +2,7 @@ import { cookies } from "next/headers";
 import { UsuariosClient } from "./_components/usuarios-client";
 
 const BACKEND = process.env.BACKEND_URL ?? "http://localhost:3001";
+const CLIENT_BACKEND = "/api/backend";
 
 export interface UsuarioRow {
   id: number;
@@ -45,7 +46,7 @@ export default async function UsuariosPage() {
       initialUsuarios={usuarios}
       sucursales={sucursales}
       token={token}
-      backendUrl={BACKEND}
+      backendUrl={CLIENT_BACKEND}
     />
   );
 }

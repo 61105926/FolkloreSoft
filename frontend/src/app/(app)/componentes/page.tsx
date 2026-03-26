@@ -2,6 +2,7 @@ import { cookies } from "next/headers";
 import { ComponentesClient } from "./_components/componentes-client";
 
 const BACKEND = process.env.BACKEND_URL ?? "http://localhost:3001";
+const CLIENT_BACKEND = "/api/backend";
 
 async function fetchJson<T>(url: string, token: string): Promise<T> {
   try {
@@ -26,7 +27,7 @@ export default async function ComponentesPage() {
     <ComponentesClient
       initialComponentes={componentes as any[]}
       token={token}
-      backendUrl={BACKEND}
+      backendUrl={CLIENT_BACKEND}
     />
   );
 }

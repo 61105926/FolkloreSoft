@@ -2,6 +2,7 @@ import { cookies } from "next/headers";
 import { TransferenciasKanban } from "./_components/transferencias-kanban";
 
 const BACKEND = process.env.BACKEND_URL ?? "http://localhost:3001";
+const CLIENT_BACKEND = "/api/backend";
 
 export interface Transferencia {
   id: number;
@@ -88,7 +89,7 @@ export default async function SucursalesInventarioPage() {
       instanciasDisponibles={instanciasDisponibles}
       statsSucursales={statsSucursales}
       token={token}
-      backendUrl={BACKEND}
+      backendUrl={CLIENT_BACKEND}
     />
   );
 }

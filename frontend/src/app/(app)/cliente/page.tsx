@@ -2,6 +2,7 @@ import { cookies } from "next/headers";
 import { ClientesClient } from "./_components/clientes-client";
 
 const BACKEND = process.env.BACKEND_URL ?? "http://localhost:3001";
+const CLIENT_BACKEND = "/api/backend";
 
 export default async function ClientesPage() {
   const cookieStore = await cookies();
@@ -22,7 +23,7 @@ export default async function ClientesPage() {
     <ClientesClient
       initialClientes={clientes}
       token={token}
-      backendUrl={BACKEND}
+      backendUrl={CLIENT_BACKEND}
     />
   );
 }

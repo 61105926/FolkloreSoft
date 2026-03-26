@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { SucursalesClient } from "./_components/sucursales-client";
 
 const BACKEND = process.env.BACKEND_URL ?? "http://localhost:3001";
+const CLIENT_BACKEND = "/api/backend";
 
 export interface SucursalRow {
   id: number;
@@ -44,7 +45,7 @@ export default async function SucursalesGestionPage() {
     <SucursalesClient
       initialSucursales={sucursales}
       token={token}
-      backendUrl={BACKEND}
+      backendUrl={CLIENT_BACKEND}
     />
   );
 }
