@@ -35,7 +35,7 @@ RUN npm run build
 FROM node:20-alpine AS runner
 
 # Instalar MariaDB (compatible MySQL) + supervisord + OpenSSL (requerido por Prisma)
-RUN apk add --no-cache supervisor mariadb mariadb-client openssl
+RUN apk add --no-cache supervisor mariadb mariadb-client openssl php83 php83-pdo_mysql php83-session wget
 
 # Alpine trae mariadb-server.cnf con skip-networking — lo eliminamos y ponemos el nuestro
 RUN rm -f /etc/my.cnf.d/mariadb-server.cnf && \
@@ -45,6 +45,10 @@ RUN rm -f /etc/my.cnf.d/mariadb-server.cnf && \
 # Directorios de MySQL
 RUN mkdir -p /var/lib/mysql /run/mysqld && \
     chown -R mysql:mysql /var/lib/mysql /run/mysqld
+
+# Descargar Adminer (gestor web de base de datos)
+RUN mkdir -p /app/adminer && \
+    wget -q -O /app/adminer/index.php https://www.adminer.org/latest.php
 
 # ── Backend ──────────────────────────────────────────────────────────
 WORKDIR /app/backend
@@ -72,6 +76,6 @@ RUN chmod +x /init.sh
 WORKDIR /app
 
 # Frontend: 9002 | Backend: 9001 | MySQL: 9003 (acceso externo opcional)
-EXPOSE 9001 9002 9003
+EXPOSE 9001 9002 9003 9004
 
 ENTRYPOINT ["/init.sh"]
