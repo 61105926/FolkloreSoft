@@ -1,7 +1,7 @@
 import { addKeyword, EVENTS } from '@builderbot/bot';
-import { stockFlow } from './stock.flow';
-import { reservaFlow } from './reserva.flow';
-import { contactoFlow } from './contacto.flow';
+import { stockFlow } from './stock.flow.js';
+import { reservaFlow } from './reserva.flow.js';
+import { contactoFlow } from './contacto.flow.js';
 
 const MENU_TEXT = `¡Hola! 👋 Bienvenido a *FolkloreSoft Bolivia* 🎭
 

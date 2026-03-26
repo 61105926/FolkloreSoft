@@ -1,5 +1,5 @@
 import { addKeyword } from '@builderbot/bot';
-import { getConjuntos, calcularStock } from '../api';
+import { getConjuntos, calcularStock } from '../api.js';
 
 export const stockFlow = addKeyword(['1', '2', 'stock', 'disponible', 'trajes', 'precio', 'precios', 'danza'])
   .addAnswer(

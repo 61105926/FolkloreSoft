@@ -1,0 +1,20 @@
+[2026-03-26T06:19:16.430Z] Connection update: connecting
+[2026-03-26T06:19:20.913Z] Connection update: close
+[2026-03-26T06:19:20.914Z] Connection closed. Status: 405, Reason: Connection Failure
+[2026-03-26T06:19:20.914Z] Critical error, stopping reconnection attempts
+[2026-03-26T06:19:26.996Z] Uncaught Exception: [Error: ENOENT: no such file or directory, open 'C:\Users\Nicol\Desktop\FOLCKLORE\bot\bot.qr.png'] {
+  errno: -4058,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: 'C:\\Users\\Nicol\\Desktop\\FOLCKLORE\\bot\\bot.qr.png'
+}
+[2026-03-26T06:19:41.758Z] Connection update: connecting
+[2026-03-26T06:19:44.242Z] Connection update: close
+[2026-03-26T06:19:44.242Z] Connection closed. Status: 405, Reason: Connection Failure
+[2026-03-26T06:19:44.242Z] Critical error, stopping reconnection attempts
+[2026-03-26T06:19:46.157Z] Uncaught Exception: [Error: ENOENT: no such file or directory, open 'C:\Users\Nicol\Desktop\FOLCKLORE\bot\bot.qr.png'] {
+  errno: -4058,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: 'C:\\Users\\Nicol\\Desktop\\FOLCKLORE\\bot\\bot.qr.png'
+}

@@ -2,17 +2,19 @@
   "name": "folcklore-bot",
   "version": "1.0.0",
   "description": "WhatsApp bot para consultas de FolkloreSoft",
+  "type": "module",
   "main": "dist/app.js",
   "scripts": {
-    "dev": "ts-node src/app.ts",
+    "dev": "node --loader ts-node/esm src/app.ts",
     "build": "tsc",
     "start": "node dist/app.js"
   },
   "dependencies": {
     "@builderbot/bot": "latest",
-    "@builderbot/provider-baileys": "latest",
     "@builderbot/database-json": "latest",
-    "axios": "^1.6.0"
+    "@builderbot/provider-baileys": "latest",
+    "axios": "^1.6.0",
+    "dotenv": "^17.3.1"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",

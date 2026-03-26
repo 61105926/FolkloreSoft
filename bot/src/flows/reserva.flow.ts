@@ -1,5 +1,5 @@
 import { addKeyword } from '@builderbot/bot';
-import { getConjuntos } from '../api';
+import { getConjuntos } from '../api.js';
 
 // Guardamos los datos del cliente paso a paso en el estado del flujo
 export const reservaFlow = addKeyword(['3', 'reservar', 'reserva', 'quiero reservar'])
