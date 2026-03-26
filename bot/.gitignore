@@ -1,0 +1,5 @@
+node_modules/
+dist/
+.env
+# Sesión de WhatsApp (no subir a git - se regenera con QR)
+bot_sessions/
