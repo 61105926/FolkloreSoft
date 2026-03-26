@@ -607,11 +607,29 @@ export class ContratosService {
       },
     });
     if (data.instanciaConjuntoId) {
+      // Check if the assigned instance was one of this contract's own reservations
+      const inst = await this.prisma.instanciaConjunto.findUnique({
+        where: { id: data.instanciaConjuntoId },
+        select: { contratoReservaId: true },
+      });
       await this.prisma.instanciaConjunto.update({
         where: { id: data.instanciaConjuntoId },
-        // Clear contratoReservaId if this instance was reserved for this contrato
         data: { estado: EstadoInstanciaConjunto.ALQUILADO, contratoReservaId: null },
       });
+      // If the assigned instance was NOT from this contract's reservation pool,
+      // release one of the contract's RESERVADO instances to avoid double-counting
+      if (inst?.contratoReservaId !== contratoId) {
+        const spare = await this.prisma.instanciaConjunto.findFirst({
+          where: { contratoReservaId: contratoId, estado: EstadoInstanciaConjunto.RESERVADO },
+          select: { id: true },
+        });
+        if (spare) {
+          await this.prisma.instanciaConjunto.update({
+            where: { id: spare.id },
+            data: { estado: EstadoInstanciaConjunto.DISPONIBLE, contratoReservaId: null },
+          });
+        }
+      }
     }
     await this.log(contratoId, 'PARTICIPANTE_AGREGADO',
       `Participante agregado: ${data.nombre}${data.tipo ? ` (${data.tipo})` : ''}`);
@@ -633,20 +651,40 @@ export class ContratosService {
     // Handle instance reassignment
     const old = await this.prisma.contratoParticipante.findUnique({
       where: { id },
-      select: { instanciaConjuntoId: true },
+      select: { instanciaConjuntoId: true, contratoId: true },
     });
     if (old?.instanciaConjuntoId !== undefined && old.instanciaConjuntoId !== instanciaConjuntoId) {
       if (old.instanciaConjuntoId) {
+        // Release old instance; if the new one is also from this contract's pool,
+        // re-reserve this one so the count stays stable
         await this.prisma.instanciaConjunto.update({
           where: { id: old.instanciaConjuntoId },
           data: { estado: EstadoInstanciaConjunto.DISPONIBLE },
         });
       }
       if (instanciaConjuntoId) {
+        const newInst = await this.prisma.instanciaConjunto.findUnique({
+          where: { id: instanciaConjuntoId },
+          select: { contratoReservaId: true },
+        });
         await this.prisma.instanciaConjunto.update({
           where: { id: instanciaConjuntoId },
           data: { estado: EstadoInstanciaConjunto.ALQUILADO, contratoReservaId: null },
         });
+        // If new instance was NOT from this contract's reservation pool,
+        // release one spare reservation to avoid double-counting
+        if (newInst?.contratoReservaId !== old.contratoId) {
+          const spare = await this.prisma.instanciaConjunto.findFirst({
+            where: { contratoReservaId: old.contratoId, estado: EstadoInstanciaConjunto.RESERVADO },
+            select: { id: true },
+          });
+          if (spare) {
+            await this.prisma.instanciaConjunto.update({
+              where: { id: spare.id },
+              data: { estado: EstadoInstanciaConjunto.DISPONIBLE, contratoReservaId: null },
+            });
+          }
+        }
       }
     }
 
