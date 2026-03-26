@@ -1,80 +1,88 @@
 import { addKeyword } from '@builderbot/bot';
+import { SendWaveProvider as Provider } from '@gamastudio/sendwave-provider';
 import { getConjuntos } from '../api.js';
 
-// Guardamos los datos del cliente paso a paso en el estado del flujo
-export const reservaFlow = addKeyword(['3', 'reservar', 'reserva', 'quiero reservar'])
-  .addAnswer(
-    '¡Perfecto! Vamos a registrar tu reserva 📋\n\n¿Cuál es tu *nombre completo*?',
-    { capture: true },
-    async (ctx, { state }) => {
-      await state.update({ nombre: ctx.body.trim() });
+export const reservaFlow = addKeyword<Provider>(['3', 'reservar', 'reserva', 'quiero reservar', '📋 hacer reserva'])
+  .addAction(async (ctx, { provider }) => {
+    await provider.sendText({
+      from: ctx.from,
+      text: '📋 *Solicitud de reserva*\n\nVamos a registrar tus datos. Escribe *cancelar* en cualquier momento para salir.\n\n¿Cuál es tu *nombre completo*?',
+    });
+  })
+  .addAction({ capture: true }, async (ctx, { state, provider, endFlow }) => {
+    if (ctx.body.trim().toLowerCase() === 'cancelar') {
+      return endFlow('Reserva cancelada. Escribe *menú* cuando quieras. 👋');
     }
-  )
-  .addAnswer('¿Tu número de *CI* (cédula de identidad)?', { capture: true }, async (ctx, { state }) => {
+    await state.update({ nombre: ctx.body.trim() });
+    await provider.sendText({ from: ctx.from, text: '🪪 ¿Tu número de *CI* (cédula de identidad)?' });
+  })
+  .addAction({ capture: true }, async (ctx, { state, provider, endFlow }) => {
+    if (ctx.body.trim().toLowerCase() === 'cancelar') return endFlow('Reserva cancelada. Escribe *menú* cuando quieras. 👋');
     await state.update({ ci: ctx.body.trim() });
+    await provider.sendText({ from: ctx.from, text: '📱 ¿Tu número de *celular*?' });
   })
-  .addAnswer('¿Tu número de *celular* (para contactarte)?', { capture: true }, async (ctx, { state }) => {
+  .addAction({ capture: true }, async (ctx, { state, provider, endFlow }) => {
+    if (ctx.body.trim().toLowerCase() === 'cancelar') return endFlow('Reserva cancelada. Escribe *menú* cuando quieras. 👋');
     await state.update({ celular: ctx.body.trim() });
+
+    // Mostrar lista de danzas disponibles
+    const conjuntos = await getConjuntos();
+    const danzas = [...new Set(conjuntos.map((c) => c.danza))];
+
+    await provider.sendList({
+      from: ctx.from,
+      list: {
+        title: '🎭 Elige la danza',
+        description: '¿Qué traje necesitas?',
+        button: 'Ver danzas',
+        content: danzas.map((d) => `🎶 ${d}`),
+      },
+    });
   })
-  .addAnswer(
-    '¿Qué *danza* necesitas? (Tinku, Caporales, Morenada, Diablada, Saya...)',
-    { capture: true },
-    async (ctx, { state, flowDynamic }) => {
-      const danza = ctx.body.trim();
-      const conjuntos = await getConjuntos();
-      const opciones = conjuntos.filter((c) =>
-        c.danza.toLowerCase().includes(danza.toLowerCase())
-      );
+  .addAction({ capture: true }, async (ctx, { state, provider, endFlow }) => {
+    if (ctx.body.trim().toLowerCase() === 'cancelar') return endFlow('Reserva cancelada. Escribe *menú* cuando quieras. 👋');
+    const danza = ctx.body.trim().replace(/^🎶\s*/u, '');
+    const conjuntos = await getConjuntos();
+    const opciones = conjuntos.filter((c) => c.danza.toLowerCase().includes(danza.toLowerCase()));
 
-      if (!opciones.length) {
-        await flowDynamic(`No encontré trajes para *${danza}*. Por favor contacta a un asesor escribiendo *4*.`);
-        return;
-      }
-
-      await state.update({ danza, conjuntoId: opciones[0].id, conjuntoNombre: opciones[0].nombre });
-
-      if (opciones.length === 1) {
-        await flowDynamic(`Traje seleccionado: *${opciones[0].nombre}*`);
-      } else {
-        const lista = opciones.map((c, i) => `${i + 1}. ${c.nombre}`).join('\n');
-        await flowDynamic(`Encontré varios trajes:\n${lista}\n\nEl sistema seleccionará el primero disponible.`);
-      }
+    if (!opciones.length) {
+      await provider.sendText({ from: ctx.from, text: `No encontré trajes para *${danza}*.\n\nEscribe *menú* para volver.` });
+      return;
     }
-  )
-  .addAnswer('¿Cuántos trajes necesitas?', { capture: true }, async (ctx, { state }) => {
-    const n = parseInt(ctx.body.trim()) || 1;
-    await state.update({ cantidad: n });
+    await state.update({ danza, conjuntoNombre: opciones[0].nombre, conjuntoId: opciones[0].id });
+    await provider.sendText({ from: ctx.from, text: `✅ Traje: *${opciones[0].nombre}*\n\n🔢 ¿Cuántos trajes necesitas?` });
   })
-  .addAnswer(
-    '¿Fecha del evento? (formato DD/MM/AAAA)',
-    { capture: true },
-    async (ctx, { state }) => {
-      await state.update({ fechaEvento: ctx.body.trim() });
-    }
-  )
-  .addAnswer(
-    '¿Nombre del evento o institución?',
-    { capture: true },
-    async (ctx, { state, flowDynamic }) => {
-      await state.update({ evento: ctx.body.trim() });
+  .addAction({ capture: true }, async (ctx, { state, provider, endFlow }) => {
+    if (ctx.body.trim().toLowerCase() === 'cancelar') return endFlow('Reserva cancelada. Escribe *menú* cuando quieras. 👋');
+    await state.update({ cantidad: parseInt(ctx.body.trim()) || 1 });
+    await provider.sendText({ from: ctx.from, text: '📅 ¿Fecha del evento? (ejemplo: 25/06/2026)' });
+  })
+  .addAction({ capture: true }, async (ctx, { state, provider, endFlow }) => {
+    if (ctx.body.trim().toLowerCase() === 'cancelar') return endFlow('Reserva cancelada. Escribe *menú* cuando quieras. 👋');
+    await state.update({ fechaEvento: ctx.body.trim() });
+    await provider.sendText({ from: ctx.from, text: '🏫 ¿Nombre del evento o institución?' });
+  })
+  .addAction({ capture: true }, async (ctx, { state, provider, endFlow }) => {
+    if (ctx.body.trim().toLowerCase() === 'cancelar') return endFlow('Reserva cancelada. Escribe *menú* cuando quieras. 👋');
+    await state.update({ evento: ctx.body.trim() });
 
-      const s = state.getMyState() as Record<string, string>;
-      const resumen =
-        `✅ *Resumen de tu solicitud de reserva:*\n\n` +
+    const s = state.getMyState() as Record<string, string>;
+
+    await provider.sendText({
+      from: ctx.from,
+      text:
+        `✅ *Solicitud de reserva enviada*\n\n` +
         `👤 Nombre: ${s.nombre}\n` +
         `🪪 CI: ${s.ci}\n` +
         `📱 Celular: ${s.celular}\n` +
-        `🎭 Traje: ${s.conjuntoNombre} (${s.danza})\n` +
+        `🎭 Traje: ${s.conjuntoNombre}\n` +
         `🔢 Cantidad: ${s.cantidad}\n` +
         `📅 Fecha evento: ${s.fechaEvento}\n` +
         `🏫 Evento: ${s.evento}\n\n` +
-        `Un asesor de *FolkloreSoft* se pondrá en contacto contigo para confirmar la reserva y coordinar el anticipo.\n\n` +
-        `⏰ Horario de atención: Lun–Sáb 8:00–20:00\n\n` +
-        `Escribe *menú* para volver al inicio.`;
+        `Un asesor de *FolkloreSoft* se comunicará contigo para confirmar y coordinar el anticipo.\n\n` +
+        `⏰ Atención: Lun–Sáb 8:00–20:00\n\n` +
+        `Escribe *menú* para volver al inicio.`,
+    });
 
-      await flowDynamic(resumen);
-
-      // Aquí podrías hacer POST a tu API para guardar la solicitud
-      // await axios.post(`${API_URL}/bot/solicitudes`, { ...s });
-    }
-  );
+    endFlow();
+  });
