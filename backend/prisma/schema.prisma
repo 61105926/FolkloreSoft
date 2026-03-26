@@ -139,6 +139,7 @@ model ConjuntoComponente {
 
 enum EstadoInstanciaConjunto {
   DISPONIBLE
+  RESERVADO
   ALQUILADO
   EN_TRANSFERENCIA
   DADO_DE_BAJA
@@ -151,10 +152,12 @@ model InstanciaConjunto {
   sucursalId              Int
   estado                  EstadoInstanciaConjunto   @default(DISPONIBLE)
   notas                   String?                   @db.Text
+  contratoReservaId       Int?
   createdAt               DateTime                  @default(now())
   updatedAt               DateTime                  @updatedAt
   variacion               VariacionConjunto         @relation(fields: [variacionId], references: [id])
   sucursal                Sucursal                  @relation(fields: [sucursalId], references: [id])
+  contratoReserva         ContratoAlquiler?         @relation("instanciasReservadas", fields: [contratoReservaId], references: [id], onDelete: SetNull)
   componentes             InstanciaComponente[]
   transferencias          Transferencia[]
   contratoParticipantes   ContratoParticipante[]
@@ -329,6 +332,7 @@ model ContratoAlquiler {
   participantes         ContratoParticipante[]
   historial             ContratoHistorial[]
   movimientosCaja       MovimientoCaja[]
+  instanciasReservadas  InstanciaConjunto[]    @relation("instanciasReservadas")
 }
 
 model ContratoHistorial {

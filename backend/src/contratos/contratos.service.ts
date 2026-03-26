@@ -215,7 +215,43 @@ export class ContratosService {
         `Garantía(s) en efectivo de Bs. ${totalGar.toFixed(2)} registradas en caja — cobrado por ${userName}`);
     }
 
+    // Auto-reserve available instances for each prenda
+    for (const prenda of prendaCreate) {
+      if (prenda.variacionId && prenda.total > 0) {
+        await this.autoReservarInstancias(contrato.id, prenda.variacionId, prenda.total, actor?.sucursalId ?? undefined);
+      }
+    }
+
     return contrato;
+  }
+
+  /** Pick up to `cantidad` DISPONIBLE instances from a variacion and mark them RESERVADO */
+  private async autoReservarInstancias(contratoId: number, variacionId: number, cantidad: number, sucursalId?: number) {
+    const instancias = await this.prisma.instanciaConjunto.findMany({
+      where: {
+        variacionId,
+        estado: EstadoInstanciaConjunto.DISPONIBLE,
+        ...(sucursalId ? { sucursalId } : {}),
+      },
+      take: cantidad,
+      orderBy: { id: 'asc' },
+      select: { id: true },
+    });
+
+    if (instancias.length === 0) return;
+
+    await this.prisma.instanciaConjunto.updateMany({
+      where: { id: { in: instancias.map((i) => i.id) } },
+      data: { estado: EstadoInstanciaConjunto.RESERVADO, contratoReservaId: contratoId },
+    });
+  }
+
+  /** Release all RESERVADO instances linked to a contrato */
+  private async liberarReservas(contratoId: number) {
+    await this.prisma.instanciaConjunto.updateMany({
+      where: { contratoReservaId: contratoId, estado: EstadoInstanciaConjunto.RESERVADO },
+      data: { estado: EstadoInstanciaConjunto.DISPONIBLE, contratoReservaId: null },
+    });
   }
 
   async update(id: number, data: {
@@ -251,6 +287,11 @@ export class ContratosService {
 
   async entregar(id: number) {
     await this.findOne(id);
+    // Promote RESERVADO → ALQUILADO when contract is delivered
+    await this.prisma.instanciaConjunto.updateMany({
+      where: { contratoReservaId: id, estado: EstadoInstanciaConjunto.RESERVADO },
+      data: { estado: EstadoInstanciaConjunto.ALQUILADO, contratoReservaId: null },
+    });
     const result = await this.prisma.contratoAlquiler.update({
       where: { id },
       data: { estado: EstadoContrato.ENTREGADO, fecha_entrega_real: new Date() },
@@ -262,6 +303,10 @@ export class ContratosService {
 
   async iniciarUso(id: number) {
     await this.findOne(id);
+    await this.prisma.instanciaConjunto.updateMany({
+      where: { contratoReservaId: id, estado: EstadoInstanciaConjunto.RESERVADO },
+      data: { estado: EstadoInstanciaConjunto.ALQUILADO, contratoReservaId: null },
+    });
     const result = await this.prisma.contratoAlquiler.update({
       where: { id },
       data: { estado: EstadoContrato.EN_USO },
@@ -286,6 +331,8 @@ export class ContratosService {
         data: { estado: EstadoInstanciaConjunto.DISPONIBLE },
       });
     }
+    // Liberar instancias auto-reservadas que no fueron asignadas
+    await this.liberarReservas(id);
 
     const result = await this.prisma.contratoAlquiler.update({
       where: { id },
@@ -327,6 +374,7 @@ export class ContratosService {
         data: { estado: EstadoInstanciaConjunto.DISPONIBLE },
       });
     }
+    await this.liberarReservas(id);
     const result = await this.prisma.contratoAlquiler.update({
       where: { id },
       data: { estado: EstadoContrato.CERRADO },
@@ -340,13 +388,14 @@ export class ContratosService {
     const contrato = await this.findOne(id);
     const instanciaIds = (contrato.participantes ?? [])
       .map((p) => (p as { instanciaConjuntoId?: number }).instanciaConjuntoId)
-      .filter((id): id is number => !!id);
+      .filter((iid): iid is number => !!iid);
     if (instanciaIds.length > 0) {
       await this.prisma.instanciaConjunto.updateMany({
         where: { id: { in: instanciaIds } },
         data: { estado: EstadoInstanciaConjunto.DISPONIBLE },
       });
     }
+    await this.liberarReservas(id);
     const result = await this.prisma.contratoAlquiler.update({
       where: { id },
       data: { estado: EstadoContrato.CANCELADO },
@@ -383,6 +432,7 @@ export class ContratosService {
         data: { estado: EstadoInstanciaConjunto.DISPONIBLE },
       });
     }
+    await this.liberarReservas(id);
     await this.prisma.movimientoCaja.deleteMany({ where: { contratoId: id } });
     return this.prisma.contratoAlquiler.delete({ where: { id } });
   }
@@ -559,7 +609,8 @@ export class ContratosService {
     if (data.instanciaConjuntoId) {
       await this.prisma.instanciaConjunto.update({
         where: { id: data.instanciaConjuntoId },
-        data: { estado: EstadoInstanciaConjunto.ALQUILADO },
+        // Clear contratoReservaId if this instance was reserved for this contrato
+        data: { estado: EstadoInstanciaConjunto.ALQUILADO, contratoReservaId: null },
       });
     }
     await this.log(contratoId, 'PARTICIPANTE_AGREGADO',
@@ -594,7 +645,7 @@ export class ContratosService {
       if (instanciaConjuntoId) {
         await this.prisma.instanciaConjunto.update({
           where: { id: instanciaConjuntoId },
-          data: { estado: EstadoInstanciaConjunto.ALQUILADO },
+          data: { estado: EstadoInstanciaConjunto.ALQUILADO, contratoReservaId: null },
         });
       }
     }

@@ -23,7 +23,7 @@ interface ConjuntoComponente {
 interface Instancia {
   id: number;
   codigo: string;
-  estado: "DISPONIBLE" | "ALQUILADO" | "EN_TRANSFERENCIA" | "DADO_DE_BAJA";
+  estado: "DISPONIBLE" | "RESERVADO" | "ALQUILADO" | "EN_TRANSFERENCIA" | "DADO_DE_BAJA";
   sucursal: { id: number; nombre: string };
 }
 
@@ -129,10 +129,10 @@ function formatPrecio(precio: string) {
 function getStats(c: Conjunto) {
   const all = c.variaciones.flatMap((v) => v.instancias);
   const total = all.length;
-  const disponibles    = all.filter((i) => i.estado === "DISPONIBLE").length;
-  const alquilados     = all.filter((i) => i.estado === "ALQUILADO").length;
-  const reservados     = all.filter((i) => i.estado === "EN_TRANSFERENCIA").length;
-  const limpieza       = all.filter((i) => i.estado === "DADO_DE_BAJA").length;
+  const disponibles = all.filter((i) => i.estado === "DISPONIBLE").length;
+  const alquilados  = all.filter((i) => i.estado === "ALQUILADO").length;
+  const reservados  = all.filter((i) => i.estado === "RESERVADO").length;
+  const limpieza    = all.filter((i) => i.estado === "DADO_DE_BAJA").length;
   const pct = total > 0 ? Math.round((disponibles / total) * 100) : 0;
   return { total, disponibles, alquilados, reservados, limpieza, pct };
 }
@@ -1366,10 +1366,11 @@ function ConjuntoModal({
 // ── Detalle Conjunto Modal ────────────────────────────────────────────────────
 
 const ESTADO_BADGE: Record<string, { label: string; dot: string; badge: string }> = {
-  DISPONIBLE:       { label: "Disponible",  dot: "bg-coca",         badge: "bg-coca/10 text-coca border-coca/20" },
-  ALQUILADO:        { label: "Alquilado",   dot: "bg-gold",         badge: "bg-gold/10 text-gold border-gold/20" },
-  EN_TRANSFERENCIA: { label: "Reservado",   dot: "bg-primary",      badge: "bg-primary/10 text-primary border-primary/20" },
-  DADO_DE_BAJA:     { label: "Baja",        dot: "bg-crimson",      badge: "bg-crimson/10 text-crimson border-crimson/20" },
+  DISPONIBLE:       { label: "Disponible",    dot: "bg-coca",         badge: "bg-coca/10 text-coca border-coca/20" },
+  RESERVADO:        { label: "Reservado",     dot: "bg-primary",      badge: "bg-primary/10 text-primary border-primary/20" },
+  ALQUILADO:        { label: "Alquilado",     dot: "bg-gold",         badge: "bg-gold/10 text-gold border-gold/20" },
+  EN_TRANSFERENCIA: { label: "Transferencia", dot: "bg-amber-500",    badge: "bg-amber-500/10 text-amber-600 border-amber-500/20" },
+  DADO_DE_BAJA:     { label: "Baja",          dot: "bg-crimson",      badge: "bg-crimson/10 text-crimson border-crimson/20" },
 };
 
 function DetalleConjuntoModal({
@@ -1555,7 +1556,7 @@ function DetalleConjuntoModal({
                       const t = selectedVar.instancias.length;
                       const d = selectedVar.instancias.filter((i) => i.estado === "DISPONIBLE").length;
                       const a = selectedVar.instancias.filter((i) => i.estado === "ALQUILADO").length;
-                      const r = selectedVar.instancias.filter((i) => i.estado === "EN_TRANSFERENCIA").length;
+                      const r = selectedVar.instancias.filter((i) => i.estado === "RESERVADO").length;
                       return (
                         <div className="mt-2.5 space-y-1.5">
                           <div className="h-1.5 bg-muted rounded-full overflow-hidden flex">
