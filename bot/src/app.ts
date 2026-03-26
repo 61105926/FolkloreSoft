@@ -20,11 +20,17 @@ import { setupCrons }   from './cron.js';
 const PORT        = parseInt(process.env.BOT_PORT    ?? '3002');
 const NOTIFY_PORT = parseInt(process.env.NOTIFY_PORT ?? '3003');
 
-// Suprimir el unhandledRejection interno de BuilderBot (queue timeout cosmético)
-process.on('unhandledRejection', (reason) => {
-  if (reason instanceof Error && reason.message?.includes('Queue item timeout')) return;
-  console.error('[Bot] Unhandled rejection:', reason);
-});
+// El provider SendWave registra su propio console.error para unhandledRejection.
+// Filtramos el mensaje cosmético de BuilderBot para no ensuciar los logs.
+const _ce = console.error.bind(console);
+console.error = (...args: unknown[]) => {
+  if (
+    args[0] === '[Global] Unhandled rejection:' &&
+    args[1] instanceof Error &&
+    args[1].message?.includes('Queue item timeout')
+  ) return;
+  _ce(...args);
+};
 
 // Envuelve los métodos sendText/sendImage del provider con un timeout de 20 s
 // para que nunca bloqueen el queue indefinidamente
@@ -79,11 +85,10 @@ async function main() {
 
   patchProviderTimeout(adapterProvider as unknown as Record<string, unknown>);
 
-  const { httpServer } = await createBot({
-    flow:     adapterFlow,
-    provider: adapterProvider,
-    database: adapterDB,
-  });
+  const { httpServer } = await createBot(
+    { flow: adapterFlow, provider: adapterProvider, database: adapterDB },
+    { queue: { timeout: 300_000, concurrencyLimit: 15 } }, // 5 min por paso
+  );
 
   httpServer(PORT);
 
