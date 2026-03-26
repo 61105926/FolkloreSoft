@@ -1355,7 +1355,9 @@ export function ContratoModal({
                           >
                             <option value="">Sin instancia asignada</option>
                             {instanciaOptions.map((inst) => (
-                              <option key={inst.id} value={inst.id}>{inst.codigo}</option>
+                              <option key={inst.id} value={inst.id}>
+                                {inst.codigo}{(inst as { estado?: string }).estado === "RESERVADO" ? " ★" : ""}
+                              </option>
                             ))}
                           </select>
                         </div>

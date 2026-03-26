@@ -893,11 +893,18 @@ export class ContratosService {
   async getInstanciasDisponibles(prendaId: number) {
     const prenda = await this.prisma.contratoPrenda.findUnique({
       where: { id: prendaId },
-      select: { variacionId: true },
+      select: { variacionId: true, contratoId: true },
     });
     if (!prenda || !prenda.variacionId) return [];
+    // Include DISPONIBLE + RESERVADO instances that belong to this contract
     return this.prisma.instanciaConjunto.findMany({
-      where: { variacionId: prenda.variacionId, estado: EstadoInstanciaConjunto.DISPONIBLE },
+      where: {
+        variacionId: prenda.variacionId,
+        OR: [
+          { estado: EstadoInstanciaConjunto.DISPONIBLE },
+          { estado: EstadoInstanciaConjunto.RESERVADO, contratoReservaId: prenda.contratoId },
+        ],
+      },
       select: { id: true, codigo: true, estado: true },
       orderBy: { codigo: 'asc' },
     });
