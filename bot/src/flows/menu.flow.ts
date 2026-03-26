@@ -22,13 +22,13 @@ export async function enviarMenu(ctx: Ctx, provider: Provider) {
     from: ctx.from,
     text:
       `🎭 *FolkloreSoft Bolivia — ${saludoPorHora()}*\n\n` +
-      `1️⃣  Ver disponibilidad de trajes\n` +
-      `2️⃣  Cotizar precio\n` +
-      `3️⃣  Hacer una reserva\n` +
-      `4️⃣  Consultar mi reserva\n` +
-      `5️⃣  Cancelar reserva\n` +
-      `6️⃣  Hablar con un asesor\n\n` +
-      `_Responde con el número o escribe tu consulta._`,
+      `📦 *disponibilidad* — Ver trajes disponibles\n` +
+      `💰 *cotizar* — Consultar precio\n` +
+      `📋 *reservar* — Hacer una reserva\n` +
+      `🔍 *consultar* — Ver mi reserva\n` +
+      `❌ *cancelar* — Cancelar reserva\n` +
+      `📞 *asesor* — Hablar con una persona\n\n` +
+      `_Escribe la palabra resaltada o tu consulta._`,
   });
 }
 
@@ -48,31 +48,31 @@ export const volverFlow = addKeyword<Provider>([
     await enviarMenu(ctx, provider);
   });
 
-// ── Opciones del menú (números 1-6 y palabras clave directas) ─────────────────
+// ── Opciones del menú — SOLO palabras clave completas (nunca dígitos sueltos)
+// Los números del menú son decorativos; el usuario escribe la palabra.
 export const opcionFlow = addKeyword<Provider>([
-  '1', '2', '3', '4', '5', '6',
-  'disponibilidad', 'trajes', 'catalogo', 'catálogo', 'stock',
-  'cotizar', 'cotizacion', 'cotización', 'precio', 'precios',
-  'reservar', 'reserva', 'alquilar',
-  'consultar', 'mi reserva', 'ver reserva',
-  'cancelar', 'anular',
-  'asesor', 'hablar',
+  'disponibilidad', 'trajes', 'catalogo', 'catálogo', 'stock', 'ver trajes',
+  'cotizar', 'cotizacion', 'cotización', 'precio', 'precios', 'cuanto cuesta', 'cuánto cuesta',
+  'reservar', 'alquilar', 'quiero reservar',
+  'consultar', 'mi reserva', 'ver reserva', 'ver mi reserva',
+  'cancelar', 'anular', 'cancelar reserva',
+  'asesor', 'hablar con asesor', 'hablar con una persona',
   'admin', '/admin',
 ])
   .addAction(async (ctx, { gotoFlow, provider }) => {
     const o = ctx.body.trim().toLowerCase();
 
-    if (o === '1' || o.includes('disponibilidad') || o.includes('trajes') || o.includes('stock') || o.includes('catalogo') || o.includes('catálogo'))
+    if (o.includes('disponibilidad') || o.includes('trajes') || o.includes('stock') || o.includes('catalogo') || o.includes('catálogo'))
       return gotoFlow(stockFlow);
-    if (o === '2' || o.includes('cotizar') || o.includes('precio'))
+    if (o.includes('cotizar') || o.includes('precio') || o.includes('cuanto'))
       return gotoFlow(cotizacionFlow);
-    if (o === '3' || o.includes('reservar') || o.includes('alquilar') || (o.includes('reserva') && !o.includes('consultar') && !o.includes('cancelar') && !o.includes('mi')))
+    if (o.includes('reservar') || o.includes('alquilar'))
       return gotoFlow(reservaFlow);
-    if (o === '4' || o.includes('consultar') || o.includes('mi reserva') || o.includes('ver reserva'))
+    if (o.includes('consultar') || o.includes('mi reserva') || o.includes('ver reserva'))
       return gotoFlow(consultaFlow);
-    if (o === '5' || o.includes('cancelar') || o.includes('anular'))
+    if (o.includes('cancelar') || o.includes('anular'))
       return gotoFlow(cancelarFlow);
-    if (o === '6' || o.includes('asesor') || o.includes('hablar'))
+    if (o.includes('asesor') || o.includes('hablar'))
       return gotoFlow(contactoFlow);
     if (o === 'admin' || o === '/admin')
       return gotoFlow(adminFlow);
