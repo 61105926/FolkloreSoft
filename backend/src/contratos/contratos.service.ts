@@ -1,5 +1,6 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service.js';
+import { BotNotifyService } from './bot-notify.service.js';
 import { EstadoContrato, TipoContrato, CiudadContrato, TipoGarantia, FormaPago, TipoParticipante, EstadoInstanciaConjunto } from '@prisma/client';
 
 const INCLUDE_FULL = {
@@ -41,7 +42,10 @@ const INCLUDE_LIST = {
 
 @Injectable()
 export class ContratosService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly botNotify: BotNotifyService,
+  ) {}
 
   // ── Historial helper ──────────────────────────────────────────────────────
 
@@ -298,6 +302,8 @@ export class ContratosService {
       include: INCLUDE_FULL,
     });
     await this.log(id, 'ENTREGADO', 'Prendas entregadas al cliente');
+    // Enviar comprobante por WhatsApp
+    void this.botNotify.notificarEntrega(result as unknown as Parameters<BotNotifyService['notificarEntrega']>[0]);
     return result;
   }
 
@@ -633,6 +639,37 @@ export class ContratosService {
     }
     await this.log(contratoId, 'PARTICIPANTE_AGREGADO',
       `Participante agregado: ${data.nombre}${data.tipo ? ` (${data.tipo})` : ''}`);
+
+    // Notificar si se asignó una instancia física
+    if (data.instanciaConjuntoId) {
+      const contrato = await this.prisma.contratoAlquiler.findUnique({
+        where: { id: contratoId },
+        select: {
+          codigo: true,
+          cliente: { select: { nombre: true, celular: true } },
+          prendas: {
+            where: data.prendaId ? { id: data.prendaId } : {},
+            select: { modelo: true },
+            take: 1,
+          },
+        },
+      });
+      const instancia = await this.prisma.instanciaConjunto.findUnique({
+        where: { id: data.instanciaConjuntoId },
+        select: { codigo: true },
+      });
+      if (contrato && instancia) {
+        void this.botNotify.notificarPrendaLista({
+          clienteCelular:    contrato.cliente.celular,
+          clienteNombre:     contrato.cliente.nombre,
+          contratoCode:      contrato.codigo,
+          participanteNombre: data.nombre,
+          instanciaCodigo:   instancia.codigo,
+          prendaModelo:      contrato.prendas[0]?.modelo ?? 'Prenda',
+        });
+      }
+    }
+
     return p;
   }
 
@@ -789,6 +826,21 @@ export class ContratosService {
     const condDesc = data?.condicion === 'PERDIDA' ? 'prenda perdida' : data?.condicion === 'CON_DANOS' ? 'con daños' : 'correctamente';
     await this.log(p.contratoId, 'PARTICIPANTE_DEVOLVIO',
       `${p.nombre} devolvió ${condDesc}${data?.notas ? ` — ${data.notas}` : ''}`);
+
+    // Notificar devolución por WhatsApp
+    const contratoInfo = await this.prisma.contratoAlquiler.findUnique({
+      where: { id: p.contratoId },
+      select: { codigo: true, cliente: { select: { nombre: true, celular: true } } },
+    });
+    if (contratoInfo) {
+      void this.botNotify.notificarDevolucion({
+        clienteCelular:     contratoInfo.cliente.celular,
+        clienteNombre:      contratoInfo.cliente.nombre,
+        contratoCode:       contratoInfo.codigo,
+        participanteNombre: p.nombre,
+        instanciaCodigo:    (updated.instanciaConjunto as { codigo?: string } | null)?.codigo,
+      });
+    }
 
     return updated;
   }
