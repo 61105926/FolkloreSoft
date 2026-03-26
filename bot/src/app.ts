@@ -20,12 +20,37 @@ import { setupCrons }   from './cron.js';
 const PORT        = parseInt(process.env.BOT_PORT    ?? '3002');
 const NOTIFY_PORT = parseInt(process.env.NOTIFY_PORT ?? '3003');
 
+// Suprimir el unhandledRejection interno de BuilderBot (queue timeout cosmético)
+process.on('unhandledRejection', (reason) => {
+  if (reason instanceof Error && reason.message?.includes('Queue item timeout')) return;
+  console.error('[Bot] Unhandled rejection:', reason);
+});
+
+// Envuelve los métodos sendText/sendImage del provider con un timeout de 20 s
+// para que nunca bloqueen el queue indefinidamente
+function patchProviderTimeout(provider: Record<string, unknown>, ms = 20_000) {
+  for (const method of ['sendText', 'sendImage'] as const) {
+    if (typeof provider[method] !== 'function') continue;
+    const original = (provider[method] as (...a: unknown[]) => Promise<unknown>).bind(provider);
+    provider[method] = async (...args: unknown[]) => {
+      const timer = new Promise<void>((_, reject) =>
+        setTimeout(() => reject(new Error(`${method} timeout ${ms}ms`)), ms),
+      );
+      try {
+        return await Promise.race([original(...args), timer]);
+      } catch (e) {
+        console.warn(`[Bot] ${method} falló:`, (e as Error).message);
+      }
+    };
+  }
+}
+
 async function main() {
   const adapterDB = new MemoryDB();
 
   const adapterProvider = createSendWaveProvider({
-    name: 'FolkloreSoftBot',
-    apiKey: process.env.SENDWAVE_API_KEY ?? '',
+    name: 'dev',
+    apiKey: process.env.SENDWAVE_API_KEY ?? '4DA4CC84-96D0-4A6E-95AD-BE76F0961CFA',
     port: PORT,
     queueFlow: {
       enabled: true,
@@ -50,6 +75,8 @@ async function main() {
     // Admin
     adminFlow,
   ]);
+
+  patchProviderTimeout(adapterProvider as unknown as Record<string, unknown>);
 
   const { httpServer } = await createBot({
     flow:     adapterFlow,
