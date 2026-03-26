@@ -20,8 +20,7 @@ const ESTADO_LABEL: Record<string, string> = {
 };
 
 export const consultaFlow = addKeyword<Provider>([
-  '4', 'consultar', 'consulta', 'mi reserva', 'ver reserva',
-  'estado', 'buscar reserva', '🔍 consultar mi reserva',
+  'consultar', 'consulta', 'mi reserva', 'ver reserva', 'buscar reserva',
 ])
   .addAction(async (ctx, { provider }) => {
     await provider.sendText({

@@ -3,7 +3,7 @@ import { SendWaveProvider as Provider } from '@gamastudio/sendwave-provider';
 import { cancelarReserva } from '../api.js';
 
 export const cancelarFlow = addKeyword<Provider>([
-  '5', 'cancelar reserva', 'anular', 'anular reserva', '❌ cancelar reserva',
+  'cancelar reserva', 'anular', 'anular reserva',
 ])
   .addAction(async (ctx, { provider }) => {
     await provider.sendText({

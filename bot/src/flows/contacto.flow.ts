@@ -1,7 +1,7 @@
 import { addKeyword } from '@builderbot/bot';
 import { SendWaveProvider as Provider } from '@gamastudio/sendwave-provider';
 
-export const contactoFlow = addKeyword<Provider>(['4', 'asesor', 'humano', 'persona', 'ayuda', '📞 hablar con un asesor'])
+export const contactoFlow = addKeyword<Provider>(['asesor', 'humano', 'persona', 'hablar con asesor'])
   .addAction(async (ctx, { provider, blacklist, endFlow }) => {
     await provider.sendText({
       from: ctx.from,

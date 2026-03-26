@@ -3,7 +3,7 @@ import { SendWaveProvider as Provider } from '@gamastudio/sendwave-provider';
 import { getConjuntos, calcularStock } from '../api.js';
 
 export const stockFlow = addKeyword<Provider>([
-  '1', 'stock', 'disponible', 'trajes', 'disponibilidad', 'catálogo', 'catalogo',
+  'stock', 'disponible', 'trajes', 'disponibilidad', 'catálogo', 'catalogo',
 ])
   .addAction(async (ctx, { provider }) => {
     await provider.sendText({

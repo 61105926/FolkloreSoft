@@ -3,8 +3,7 @@ import { SendWaveProvider as Provider } from '@gamastudio/sendwave-provider';
 import { getConjuntos } from '../api.js';
 
 export const reservaFlow = addKeyword<Provider>([
-  '3', 'reservar', 'reserva', 'quiero reservar', '📋 hacer una reserva',
-  'alquilar', 'necesito trajes',
+  'reservar', 'reserva', 'quiero reservar', 'alquilar', 'necesito trajes',
 ])
   .addAction(async (ctx, { provider }) => {
     await provider.sendText({

@@ -3,8 +3,8 @@ import { SendWaveProvider as Provider } from '@gamastudio/sendwave-provider';
 import { getConjuntos, cotizar } from '../api.js';
 
 export const cotizacionFlow = addKeyword<Provider>([
-  '2', 'cotizar', 'cotizacion', 'cotización', 'precio', 'precios',
-  'cuánto cuesta', 'cuanto cuesta', '💰 cotizar precio',
+  'cotizar', 'cotizacion', 'cotización', 'precio', 'precios',
+  'cuánto cuesta', 'cuanto cuesta',
 ])
   .addAction(async (ctx, { provider }) => {
     await provider.sendText({
