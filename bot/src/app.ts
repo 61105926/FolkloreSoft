@@ -5,7 +5,7 @@ import { createServer } from 'http';
 import { createBot, createFlow, MemoryDB } from '@builderbot/bot';
 import { createSendWaveProvider } from '@gamastudio/sendwave-provider';
 
-import { menuFlow, volverFlow, opcionFlow, endFlow } from './flows/menu.flow.js';
+import { menuFlow, volverFlow, opcionFlow, digitoFlow, endFlow } from './flows/menu.flow.js';
 import { stockFlow }      from './flows/stock.flow.js';
 import { reservaFlow }    from './flows/reserva.flow.js';
 import { contactoFlow }   from './flows/contacto.flow.js';
@@ -71,6 +71,7 @@ async function main() {
     menuFlow,
     volverFlow,
     opcionFlow,
+    digitoFlow,
     endFlow,
     // Flujos de usuario
     stockFlow,

@@ -38,11 +38,7 @@ export class BotService {
           },
         },
         participantes: {
-          select: {
-            nombre: true,
-            devuelto: true,
-            instanciaConjunto: { select: { codigo: true } },
-          },
+          select: { nombre: true, devuelto: true },
         },
         garantias: {
           select: { tipo: true, descripcion: true, valor: true, retenida: true },
@@ -66,7 +62,7 @@ export class BotService {
             id: true,
             nombre_variacion: true,
             talla: true,
-            _count: { select: { instancias: true } },
+            movimientosStock: { select: { cantidad: true } },
           },
         },
       },
@@ -164,24 +160,84 @@ export class BotService {
     return contrato;
   }
 
-  // ── Catálogo para el bot (sin JWT) ────────────────────────────────────────
+  // ── Catálogo público (con variaciones detalladas) ─────────────────────────
   async getCatalogo() {
-    return this.prisma.conjunto.findMany({
+    const conjuntos = await this.prisma.conjunto.findMany({
+      where: { activo: true, disponible_alquiler: true },
       select: {
         id: true,
         nombre: true,
         danza: true,
+        genero: true,
+        descripcion: true,
         precio_base: true,
         imagen_url: true,
         variaciones: {
+          where: { activa: true },
           select: {
-            instancias: {
-              select: { estado: true },
+            id: true,
+            nombre_variacion: true,
+            talla: true,
+            color: true,
+            precio_alquiler: true,
+            movimientosStock: { select: { cantidad: true } },
+            contratoPrendas: {
+              where: {
+                contrato: { estado: { in: ['RESERVADO', 'CONFIRMADO', 'ENTREGADO', 'EN_USO'] } },
+              },
+              select: { total: true },
             },
           },
         },
       },
       orderBy: [{ danza: 'asc' }, { nombre: 'asc' }],
     });
+
+    return conjuntos.map((c) => ({
+      ...c,
+      variaciones: c.variaciones.map((v) => {
+        const stockTotal = v.movimientosStock.reduce((s, m) => s + m.cantidad, 0);
+        const ocupado = v.contratoPrendas.reduce((s, p) => s + p.total, 0);
+        return {
+          id: v.id,
+          nombre_variacion: v.nombre_variacion,
+          talla: v.talla,
+          color: v.color,
+          precio_alquiler: v.precio_alquiler,
+          disponible: Math.max(0, stockTotal - ocupado),
+          total: stockTotal,
+        };
+      }),
+    }));
+  }
+
+  // ── Crear solicitud de reserva web (raw SQL para no depender del cliente generado) ──
+  async crearSolicitudWeb(data: {
+    nombre: string;
+    ci: string;
+    celular: string;
+    evento: string;
+    fechaEvento: string;
+    items: unknown[];
+    totalEstimado: number;
+    anticipoMin: number;
+  }) {
+    const itemsJson = JSON.stringify(data.items);
+    const fechaEvento = new Date(data.fechaEvento);
+
+    await this.prisma.$executeRaw`
+      INSERT INTO SolicitudReservaWeb
+        (nombre, ci, celular, evento, fecha_evento, items, total_estimado, anticipo_min, estado, createdAt, updatedAt)
+      VALUES
+        (${data.nombre}, ${data.ci}, ${data.celular}, ${data.evento},
+         ${fechaEvento}, ${itemsJson},
+         ${data.totalEstimado}, ${data.anticipoMin},
+         'PENDIENTE', NOW(), NOW())
+    `;
+
+    const rows = await this.prisma.$queryRaw<{ id: bigint }[]>`
+      SELECT LAST_INSERT_ID() AS id
+    `;
+    return { id: Number(rows[0].id), estado: 'PENDIENTE' };
   }
 }

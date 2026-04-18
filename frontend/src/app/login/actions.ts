@@ -56,7 +56,7 @@ export async function loginAction(
       httpOnly: true,
       secure: process.env.COOKIE_SECURE === "true",
       sameSite: "strict",
-      maxAge: 60 * 15,
+      maxAge: 60 * 60 * 8,
       path: "/",
     });
   } catch {

@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { BotNotifyService } from './bot-notify.service.js';
-import { EstadoContrato, TipoContrato, CiudadContrato, TipoGarantia, FormaPago, TipoParticipante, EstadoInstanciaConjunto } from '@prisma/client';
+import { EstadoContrato, TipoContrato, CiudadContrato, TipoGarantia, FormaPago, TipoParticipante } from '@prisma/client';
 
 const INCLUDE_FULL = {
   cliente: true,
@@ -11,7 +11,6 @@ const INCLUDE_FULL = {
       conjunto: { select: { id: true, nombre: true, danza: true } },
       variacion: { select: { id: true, nombre_variacion: true, talla: true, color: true, codigo_variacion: true } },
       participantes: {
-        include: { instanciaConjunto: { select: { id: true, codigo: true, estado: true } } },
         orderBy: { createdAt: 'asc' as const },
       },
     },
@@ -24,7 +23,6 @@ const INCLUDE_FULL = {
   participantes: {
     include: {
       garantias: true,
-      instanciaConjunto: { select: { id: true, codigo: true, estado: true } },
     },
     orderBy: { createdAt: 'asc' as const },
   },
@@ -219,43 +217,27 @@ export class ContratosService {
         `Garantía(s) en efectivo de Bs. ${totalGar.toFixed(2)} registradas en caja — cobrado por ${userName}`);
     }
 
-    // Auto-reserve available instances for each prenda
-    for (const prenda of prendaCreate) {
-      if (prenda.variacionId && prenda.total > 0) {
-        await this.autoReservarInstancias(contrato.id, prenda.variacionId, prenda.total, actor?.sucursalId ?? undefined);
-      }
-    }
-
     return contrato;
   }
 
-  /** Pick up to `cantidad` DISPONIBLE instances from a variacion and mark them RESERVADO */
-  private async autoReservarInstancias(contratoId: number, variacionId: number, cantidad: number, sucursalId?: number) {
-    const instancias = await this.prisma.instanciaConjunto.findMany({
-      where: {
-        variacionId,
-        estado: EstadoInstanciaConjunto.DISPONIBLE,
-        ...(sucursalId ? { sucursalId } : {}),
-      },
-      take: cantidad,
-      orderBy: { id: 'asc' },
-      select: { id: true },
-    });
-
-    if (instancias.length === 0) return;
-
-    await this.prisma.instanciaConjunto.updateMany({
-      where: { id: { in: instancias.map((i) => i.id) } },
-      data: { estado: EstadoInstanciaConjunto.RESERVADO, contratoReservaId: contratoId },
-    });
-  }
-
-  /** Release all RESERVADO instances linked to a contrato */
-  private async liberarReservas(contratoId: number) {
-    await this.prisma.instanciaConjunto.updateMany({
-      where: { contratoReservaId: contratoId, estado: EstadoInstanciaConjunto.RESERVADO },
-      data: { estado: EstadoInstanciaConjunto.DISPONIBLE, contratoReservaId: null },
-    });
+  /** Stock disponible para una variación = total stock - cantidad en contratos activos */
+  private async stockDisponible(variacionId: number): Promise<number> {
+    const [stockAgg, reservadoAgg] = await Promise.all([
+      this.prisma.movimientoStock.aggregate({
+        where: { variacionId },
+        _sum: { cantidad: true },
+      }),
+      this.prisma.contratoPrenda.aggregate({
+        where: {
+          variacionId,
+          contrato: { estado: { in: ['RESERVADO', 'CONFIRMADO', 'ENTREGADO', 'EN_USO'] } },
+        },
+        _sum: { total: true },
+      }),
+    ]);
+    const total = stockAgg._sum.cantidad ?? 0;
+    const ocupado = reservadoAgg._sum.total ?? 0;
+    return total - ocupado;
   }
 
   async update(id: number, data: {
@@ -291,11 +273,6 @@ export class ContratosService {
 
   async entregar(id: number) {
     await this.findOne(id);
-    // Promote RESERVADO → ALQUILADO when contract is delivered
-    await this.prisma.instanciaConjunto.updateMany({
-      where: { contratoReservaId: id, estado: EstadoInstanciaConjunto.RESERVADO },
-      data: { estado: EstadoInstanciaConjunto.ALQUILADO, contratoReservaId: null },
-    });
     const result = await this.prisma.contratoAlquiler.update({
       where: { id },
       data: { estado: EstadoContrato.ENTREGADO, fecha_entrega_real: new Date() },
@@ -309,10 +286,6 @@ export class ContratosService {
 
   async iniciarUso(id: number) {
     await this.findOne(id);
-    await this.prisma.instanciaConjunto.updateMany({
-      where: { contratoReservaId: id, estado: EstadoInstanciaConjunto.RESERVADO },
-      data: { estado: EstadoInstanciaConjunto.ALQUILADO, contratoReservaId: null },
-    });
     const result = await this.prisma.contratoAlquiler.update({
       where: { id },
       data: { estado: EstadoContrato.EN_USO },
@@ -323,22 +296,8 @@ export class ContratosService {
   }
 
   async devolver(id: number, data?: { observaciones?: string }) {
-    // Auto-detect si queda deuda basado en los pagos reales en caja
     const contrato = await this.findOne(id);
     const conDeuda = Number(contrato.total_pagado) < Number(contrato.total);
-
-    // Liberar todas las instancias asignadas a participantes
-    const instanciaIds = (contrato.participantes ?? [])
-      .map((p) => (p as { instanciaConjuntoId?: number }).instanciaConjuntoId)
-      .filter((iid): iid is number => !!iid);
-    if (instanciaIds.length > 0) {
-      await this.prisma.instanciaConjunto.updateMany({
-        where: { id: { in: instanciaIds }, estado: EstadoInstanciaConjunto.ALQUILADO },
-        data: { estado: EstadoInstanciaConjunto.DISPONIBLE },
-      });
-    }
-    // Liberar instancias auto-reservadas que no fueron asignadas
-    await this.liberarReservas(id);
 
     const result = await this.prisma.contratoAlquiler.update({
       where: { id },
@@ -379,18 +338,7 @@ export class ContratosService {
   }
 
   async cerrar(id: number) {
-    const contrato = await this.findOne(id);
-    // Liberar instancias que pudieran quedar ALQUILADO
-    const instanciaIds = (contrato.participantes ?? [])
-      .map((p) => (p as { instanciaConjuntoId?: number }).instanciaConjuntoId)
-      .filter((iid): iid is number => !!iid);
-    if (instanciaIds.length > 0) {
-      await this.prisma.instanciaConjunto.updateMany({
-        where: { id: { in: instanciaIds }, estado: EstadoInstanciaConjunto.ALQUILADO },
-        data: { estado: EstadoInstanciaConjunto.DISPONIBLE },
-      });
-    }
-    await this.liberarReservas(id);
+    await this.findOne(id);
     const result = await this.prisma.contratoAlquiler.update({
       where: { id },
       data: { estado: EstadoContrato.CERRADO },
@@ -401,17 +349,7 @@ export class ContratosService {
   }
 
   async cancelar(id: number) {
-    const contrato = await this.findOne(id);
-    const instanciaIds = (contrato.participantes ?? [])
-      .map((p) => (p as { instanciaConjuntoId?: number }).instanciaConjuntoId)
-      .filter((iid): iid is number => !!iid);
-    if (instanciaIds.length > 0) {
-      await this.prisma.instanciaConjunto.updateMany({
-        where: { id: { in: instanciaIds } },
-        data: { estado: EstadoInstanciaConjunto.DISPONIBLE },
-      });
-    }
-    await this.liberarReservas(id);
+    await this.findOne(id);
     const result = await this.prisma.contratoAlquiler.update({
       where: { id },
       data: { estado: EstadoContrato.CANCELADO },
@@ -437,18 +375,7 @@ export class ContratosService {
   }
 
   async remove(id: number) {
-    const contrato = await this.findOne(id);
-    // Liberar instancias antes de borrar
-    const instanciaIds = (contrato.participantes ?? [])
-      .map((p) => (p as { instanciaConjuntoId?: number }).instanciaConjuntoId)
-      .filter((iid): iid is number => !!iid);
-    if (instanciaIds.length > 0) {
-      await this.prisma.instanciaConjunto.updateMany({
-        where: { id: { in: instanciaIds }, estado: EstadoInstanciaConjunto.ALQUILADO },
-        data: { estado: EstadoInstanciaConjunto.DISPONIBLE },
-      });
-    }
-    await this.liberarReservas(id);
+    await this.findOne(id);
     await this.prisma.movimientoCaja.deleteMany({ where: { contratoId: id } });
     return this.prisma.contratoAlquiler.delete({ where: { id } });
   }
@@ -472,9 +399,7 @@ export class ContratosService {
       (data.cantidad_ninos ?? 0);
 
     if (data.variacionId && total > 0) {
-      const disponibles = await this.prisma.instanciaConjunto.count({
-        where: { variacionId: data.variacionId, estado: EstadoInstanciaConjunto.DISPONIBLE },
-      });
+      const disponibles = await this.stockDisponible(data.variacionId);
       if (disponibles < total) {
         throw new BadRequestException(
           `Stock insuficiente. Disponibles: ${disponibles}, solicitados: ${total}.`,
@@ -497,9 +422,7 @@ export class ContratosService {
         subtotal: total * data.costo_unitario,
       },
       include: {
-        participantes: {
-          include: { instanciaConjunto: { select: { id: true, codigo: true, estado: true } } },
-        },
+        participantes: true,
         variacion: { select: { id: true, nombre_variacion: true, talla: true, color: true, codigo_variacion: true } },
       },
     });
@@ -527,9 +450,7 @@ export class ContratosService {
 
     const variacionId = data.variacionId !== undefined ? data.variacionId : existing.variacionId;
     if (variacionId && total > 0) {
-      const disponibles = await this.prisma.instanciaConjunto.count({
-        where: { variacionId, estado: EstadoInstanciaConjunto.DISPONIBLE },
-      });
+      const disponibles = await this.stockDisponible(variacionId);
       if (disponibles < total) {
         throw new BadRequestException(
           `Stock insuficiente. Disponibles: ${disponibles}, solicitados: ${total}.`,
@@ -600,9 +521,28 @@ export class ContratosService {
   }
 
   async removeGarantia(id: number) {
-    const g = await this.prisma.contratoGarantia.findUnique({ where: { id }, select: { contratoId: true, tipo: true } });
+    const g = await this.prisma.contratoGarantia.findUnique({
+      where: { id },
+      select: { contratoId: true, tipo: true, retenida: true, valor: true, descripcion: true },
+    });
     await this.prisma.contratoGarantia.delete({ where: { id } });
-    if (g) await this.log(g.contratoId, 'GARANTIA_REMOVIDA', `Garantía removida: ${g.tipo}`);
+    if (!g) return;
+
+    await this.log(g.contratoId, 'GARANTIA_REMOVIDA', `Garantía removida: ${g.tipo}`);
+
+    // Si era una sanción (tipo OTRO, retenida), revertir el ingreso en caja
+    if (g.tipo === 'OTRO' && g.retenida && g.valor && Number(g.valor) > 0) {
+      await this.prisma.movimientoCaja.create({
+        data: {
+          tipo: 'EGRESO',
+          concepto: 'OTRO_EGRESO',
+          monto: Number(g.valor),
+          descripcion: `Sanción anulada — ${g.descripcion ?? 'sanción removida'}`,
+          forma_pago: FormaPago.EFECTIVO,
+          contratoId: g.contratoId,
+        },
+      });
+    }
   }
 
   // ── Participantes ─────────────────────────────────────────────────────────
@@ -610,158 +550,48 @@ export class ContratosService {
   async addParticipante(contratoId: number, data: {
     nombre: string;
     ci?: string;
+    celular?: string;
     tipo?: TipoParticipante;
     prendaId?: number;
     notas?: string;
-    instanciaConjuntoId?: number;
   }) {
     const p = await this.prisma.contratoParticipante.create({
       data: { contratoId, ...data },
-      include: {
-        garantias: true,
-        instanciaConjunto: { select: { id: true, codigo: true, estado: true } },
-      },
+      include: { garantias: true },
     });
-    if (data.instanciaConjuntoId) {
-      // Check if the assigned instance was one of this contract's own reservations
-      const inst = await this.prisma.instanciaConjunto.findUnique({
-        where: { id: data.instanciaConjuntoId },
-        select: { contratoReservaId: true },
-      });
-      await this.prisma.instanciaConjunto.update({
-        where: { id: data.instanciaConjuntoId },
-        data: { estado: EstadoInstanciaConjunto.ALQUILADO, contratoReservaId: null },
-      });
-      // If the assigned instance was NOT from this contract's reservation pool,
-      // release one of the contract's RESERVADO instances to avoid double-counting
-      if (inst?.contratoReservaId !== contratoId) {
-        const spare = await this.prisma.instanciaConjunto.findFirst({
-          where: { contratoReservaId: contratoId, estado: EstadoInstanciaConjunto.RESERVADO },
-          select: { id: true },
-        });
-        if (spare) {
-          await this.prisma.instanciaConjunto.update({
-            where: { id: spare.id },
-            data: { estado: EstadoInstanciaConjunto.DISPONIBLE, contratoReservaId: null },
-          });
-        }
-      }
-    }
     await this.log(contratoId, 'PARTICIPANTE_AGREGADO',
       `Participante agregado: ${data.nombre}${data.tipo ? ` (${data.tipo})` : ''}`);
-
-    // Notificar si se asignó una instancia física
-    if (data.instanciaConjuntoId) {
-      const contrato = await this.prisma.contratoAlquiler.findUnique({
-        where: { id: contratoId },
-        select: {
-          codigo: true,
-          cliente: { select: { nombre: true, celular: true } },
-          prendas: {
-            where: data.prendaId ? { id: data.prendaId } : {},
-            select: { modelo: true },
-            take: 1,
-          },
-        },
-      });
-      const instancia = await this.prisma.instanciaConjunto.findUnique({
-        where: { id: data.instanciaConjuntoId },
-        select: { codigo: true },
-      });
-      if (contrato && instancia) {
-        void this.botNotify.notificarPrendaLista({
-          clienteCelular:    contrato.cliente.celular,
-          clienteNombre:     contrato.cliente.nombre,
-          contratoCode:      contrato.codigo,
-          participanteNombre: data.nombre,
-          instanciaCodigo:   instancia.codigo,
-          prendaModelo:      contrato.prendas[0]?.modelo ?? 'Prenda',
-        });
-      }
-    }
-
     return p;
   }
 
   async updateParticipante(id: number, data: {
     nombre?: string;
     ci?: string;
+    celular?: string;
     tipo?: TipoParticipante;
     prendaId?: number | null;
     notas?: string;
     devuelto?: boolean;
     fecha_devolucion?: string | null;
-    instanciaConjuntoId?: number | null;
   }) {
-    const { fecha_devolucion, instanciaConjuntoId, ...rest } = data;
-
-    // Handle instance reassignment
-    const old = await this.prisma.contratoParticipante.findUnique({
-      where: { id },
-      select: { instanciaConjuntoId: true, contratoId: true },
-    });
-    if (old?.instanciaConjuntoId !== undefined && old.instanciaConjuntoId !== instanciaConjuntoId) {
-      if (old.instanciaConjuntoId) {
-        // Release old instance; if the new one is also from this contract's pool,
-        // re-reserve this one so the count stays stable
-        await this.prisma.instanciaConjunto.update({
-          where: { id: old.instanciaConjuntoId },
-          data: { estado: EstadoInstanciaConjunto.DISPONIBLE },
-        });
-      }
-      if (instanciaConjuntoId) {
-        const newInst = await this.prisma.instanciaConjunto.findUnique({
-          where: { id: instanciaConjuntoId },
-          select: { contratoReservaId: true },
-        });
-        await this.prisma.instanciaConjunto.update({
-          where: { id: instanciaConjuntoId },
-          data: { estado: EstadoInstanciaConjunto.ALQUILADO, contratoReservaId: null },
-        });
-        // If new instance was NOT from this contract's reservation pool,
-        // release one spare reservation to avoid double-counting
-        if (newInst?.contratoReservaId !== old.contratoId) {
-          const spare = await this.prisma.instanciaConjunto.findFirst({
-            where: { contratoReservaId: old.contratoId, estado: EstadoInstanciaConjunto.RESERVADO },
-            select: { id: true },
-          });
-          if (spare) {
-            await this.prisma.instanciaConjunto.update({
-              where: { id: spare.id },
-              data: { estado: EstadoInstanciaConjunto.DISPONIBLE, contratoReservaId: null },
-            });
-          }
-        }
-      }
-    }
-
+    const { fecha_devolucion, ...rest } = data;
     return this.prisma.contratoParticipante.update({
       where: { id },
       data: {
         ...rest,
-        instanciaConjuntoId,
         fecha_devolucion: fecha_devolucion
           ? new Date(fecha_devolucion)
           : fecha_devolucion === null ? null : undefined,
       },
-      include: {
-        garantias: true,
-        instanciaConjunto: { select: { id: true, codigo: true, estado: true } },
-      },
+      include: { garantias: true },
     });
   }
 
   async removeParticipante(id: number) {
     const p = await this.prisma.contratoParticipante.findUnique({
       where: { id },
-      select: { instanciaConjuntoId: true, nombre: true, contratoId: true },
+      select: { nombre: true, contratoId: true },
     });
-    if (p?.instanciaConjuntoId) {
-      await this.prisma.instanciaConjunto.update({
-        where: { id: p.instanciaConjuntoId },
-        data: { estado: EstadoInstanciaConjunto.DISPONIBLE },
-      });
-    }
     await this.prisma.contratoParticipante.delete({ where: { id } });
     if (p) await this.log(p.contratoId, 'PARTICIPANTE_REMOVIDO', `Participante removido: ${p.nombre}`);
   }
@@ -774,19 +604,8 @@ export class ContratosService {
   }) {
     const p = await this.prisma.contratoParticipante.findUniqueOrThrow({
       where: { id },
-      select: { instanciaConjuntoId: true, contratoId: true, notas: true, nombre: true },
+      select: { contratoId: true, notas: true, nombre: true },
     });
-
-    // Update instance state FIRST so the returned participant reflects the new state
-    if (p.instanciaConjuntoId) {
-      const nuevoEstado = data?.condicion === 'PERDIDA'
-        ? EstadoInstanciaConjunto.DADO_DE_BAJA
-        : EstadoInstanciaConjunto.DISPONIBLE;
-      await this.prisma.instanciaConjunto.update({
-        where: { id: p.instanciaConjuntoId },
-        data: { estado: nuevoEstado },
-      });
-    }
 
     // Append devolucion notes to existing notes
     let updatedNotas: string | undefined;
@@ -809,25 +628,34 @@ export class ContratosService {
         fecha_devolucion: new Date(),
         ...(updatedNotas !== undefined ? { notas: updatedNotas } : {}),
       },
-      include: {
-        garantias: true,
-        instanciaConjunto: { select: { id: true, codigo: true, estado: true } },
-      },
+      include: { garantias: true },
     });
 
     // Create sanction as a retained guarantee linked to the participant
     const montoSancion = data?.sancion_monto && data.sancion_monto > 0 ? data.sancion_monto : undefined;
     if (montoSancion) {
       const motivoDefault = data?.condicion === 'PERDIDA' ? 'Pérdida de prenda' : 'Daños en la prenda';
+      const motivoSancion = data?.sancion_motivo?.trim() || motivoDefault;
       await this.prisma.contratoGarantia.create({
         data: {
           contratoId: p.contratoId,
           participanteId: id,
           tipo: TipoGarantia.OTRO,
-          descripcion: data?.sancion_motivo?.trim() || motivoDefault,
+          descripcion: motivoSancion,
           valor: montoSancion,
           retenida: true,
-          motivo_retencion: data?.sancion_motivo?.trim() || motivoDefault,
+          motivo_retencion: motivoSancion,
+        },
+      });
+      // Registrar la sanción como ingreso en caja
+      await this.prisma.movimientoCaja.create({
+        data: {
+          tipo: 'INGRESO',
+          concepto: 'OTRO_INGRESO',
+          monto: montoSancion,
+          descripcion: `Sanción — ${motivoSancion} (${p.nombre})`,
+          forma_pago: FormaPago.EFECTIVO,
+          contratoId: p.contratoId,
         },
       });
     }
@@ -848,7 +676,6 @@ export class ContratosService {
         clienteNombre:      contratoInfo.cliente.nombre,
         contratoCode:       contratoInfo.codigo,
         participanteNombre: p.nombre,
-        instanciaCodigo:    (updated.instanciaConjunto as { codigo?: string } | null)?.codigo,
       });
     }
 
@@ -950,34 +777,10 @@ export class ContratosService {
     return updated;
   }
 
-  // ── Instancias disponibles para una prenda ────────────────────────────────
-
-  async getInstanciasDisponibles(prendaId: number) {
-    const prenda = await this.prisma.contratoPrenda.findUnique({
-      where: { id: prendaId },
-      select: { variacionId: true, contratoId: true },
-    });
-    if (!prenda || !prenda.variacionId) return [];
-    // Include DISPONIBLE + RESERVADO instances that belong to this contract
-    return this.prisma.instanciaConjunto.findMany({
-      where: {
-        variacionId: prenda.variacionId,
-        OR: [
-          { estado: EstadoInstanciaConjunto.DISPONIBLE },
-          { estado: EstadoInstanciaConjunto.RESERVADO, contratoReservaId: prenda.contratoId },
-        ],
-      },
-      select: { id: true, codigo: true, estado: true },
-      orderBy: { codigo: 'asc' },
-    });
-  }
-
   // ── Stock disponible para una variación ────────────────────────────────────
 
   async getStockForVariacion(variacionId: number) {
-    const disponibles = await this.prisma.instanciaConjunto.count({
-      where: { variacionId, estado: EstadoInstanciaConjunto.DISPONIBLE },
-    });
+    const disponibles = await this.stockDisponible(variacionId);
     return { variacionId, disponibles };
   }
 }

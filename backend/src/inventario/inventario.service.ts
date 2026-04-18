@@ -1,102 +1,150 @@
-import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service.js';
-import { EstadoInstanciaComponente } from '@prisma/client';
+import { TipoMovimientoStock, EstadoInstanciaComponente } from '@prisma/client';
 
 @Injectable()
 export class InventarioService {
   constructor(private readonly prisma: PrismaService) {}
 
-  // ── InstanciasConjunto ──
-  findAllInstanciasConjunto(sucursalId?: number) {
-    return this.prisma.instanciaConjunto.findMany({
-      where: sucursalId ? { sucursalId } : undefined,
-      include: {
-        variacion: {
-          include: {
-            conjunto: { include: { componentes: { include: { componente: true } } } },
+  // ── Stock de variaciones ──────────────────────────────────────────────────
+
+  /** Suma todos los movimientos de una variación para obtener el stock actual */
+  async stockVariacion(variacionId: number): Promise<number> {
+    const agg = await this.prisma.movimientoStock.aggregate({
+      where: { variacionId },
+      _sum: { cantidad: true },
+    });
+    return agg._sum.cantidad ?? 0;
+  }
+
+  /** Stock de todas las variaciones de un conjunto */
+  async stockConjunto(conjuntoId: number) {
+    const variaciones = await this.prisma.variacionConjunto.findMany({
+      where: { conjuntoId, activa: true },
+      select: { id: true, nombre_variacion: true, talla: true, color: true, estilo: true },
+    });
+
+    return Promise.all(
+      variaciones.map(async (v) => ({
+        ...v,
+        stock: await this.stockVariacion(v.id),
+      })),
+    );
+  }
+
+  /** Stock de todos los conjuntos (resumen para dashboard) */
+  async resumenStock() {
+    const conjuntos = await this.prisma.conjunto.findMany({
+      where: { activo: true },
+      select: {
+        id: true, nombre: true, danza: true, imagen_url: true,
+        variaciones: {
+          where: { activa: true },
+          select: {
+            id: true, nombre_variacion: true, talla: true, color: true,
+            movimientosStock: { select: { cantidad: true } },
           },
         },
-        sucursal: true,
-        componentes: { include: { componente: true } },
       },
-      orderBy: { codigo: 'asc' },
+      orderBy: [{ danza: 'asc' }, { nombre: 'asc' }],
     });
+
+    return conjuntos.map((c) => ({
+      id: c.id,
+      nombre: c.nombre,
+      danza: c.danza,
+      imagen_url: c.imagen_url,
+      variaciones: c.variaciones.map((v) => ({
+        id: v.id,
+        nombre_variacion: v.nombre_variacion,
+        talla: v.talla,
+        color: v.color,
+        stock: v.movimientosStock.reduce((s, m) => s + m.cantidad, 0),
+      })),
+      stockTotal: c.variaciones.reduce(
+        (s, v) => s + v.movimientosStock.reduce((sv, m) => sv + m.cantidad, 0),
+        0,
+      ),
+    }));
   }
 
-  async findInstanciaConjunto(id: number) {
-    const inst = await this.prisma.instanciaConjunto.findUnique({
-      where: { id },
+  // ── Movimientos de stock ──────────────────────────────────────────────────
+
+  async getMovimientos(variacionId?: number) {
+    return this.prisma.movimientoStock.findMany({
+      where: variacionId ? { variacionId } : undefined,
       include: {
         variacion: {
-          include: {
-            conjunto: { include: { componentes: { include: { componente: true } } } },
+          select: {
+            id: true, nombre_variacion: true, talla: true,
+            conjunto: { select: { id: true, nombre: true, danza: true } },
           },
         },
-        sucursal: true,
-        componentes: { include: { componente: true } },
+        user: { select: { id: true, nombre: true } },
       },
+      orderBy: { createdAt: 'desc' },
     });
-    if (!inst) throw new NotFoundException(`InstanciaConjunto #${id} no encontrada`);
-    return inst;
   }
 
-  createInstanciaConjunto(data: { codigo: string; variacionId: number; sucursalId: number }) {
-    return this.prisma.instanciaConjunto.create({
-      data,
+  async registrarMovimiento(data: {
+    variacionId: number;
+    tipo: TipoMovimientoStock;
+    cantidad: number; // siempre positivo, el tipo determina si suma o resta
+    motivo?: string;
+    userId?: number;
+  }) {
+    const variacion = await this.prisma.variacionConjunto.findUnique({
+      where: { id: data.variacionId },
+    });
+    if (!variacion) throw new NotFoundException(`Variación #${data.variacionId} no encontrada`);
+
+    // BAJA siempre se guarda como negativo
+    const cantidadFinal =
+      data.tipo === 'BAJA' ? -Math.abs(data.cantidad) : Math.abs(data.cantidad);
+
+    return this.prisma.movimientoStock.create({
+      data: {
+        variacionId: data.variacionId,
+        tipo: data.tipo,
+        cantidad: cantidadFinal,
+        motivo: data.motivo,
+        userId: data.userId,
+      },
       include: {
-        variacion: { include: { conjunto: true } },
-        sucursal: true,
+        variacion: {
+          select: {
+            id: true, nombre_variacion: true, talla: true,
+            conjunto: { select: { id: true, nombre: true, danza: true } },
+          },
+        },
+        user: { select: { id: true, nombre: true } },
       },
     });
   }
 
-  // Ensamblar: toma piezas del pool y las asigna al conjunto
-  async ensamblar(instanciaConjuntoId: number, componenteIds: number[]) {
-    const instancia = await this.findInstanciaConjunto(instanciaConjuntoId);
-
-    return this.prisma.$transaction(async (tx) => {
-      for (const componenteInstId of componenteIds) {
-        const pieza = await tx.instanciaComponente.findUnique({
-          where: { id: componenteInstId },
-        });
-        if (!pieza) throw new NotFoundException(`Pieza #${componenteInstId} no encontrada`);
-        if (pieza.estado !== 'DISPONIBLE_POOL') {
-          throw new BadRequestException(`Pieza #${componenteInstId} no está disponible (estado: ${pieza.estado})`);
-        }
-        if (pieza.sucursalId !== instancia.sucursalId) {
-          throw new BadRequestException(`Pieza #${componenteInstId} pertenece a otra sucursal`);
-        }
-        await tx.instanciaComponente.update({
-          where: { id: componenteInstId },
-          data: { estado: 'ASIGNADO', instanciaConjuntoId },
-        });
-      }
-      return tx.instanciaConjunto.findUnique({
-        where: { id: instanciaConjuntoId },
-        include: { componentes: { include: { componente: true } } },
-      });
-    });
+  async registrarMovimientoMasivo(items: {
+    variacionId: number;
+    tipo: TipoMovimientoStock;
+    cantidad: number;
+    motivo?: string;
+  }[], userId?: number) {
+    const creados = await this.prisma.$transaction(
+      items.map((item) =>
+        this.prisma.movimientoStock.create({
+          data: {
+            variacionId: item.variacionId,
+            tipo: item.tipo,
+            cantidad: item.tipo === 'BAJA' ? -Math.abs(item.cantidad) : Math.abs(item.cantidad),
+            motivo: item.motivo,
+            userId,
+          },
+        }),
+      ),
+    );
+    return creados;
   }
 
-  // Desensamblar: devuelve piezas al pool
-  async desensamblar(instanciaConjuntoId: number) {
-    return this.prisma.$transaction(async (tx) => {
-      await tx.instanciaComponente.updateMany({
-        where: { instanciaConjuntoId },
-        data: { estado: 'DISPONIBLE_POOL', instanciaConjuntoId: null },
-      });
-      return { message: 'Piezas devueltas al pool' };
-    });
-  }
-
-  // ── Pool (InstanciasComponente libres) ──
-  findPool(sucursalId: number) {
-    return this.prisma.instanciaComponente.findMany({
-      where: { sucursalId, estado: 'DISPONIBLE_POOL' },
-      include: { componente: true },
-      orderBy: { serial: 'asc' },
-    });
-  }
+  // ── Instancias de componentes (se mantiene para piezas sueltas) ───────────
 
   findAllInstanciasComponente(sucursalId?: number) {
     return this.prisma.instanciaComponente.findMany({
@@ -107,8 +155,11 @@ export class InventarioService {
   }
 
   createInstanciaComponente(data: {
-    serial: string; talla?: string;
-    componenteId: number; sucursalId: number; notas?: string;
+    serial: string;
+    talla?: string;
+    componenteId: number;
+    sucursalId: number;
+    notas?: string;
   }) {
     return this.prisma.instanciaComponente.create({
       data,
@@ -123,69 +174,21 @@ export class InventarioService {
     });
   }
 
-  // ── Stats por sucursal ──
-  async statsPorSucursal() {
-    const sucursales = await this.prisma.sucursal.findMany({
-      select: { id: true, nombre: true, ciudad: true },
-    });
+  // ── Stats para dashboard ──────────────────────────────────────────────────
 
-    const stats = await Promise.all(
-      sucursales.map(async (s) => {
-        const [disponible, alquilado, enTransferencia, dadoDeBaja] = await Promise.all([
-          this.prisma.instanciaConjunto.count({ where: { sucursalId: s.id, estado: 'DISPONIBLE' } }),
-          this.prisma.instanciaConjunto.count({ where: { sucursalId: s.id, estado: 'ALQUILADO' } }),
-          this.prisma.instanciaConjunto.count({ where: { sucursalId: s.id, estado: 'EN_TRANSFERENCIA' } }),
-          this.prisma.instanciaConjunto.count({ where: { sucursalId: s.id, estado: 'DADO_DE_BAJA' } }),
-        ]);
-        return {
-          sucursalId: s.id,
-          nombre: s.nombre,
-          ciudad: s.ciudad,
-          disponible,
-          alquilado,
-          enTransferencia,
-          dadoDeBaja,
-          total: disponible + alquilado + enTransferencia + dadoDeBaja,
-        };
-      }),
-    );
-    return stats;
-  }
+  async statsDashboard() {
+    const conjuntos = await this.prisma.conjunto.count({ where: { activo: true } });
+    const variaciones = await this.prisma.variacionConjunto.count({ where: { activa: true } });
 
-  // ── Dar de baja masivo ──
-  async darDeBaja(ids: number[], motivo?: string) {
-    return this.prisma.$transaction(async (tx) => {
-      await tx.instanciaConjunto.updateMany({
-        where: { id: { in: ids } },
-        data: { estado: 'DADO_DE_BAJA' },
-      });
-      const movimientos = ids.map((instanciaId) => ({
-        instanciaId,
-        tipo: 'DADO_DE_BAJA',
-        estadoDespues: 'DADO_DE_BAJA' as const,
-        notas: motivo ?? null,
-      }));
-      await tx.movimientoInstancia.createMany({ data: movimientos });
-      return { affected: ids.length };
+    const stockAgg = await this.prisma.movimientoStock.aggregate({
+      _sum: { cantidad: true },
     });
-  }
+    const stockTotal = stockAgg._sum.cantidad ?? 0;
 
-  // ── Actualizar notas de instancia ──
-  async updateNotas(id: number, notas: string) {
-    const inst = await this.prisma.instanciaConjunto.findUnique({ where: { id } });
-    if (!inst) throw new NotFoundException(`InstanciaConjunto #${id} no encontrada`);
-    await this.prisma.instanciaConjunto.update({ where: { id }, data: { notas } });
-    await this.prisma.movimientoInstancia.create({
-      data: { instanciaId: id, tipo: 'NOTA', notas },
-    });
-    return { id, notas };
-  }
+    // Conjuntos con stock 0 (sin trajes)
+    const resumen = await this.resumenStock();
+    const sinStock = resumen.filter((c) => c.stockTotal === 0).length;
 
-  // ── Historial de instancia ──
-  getHistorial(id: number) {
-    return this.prisma.movimientoInstancia.findMany({
-      where: { instanciaId: id },
-      orderBy: { createdAt: 'desc' },
-    });
+    return { conjuntos, variaciones, stockTotal, sinStock };
   }
 }

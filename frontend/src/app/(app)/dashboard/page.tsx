@@ -51,14 +51,10 @@ interface Contrato {
 }
 
 interface InventarioStat {
-  sucursalId: number;
-  nombre: string;
-  ciudad: string;
-  disponible: number;
-  alquilado: number;
-  enTransferencia: number;
-  dadoDeBaja: number;
-  total: number;
+  conjuntos: number;
+  variaciones: number;
+  stockTotal: number;
+  sinStock: number;
 }
 
 interface CuentaPorCobrar {
@@ -106,7 +102,7 @@ export default async function DashboardPage() {
       fetchJson<CajaStats>(`${BACKEND}/caja/stats`, token).catch(() => null),
       fetchJson<Movimiento[]>(`${BACKEND}/caja`, token).catch(() => [] as Movimiento[]),
       fetchJson<Contrato[]>(`${BACKEND}/contratos`, token).catch(() => [] as Contrato[]),
-      fetchJson<InventarioStat[]>(`${BACKEND}/inventario/stats-sucursales`, token).catch(() => [] as InventarioStat[]),
+      fetchJson<InventarioStat>(`${BACKEND}/inventario/stats-sucursales`, token).catch(() => ({ conjuntos: 0, variaciones: 0, stockTotal: 0, sinStock: 0 })),
       fetchJson<CuentaPorCobrar[]>(`${BACKEND}/caja/cuentas-por-cobrar`, token).catch(() => [] as CuentaPorCobrar[]),
       fetchJson<{ id: number; nombre: string; rol: string; sucursal?: { nombre: string } | null }>(`${BACKEND}/auth/me`, token).catch(() => null),
     ]);
@@ -123,10 +119,11 @@ export default async function DashboardPage() {
   const contratosRecientes = [...contratos].sort((a, b) => b.id - a.id).slice(0, 8);
 
   // Inventario agregado
-  const invTotales = inventarioStats.reduce(
-    (acc, s) => ({ disponible: acc.disponible + s.disponible, alquilado: acc.alquilado + s.alquilado, total: acc.total + s.total }),
-    { disponible: 0, alquilado: 0, total: 0 }
-  );
+  const invTotales = {
+    total:      inventarioStats.stockTotal,
+    disponible: inventarioStats.stockTotal,
+    sinStock:   inventarioStats.sinStock,
+  };
 
   // Por cobrar
   const totalDeuda = cuentasPorCobrar.reduce(
@@ -214,10 +211,10 @@ export default async function DashboardPage() {
           icon={<IconAlert />}
         />
         <KpiCard
-          label="Prendas Alquiladas"
-          value={String(invTotales.alquilado)}
-          sub={`${invTotales.disponible} disponibles de ${invTotales.total}`}
-          positive
+          label="Stock Total"
+          value={String(invTotales.total)}
+          sub={`${invTotales.sinStock} conjuntos sin stock`}
+          positive={invTotales.sinStock === 0}
           accent="bg-gold/10 text-amber-700"
           icon={<IconDress />}
         />
@@ -401,61 +398,38 @@ export default async function DashboardPage() {
           </Table>
         </div>
 
-        {/* Inventario por sucursal */}
+        {/* Resumen de stock */}
         <div className="bg-card rounded-2xl border border-border p-5 shadow-sm">
           <h2 className="text-base font-semibold mb-0.5" style={{ fontFamily: "var(--font-outfit)" }}>
-            Inventario por Sucursal
+            Resumen de Stock
           </h2>
-          <p className="text-xs text-muted-foreground mb-4">Ocupación de prendas físicas</p>
-          <div className="space-y-4">
-            {inventarioStats.map((s) => {
-              const pct = s.total > 0 ? Math.round((s.alquilado / s.total) * 100) : 0;
-              return (
-                <div key={s.sucursalId} className="space-y-1.5">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-medium">{s.nombre}</p>
-                      <p className="text-xs text-muted-foreground">{s.ciudad}</p>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-xs font-semibold">{s.alquilado}/{s.total} alquilados</p>
-                      <p className="text-xs text-muted-foreground">{s.disponible} disponibles</p>
-                    </div>
-                  </div>
-                  <div className="h-2 rounded-full bg-muted overflow-hidden">
-                    <div
-                      className="h-full bg-crimson rounded-full transition-all"
-                      style={{ width: `${pct}%` }}
-                    />
-                  </div>
-                  <div className="flex items-center gap-3 text-[10px] text-muted-foreground">
-                    <span>🔄 Tránsito: {s.enTransferencia}</span>
-                    <span>⛔ Baja: {s.dadoDeBaja}</span>
-                    <span className="ml-auto font-semibold">{pct}% ocupado</span>
-                  </div>
-                </div>
-              );
-            })}
-            {inventarioStats.length === 0 && (
-              <p className="text-sm text-muted-foreground text-center py-4">Sin datos de inventario</p>
-            )}
-          </div>
-          {inventarioStats.length > 0 && (
-            <div className="mt-4 pt-4 border-t border-border grid grid-cols-3 gap-2 text-center">
-              <div>
-                <p className="text-base font-bold text-emerald-600" style={{ fontFamily: "var(--font-outfit)" }}>{invTotales.disponible}</p>
-                <p className="text-[10px] text-muted-foreground">Disponibles</p>
-              </div>
-              <div>
-                <p className="text-base font-bold text-crimson" style={{ fontFamily: "var(--font-outfit)" }}>{invTotales.alquilado}</p>
-                <p className="text-[10px] text-muted-foreground">Alquilados</p>
-              </div>
-              <div>
-                <p className="text-base font-bold" style={{ fontFamily: "var(--font-outfit)" }}>{invTotales.total}</p>
-                <p className="text-[10px] text-muted-foreground">Total</p>
-              </div>
+          <p className="text-xs text-muted-foreground mb-4">Inventario por cantidad de unidades</p>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="rounded-xl bg-muted/40 p-4 text-center">
+              <p className="text-2xl font-bold text-emerald-700" style={{ fontFamily: "var(--font-outfit)" }}>
+                {inventarioStats.conjuntos}
+              </p>
+              <p className="text-xs text-muted-foreground mt-1">Conjuntos activos</p>
             </div>
-          )}
+            <div className="rounded-xl bg-muted/40 p-4 text-center">
+              <p className="text-2xl font-bold" style={{ fontFamily: "var(--font-outfit)" }}>
+                {inventarioStats.stockTotal}
+              </p>
+              <p className="text-xs text-muted-foreground mt-1">Unidades en stock</p>
+            </div>
+            <div className="rounded-xl bg-muted/40 p-4 text-center">
+              <p className="text-2xl font-bold text-amber-600" style={{ fontFamily: "var(--font-outfit)" }}>
+                {inventarioStats.variaciones}
+              </p>
+              <p className="text-xs text-muted-foreground mt-1">Variaciones activas</p>
+            </div>
+            <div className="rounded-xl bg-muted/40 p-4 text-center">
+              <p className={`text-2xl font-bold ${inventarioStats.sinStock > 0 ? "text-red-600" : "text-emerald-700"}`} style={{ fontFamily: "var(--font-outfit)" }}>
+                {inventarioStats.sinStock}
+              </p>
+              <p className="text-xs text-muted-foreground mt-1">Sin stock</p>
+            </div>
+          </div>
         </div>
       </div>
 

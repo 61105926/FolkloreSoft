@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Query, Body, UnauthorizedException } from '@nestjs/common';
+import { Controller, Get, Post, Query, Body, UnauthorizedException, BadRequestException } from '@nestjs/common';
 import { BotService } from './bot.service.js';
 
 // Simple API-key guard (no JWT needed — bot calls this internally)
@@ -50,5 +50,40 @@ export class BotController {
   catalogo(@Query('key') key: string) {
     verifyKey(key);
     return this.svc.getCatalogo();
+  }
+
+  // ── Endpoints públicos (sin API key — para el frontend del cliente) ─────────
+
+  @Get('public/catalogo')
+  catalogoPublico() {
+    return this.svc.getCatalogo();
+  }
+
+  @Post('public/solicitud-reserva')
+  async crearSolicitud(@Body() body: {
+    nombre: string;
+    ci: string;
+    celular: string;
+    evento: string;
+    fechaEvento: string;
+    items: {
+      conjuntoId: number;
+      conjuntoNombre: string;
+      danza: string;
+      variacionId: number | null;
+      variacionNombre: string | null;
+      talla: string | null;
+      cantidad: number;
+      dias: number;
+      precioUnitario: number;
+      subtotal: number;
+    }[];
+    totalEstimado: number;
+    anticipoMin: number;
+  }) {
+    if (!body.nombre || !body.ci || !body.celular || !body.evento || !body.fechaEvento || !body.items?.length) {
+      throw new BadRequestException('Faltan campos requeridos');
+    }
+    return this.svc.crearSolicitudWeb(body);
   }
 }

@@ -32,7 +32,6 @@ export class ContratosController {
   @Post(':id/prendas')                          addPrenda(@Param('id', ParseIntPipe) id: number, @Body() body: any) { return this.svc.addPrenda(id, body); }
   @Patch('prendas/:id')                         updatePrenda(@Param('id', ParseIntPipe) id: number, @Body() body: any) { return this.svc.updatePrenda(id, body); }
   @Delete('prendas/:id')                        removePrenda(@Param('id', ParseIntPipe) id: number) { return this.svc.removePrenda(id); }
-  @Get('prendas/:id/instancias-disponibles')    getInstanciasDisponibles(@Param('id', ParseIntPipe) id: number) { return this.svc.getInstanciasDisponibles(id); }
   @Get('variacion/:id/stock')                   getStockForVariacion(@Param('id', ParseIntPipe) id: number) { return this.svc.getStockForVariacion(id); }
 
   // ── Garantías ──────────────────────────────────────────────────────────────

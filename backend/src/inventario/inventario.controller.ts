@@ -1,68 +1,72 @@
-import { Controller, Get, Post, Patch, Param, Body, Query, ParseIntPipe, UseGuards } from '@nestjs/common';
+import {
+  Controller, Get, Post, Patch, Param, Body,
+  Query, ParseIntPipe, UseGuards, Req,
+} from '@nestjs/common';
+import type { Request } from 'express';
 import { InventarioService } from './inventario.service.js';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard.js';
-import { EstadoInstanciaComponente } from '@prisma/client';
+import { TipoMovimientoStock, EstadoInstanciaComponente } from '@prisma/client';
+
+interface JwtUser { id: number; rol: string; sucursalId: number | null }
 
 @UseGuards(JwtAuthGuard)
 @Controller('inventario')
 export class InventarioController {
   constructor(private readonly svc: InventarioService) {}
 
+  // ── Resumen de stock ──────────────────────────────────────────────────────
+
   @Get('stats-sucursales')
-  statsPorSucursal() {
-    return this.svc.statsPorSucursal();
+  statsDashboard() {
+    return this.svc.statsDashboard();
   }
 
-  @Get('instancias-conjunto')
-  findAllConjuntos(@Query('sucursalId') sucursalId?: string) {
-    return this.svc.findAllInstanciasConjunto(sucursalId ? +sucursalId : undefined);
+  @Get('stock')
+  resumenStock() {
+    return this.svc.resumenStock();
   }
 
-  @Get('instancias-conjunto/:id')
-  findConjunto(@Param('id', ParseIntPipe) id: number) {
-    return this.svc.findInstanciaConjunto(id);
+  @Get('stock/:variacionId')
+  stockVariacion(@Param('variacionId', ParseIntPipe) variacionId: number) {
+    return this.svc.stockVariacion(variacionId).then((stock) => ({ variacionId, stock }));
   }
 
-  @Get('instancias-conjunto/:id/historial')
-  getHistorial(@Param('id', ParseIntPipe) id: number) {
-    return this.svc.getHistorial(id);
+  @Get('stock/conjunto/:conjuntoId')
+  stockConjunto(@Param('conjuntoId', ParseIntPipe) conjuntoId: number) {
+    return this.svc.stockConjunto(conjuntoId);
   }
 
-  @Post('instancias-conjunto')
-  createConjunto(@Body() body: { codigo: string; variacionId: number; sucursalId: number }) {
-    return this.svc.createInstanciaConjunto(body);
+  // ── Movimientos de stock ──────────────────────────────────────────────────
+
+  @Get('movimientos')
+  getMovimientos(@Query('variacionId') variacionId?: string) {
+    return this.svc.getMovimientos(variacionId ? +variacionId : undefined);
   }
 
-  @Post('instancias-conjunto/:id/ensamblar')
-  ensamblar(
-    @Param('id', ParseIntPipe) id: number,
-    @Body() body: { componenteIds: number[] },
+  @Post('movimientos')
+  registrarMovimiento(
+    @Body() body: {
+      variacionId: number;
+      tipo: TipoMovimientoStock;
+      cantidad: number;
+      motivo?: string;
+    },
+    @Req() req: Request & { user: JwtUser },
   ) {
-    return this.svc.ensamblar(id, body.componenteIds);
+    return this.svc.registrarMovimiento({ ...body, userId: req.user.id });
   }
 
-  @Post('instancias-conjunto/:id/desensamblar')
-  desensamblar(@Param('id', ParseIntPipe) id: number) {
-    return this.svc.desensamblar(id);
-  }
-
-  @Patch('instancias-conjunto/dar-de-baja')
-  darDeBaja(@Body() body: { ids: number[]; motivo?: string }) {
-    return this.svc.darDeBaja(body.ids, body.motivo);
-  }
-
-  @Patch('instancias-conjunto/:id/notas')
-  updateNotas(
-    @Param('id', ParseIntPipe) id: number,
-    @Body() body: { notas: string },
+  @Post('movimientos/masivo')
+  registrarMasivo(
+    @Body() body: {
+      items: { variacionId: number; tipo: TipoMovimientoStock; cantidad: number; motivo?: string }[];
+    },
+    @Req() req: Request & { user: JwtUser },
   ) {
-    return this.svc.updateNotas(id, body.notas);
+    return this.svc.registrarMovimientoMasivo(body.items, req.user.id);
   }
 
-  @Get('pool')
-  findPool(@Query('sucursalId', ParseIntPipe) sucursalId: number) {
-    return this.svc.findPool(sucursalId);
-  }
+  // ── Instancias de componentes ─────────────────────────────────────────────
 
   @Get('instancias-componente')
   findAllComponentes(@Query('sucursalId') sucursalId?: string) {
@@ -70,7 +74,15 @@ export class InventarioController {
   }
 
   @Post('instancias-componente')
-  createComponente(@Body() body: { serial: string; talla?: string; componenteId: number; sucursalId: number; notas?: string }) {
+  createComponente(
+    @Body() body: {
+      serial: string;
+      talla?: string;
+      componenteId: number;
+      sucursalId: number;
+      notas?: string;
+    },
+  ) {
     return this.svc.createInstanciaComponente(body);
   }
 

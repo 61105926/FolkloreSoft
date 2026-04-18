@@ -74,7 +74,6 @@ export class BotNotifyService {
     clienteNombre: string;
     contratoCode: string;
     participanteNombre: string;
-    instanciaCodigo?: string | null;
   }) {
     if (!data.clienteCelular) return;
     await this.send({ type: 'DEVOLUCION_PARTICIPANTE', to: data.clienteCelular, data });

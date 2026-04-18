@@ -1,10 +1,20 @@
 import type { Contrato } from "./eventos-client";
 
+const TIPO_P_LABEL: Record<string, string> = {
+  HOMBRE: "Hombre", CHOLITA: "Mujer", MACHA: "Macha", NINO: "Niño", OTRO: "Otro",
+};
+
 export function imprimirContrato(c: Contrato) {
   const prendas_ = c.prendas ?? [];
   const participantes_ = c.participantes ?? [];
   const garantias_ = c.garantias ?? [];
   const saldo = (parseFloat(c.total) - parseFloat(c.total_pagado)).toFixed(2);
+
+  // Separar garantía en efectivo del resto de ingresos
+  const garantiaEfectivo = garantias_
+    .filter((g) => g.tipo === "EFECTIVO")
+    .reduce((sum, g) => sum + (g.valor ? parseFloat(String(g.valor)) : 0), 0);
+  const garantiasNoEfectivo = garantias_.filter((g) => g.tipo !== "EFECTIVO");
 
   const filasPrendas = prendas_
     .map((p) => {
@@ -28,26 +38,15 @@ export function imprimirContrato(c: Contrato) {
 
   const filasParticipantes = participantes_
     .map((p) => {
-      const instancia = p.instanciaConjunto ? p.instanciaConjunto.codigo : "-";
       const prenda = prendas_.find((pr) => pr.id === p.prendaId);
       return `<tr>
         <td style="padding:6px 8px;border:1px solid #ddd">${p.nombre}</td>
         <td style="padding:6px 8px;border:1px solid #ddd">${p.ci ?? "-"}</td>
-        <td style="padding:6px 8px;border:1px solid #ddd">${p.tipo}</td>
+        <td style="padding:6px 8px;border:1px solid #ddd">${p.celular ?? "-"}</td>
+        <td style="padding:6px 8px;border:1px solid #ddd">${TIPO_P_LABEL[p.tipo] ?? p.tipo}</td>
         <td style="padding:6px 8px;border:1px solid #ddd">${prenda?.modelo ?? "-"}</td>
-        <td style="padding:6px 8px;border:1px solid #ddd;font-family:monospace">${instancia}</td>
       </tr>`;
     })
-    .join("");
-
-  const filasGarantias = garantias_
-    .map(
-      (g) => `<tr>
-      <td style="padding:6px 8px;border:1px solid #ddd">${g.tipo.replace(/_/g, " ")}</td>
-      <td style="padding:6px 8px;border:1px solid #ddd">${g.descripcion ?? "-"}</td>
-      <td style="padding:6px 8px;border:1px solid #ddd;text-align:right">${g.valor ? "Bs. " + parseFloat(String(g.valor)).toFixed(2) : "-"}</td>
-    </tr>`
-    )
     .join("");
 
   const html = `<!DOCTYPE html><html lang="es"><head><meta charset="utf-8">
@@ -65,13 +64,18 @@ export function imprimirContrato(c: Contrato) {
     @media print { body { padding: 12px; } }
   </style>
   </head><body>
-  <div style="display:flex;justify-content:space-between;align-items:flex-start;border-bottom:2px solid #000;padding-bottom:10px;margin-bottom:14px">
+  <div style="display:flex;justify-content:space-between;align-items:flex-start;border-bottom:2px solid #000;padding-bottom:10px;margin-bottom:6px">
     <div><h1>FOLCKLORE Bolivia</h1><p style="margin:2px 0;color:#555">Alquiler de trajes folklóricos</p></div>
     <div style="text-align:right">
       <div style="font-size:15px;font-weight:bold">N° ${c.codigo}</div>
       <div style="color:#555">Contrato: ${new Date(c.fecha_contrato).toLocaleDateString("es-BO")}</div>
       <div style="color:#555">Estado: ${c.estado.replace(/_/g, " ")}</div>
     </div>
+  </div>
+  <div style="text-align:center;margin-bottom:14px">
+    <span style="display:inline-block;font-size:13px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;border:1.5px solid #000;padding:3px 18px;border-radius:4px">
+      Contrato ${c.tipo === "RESERVA" ? "de Reserva" : "Directo"}
+    </span>
   </div>
 
   <h2>Datos del Cliente</h2>
@@ -105,29 +109,49 @@ export function imprimirContrato(c: Contrato) {
       ? `
   <h2>Participantes</h2>
   <table><thead><tr>
-    <th>Nombre</th><th>CI</th><th>Tipo</th><th>Prenda</th><th>Instancia</th>
+    <th>Nombre</th><th>CI</th><th>Celular</th><th>Tipo</th><th>Prenda</th>
   </tr></thead><tbody>${filasParticipantes}</tbody></table>`
       : ""
   }
 
   ${
-    garantias_.length > 0
+    garantiasNoEfectivo.length > 0
       ? `
   <h2>Garantías</h2>
   <table><thead><tr><th>Tipo</th><th>Descripción</th><th style="text-align:right">Valor</th></tr></thead>
-  <tbody>${filasGarantias}</tbody></table>`
+  <tbody>${garantiasNoEfectivo.map((g) => `<tr>
+    <td style="padding:6px 8px;border:1px solid #ddd">${g.tipo.replace(/_/g, " ")}</td>
+    <td style="padding:6px 8px;border:1px solid #ddd">${g.descripcion ?? "-"}</td>
+    <td style="padding:6px 8px;border:1px solid #ddd;text-align:right">-</td>
+  </tr>`).join("")}</tbody></table>`
       : ""
   }
 
-  <h2>Resumen Financiero</h2>
-  <div class="section" style="max-width:280px;margin-left:auto">
-    <table><tbody>
-      <tr><td style="padding:4px 8px;border:1px solid #ddd">Total</td><td style="padding:4px 8px;border:1px solid #ddd;text-align:right;font-weight:bold">Bs. ${parseFloat(c.total).toFixed(2)}</td></tr>
-      <tr><td style="padding:4px 8px;border:1px solid #ddd">Anticipo</td><td style="padding:4px 8px;border:1px solid #ddd;text-align:right">Bs. ${parseFloat(c.anticipo).toFixed(2)}</td></tr>
-      <tr><td style="padding:4px 8px;border:1px solid #ddd">Total pagado</td><td style="padding:4px 8px;border:1px solid #ddd;text-align:right">Bs. ${parseFloat(c.total_pagado).toFixed(2)}</td></tr>
-      <tr><td style="padding:4px 8px;border:1px solid #ddd;font-weight:600">Saldo pendiente</td><td style="padding:4px 8px;border:1px solid #ddd;text-align:right;font-weight:bold;color:${parseFloat(saldo) > 0 ? "#c00" : "#080"}">Bs. ${saldo}</td></tr>
-      ${c.forma_pago ? `<tr><td style="padding:4px 8px;border:1px solid #ddd">Forma de pago</td><td style="padding:4px 8px;border:1px solid #ddd;text-align:right">${c.forma_pago}</td></tr>` : ""}
-    </tbody></table>
+  <h2>Resumen de Caja</h2>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:10px">
+
+    <div>
+      <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;color:#444;border-bottom:1px solid #ccc;padding-bottom:3px;margin-bottom:6px">Ganancia (Alquiler)</div>
+      <table><tbody>
+        <tr><td style="padding:4px 8px;border:1px solid #ddd">Total contrato</td><td style="padding:4px 8px;border:1px solid #ddd;text-align:right;font-weight:bold">Bs. ${parseFloat(c.total).toFixed(2)}</td></tr>
+        ${c.tipo === "RESERVA" ? `<tr><td style="padding:4px 8px;border:1px solid #ddd">Anticipo</td><td style="padding:4px 8px;border:1px solid #ddd;text-align:right">Bs. ${parseFloat(c.anticipo).toFixed(2)}</td></tr>` : ""}
+        <tr><td style="padding:4px 8px;border:1px solid #ddd">Pagado</td><td style="padding:4px 8px;border:1px solid #ddd;text-align:right">Bs. ${parseFloat(c.total_pagado).toFixed(2)}</td></tr>
+        <tr><td style="padding:4px 8px;border:1px solid #ddd;font-weight:600">Saldo pendiente</td><td style="padding:4px 8px;border:1px solid #ddd;text-align:right;font-weight:bold;color:${parseFloat(saldo) > 0 ? "#c00" : "#080"}">Bs. ${saldo}</td></tr>
+        ${c.forma_pago ? `<tr><td style="padding:4px 8px;border:1px solid #ddd">Forma de pago</td><td style="padding:4px 8px;border:1px solid #ddd;text-align:right">${c.forma_pago}</td></tr>` : ""}
+      </tbody></table>
+    </div>
+
+    <div>
+      <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;color:#444;border-bottom:1px solid #ccc;padding-bottom:3px;margin-bottom:6px">Garantía en Efectivo</div>
+      ${garantiaEfectivo > 0
+        ? `<table><tbody>
+            <tr><td style="padding:4px 8px;border:1px solid #ddd">Monto recibido</td><td style="padding:4px 8px;border:1px solid #ddd;text-align:right;font-weight:bold">Bs. ${garantiaEfectivo.toFixed(2)}</td></tr>
+            <tr><td style="padding:4px 8px;border:1px solid #ddd;color:#777">A devolver al cliente</td><td style="padding:4px 8px;border:1px solid #ddd;text-align:right;color:#777">al finalizar contrato</td></tr>
+          </tbody></table>`
+        : `<p style="color:#aaa;font-size:11px;margin:8px 0">Sin garantía en efectivo</p>`
+      }
+    </div>
+
   </div>
 
   ${

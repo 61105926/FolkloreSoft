@@ -1,12 +1,9 @@
 import { addKeyword, EVENTS, utils } from '@builderbot/bot';
 import { SendWaveProvider as Provider } from '@gamastudio/sendwave-provider';
-import { stockFlow }      from './stock.flow.js';
-import { reservaFlow }    from './reserva.flow.js';
-import { contactoFlow }   from './contacto.flow.js';
-import { consultaFlow }   from './consulta.flow.js';
-import { cotizacionFlow } from './cotizacion.flow.js';
-import { cancelarFlow }   from './cancelar.flow.js';
-import { adminFlow }      from './admin.flow.js';
+import { reservaFlow }  from './reserva.flow.js';
+import { contactoFlow } from './contacto.flow.js';
+import { consultaFlow } from './consulta.flow.js';
+import { adminFlow }    from './admin.flow.js';
 
 type Ctx = { from: string; body: string };
 
@@ -22,67 +19,71 @@ export async function enviarMenu(ctx: Ctx, provider: Provider) {
     from: ctx.from,
     text:
       `🎭 *FolkloreSoft Bolivia — ${saludoPorHora()}*\n\n` +
-      `📦 *disponibilidad* — Ver trajes disponibles\n` +
-      `💰 *cotizar* — Consultar precio\n` +
-      `📋 *reservar* — Hacer una reserva\n` +
-      `🔍 *consultar* — Ver mi reserva\n` +
-      `❌ *cancelar* — Cancelar reserva\n` +
-      `📞 *asesor* — Hablar con una persona\n\n` +
-      `_Escribe la palabra resaltada o tu consulta._`,
+      `1️⃣ *Reservar trajes*\n` +
+      `2️⃣ *Ver mi contrato*\n` +
+      `3️⃣ *Hablar con un asesor*\n\n` +
+      `_Escribe el número de la opción._`,
   });
 }
 
-// ── Bienvenida — solo envía el menú, sin capture ─────────────────────────────
-// (sin capture:true, el queue item completa inmediatamente)
+// ── Bienvenida ─────────────────────────────────────────────────────────────────
 export const menuFlow = addKeyword<Provider>(EVENTS.WELCOME)
-  .addAction(async (ctx, { provider }) => {
+  .addAction(async (ctx: Ctx, { provider }) => {
     await enviarMenu(ctx, provider);
   });
 
-// ── Volver al menú ────────────────────────────────────────────────────────────
+// ── Volver al menú ─────────────────────────────────────────────────────────────
 export const volverFlow = addKeyword<Provider>([
   'menu', 'menú', 'inicio', 'hola', 'buenas', 'buenos días',
   'buenos dias', 'buenas tardes', 'buenas noches', 'hi', 'hey',
 ])
-  .addAction(async (ctx, { provider }) => {
+  .addAction(async (ctx: Ctx, { provider }) => {
     await enviarMenu(ctx, provider);
   });
 
-// ── Opciones del menú — SOLO palabras clave completas (nunca dígitos sueltos)
-// Los números del menú son decorativos; el usuario escribe la palabra.
+// ── Opciones numeradas ─────────────────────────────────────────────────────────
+// Se usan palabras completas como keywords; la lógica interna compara ctx.body exacto
+// para que los números no interfieran con CIs/celulares mid-flow.
 export const opcionFlow = addKeyword<Provider>([
-  'disponibilidad', 'trajes', 'catalogo', 'catálogo', 'stock', 'ver trajes',
-  'cotizar', 'cotizacion', 'cotización', 'precio', 'precios', 'cuanto cuesta', 'cuánto cuesta',
-  'reservar', 'alquilar', 'quiero reservar',
-  'consultar', 'mi reserva', 'ver reserva', 'ver mi reserva',
-  'cancelar', 'anular', 'cancelar reserva',
-  'asesor', 'hablar con asesor', 'hablar con una persona',
+  'reservar', 'alquilar', 'quiero reservar', 'necesito trajes',
+  'contrato', 'mi contrato', 'ver contrato', 'ver mi contrato',
+  'consultar', 'mi reserva', 'ver reserva',
+  'asesor', 'hablar con asesor', 'hablar con una persona', 'persona',
   'admin', '/admin',
 ])
-  .addAction(async (ctx, { gotoFlow, provider }) => {
+  .addAction(async (ctx: Ctx, { gotoFlow, provider }) => {
     const o = ctx.body.trim().toLowerCase();
 
-    if (o.includes('disponibilidad') || o.includes('trajes') || o.includes('stock') || o.includes('catalogo') || o.includes('catálogo'))
-      return gotoFlow(stockFlow);
-    if (o.includes('cotizar') || o.includes('precio') || o.includes('cuanto'))
-      return gotoFlow(cotizacionFlow);
-    if (o.includes('reservar') || o.includes('alquilar'))
+    // Opción 1 — Reservar
+    if (o === '1' || o.includes('reservar') || o.includes('alquilar') || o.includes('necesito traje'))
       return gotoFlow(reservaFlow);
-    if (o.includes('consultar') || o.includes('mi reserva') || o.includes('ver reserva'))
+
+    // Opción 2 — Ver contrato
+    if (o === '2' || o.includes('contrato') || o.includes('consultar') || o.includes('mi reserva') || o.includes('ver reserva'))
       return gotoFlow(consultaFlow);
-    if (o.includes('cancelar') || o.includes('anular'))
-      return gotoFlow(cancelarFlow);
-    if (o.includes('asesor') || o.includes('hablar'))
+
+    // Opción 3 — Asesor
+    if (o === '3' || o.includes('asesor') || o.includes('hablar') || o.includes('persona'))
       return gotoFlow(contactoFlow);
+
     if (o === 'admin' || o === '/admin')
       return gotoFlow(adminFlow);
 
     await enviarMenu(ctx, provider);
   });
 
-// ── Cierre de sesión por inactividad (Queue Flow) ─────────────────────────────
+// Capturar dígitos sueltos solo si el usuario está en el menú (no mid-flow)
+export const digitoFlow = addKeyword<Provider>(['1', '2', '3'])
+  .addAction(async (ctx: Ctx, { gotoFlow }) => {
+    const d = ctx.body.trim();
+    if (d === '1') return gotoFlow(reservaFlow);
+    if (d === '2') return gotoFlow(consultaFlow);
+    if (d === '3') return gotoFlow(contactoFlow);
+  });
+
+// ── Cierre por inactividad ─────────────────────────────────────────────────────
 export const endFlow = addKeyword<Provider>(utils.setEvent('END_FLOW'))
   .addAction(async (ctx, { endFlow: end, provider }) => {
     provider.forceClearUser(ctx.from);
-    end('⏰ Cerramos la sesión por inactividad. ¡Escríbenos cuando quieras! 👋\n_Escribe *hola* para iniciar._');
+    end('⏰ Sesión cerrada por inactividad. Escribe *hola* cuando quieras. 👋');
   });

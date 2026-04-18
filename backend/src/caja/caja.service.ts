@@ -65,8 +65,15 @@ export class CajaService {
       this.prisma.movimientoCaja.findMany({ where: { ...scope, tipo: 'INGRESO' }, select: { concepto: true, monto: true } }),
     ]);
 
-    const sumar = (movs: typeof todosHoy, tipo: TipoMovimiento) =>
-      movs.filter((m) => m.tipo === tipo).reduce((s, m) => s + Number(m.monto), 0);
+    const CONCEPTOS_GARANTIA: ConceptoCaja[] = ['GARANTIA_EFECTIVO'];
+
+    const sumarEgresos = (movs: typeof todosHoy) =>
+      movs.filter((m) => m.tipo === 'EGRESO').reduce((s, m) => s + Number(m.monto), 0);
+
+    // Ingresos reales = INGRESO excluyendo garantía efectivo (es depósito a devolver)
+    const sumarGanancia = (movs: typeof todosHoy) =>
+      movs.filter((m) => m.tipo === 'INGRESO' && !CONCEPTOS_GARANTIA.includes(m.concepto))
+        .reduce((s, m) => s + Number(m.monto), 0);
 
     const porFormaPago = (movs: typeof todosHoy, tipo: TipoMovimiento) => {
       const map: Record<string, number> = {};
@@ -81,17 +88,17 @@ export class CajaService {
 
     return {
       hoy: {
-        ingresos: sumar(todosHoy, 'INGRESO'), egresos: sumar(todosHoy, 'EGRESO'),
-        balance:  sumar(todosHoy, 'INGRESO') - sumar(todosHoy, 'EGRESO'),
+        ingresos: sumarGanancia(todosHoy), egresos: sumarEgresos(todosHoy),
+        balance:  sumarGanancia(todosHoy) - sumarEgresos(todosHoy),
         porFormaPago: porFormaPago(todosHoy, 'INGRESO'),
       },
       semana: {
-        ingresos: sumar(todosSemana, 'INGRESO'), egresos: sumar(todosSemana, 'EGRESO'),
-        balance:  sumar(todosSemana, 'INGRESO') - sumar(todosSemana, 'EGRESO'),
+        ingresos: sumarGanancia(todosSemana), egresos: sumarEgresos(todosSemana),
+        balance:  sumarGanancia(todosSemana) - sumarEgresos(todosSemana),
       },
       mes: {
-        ingresos: sumar(todosMes, 'INGRESO'), egresos: sumar(todosMes, 'EGRESO'),
-        balance:  sumar(todosMes, 'INGRESO') - sumar(todosMes, 'EGRESO'),
+        ingresos: sumarGanancia(todosMes), egresos: sumarEgresos(todosMes),
+        balance:  sumarGanancia(todosMes) - sumarEgresos(todosMes),
       },
       totales: {
         anticipo: sumarConcepto(['ANTICIPO_CONTRATO']),

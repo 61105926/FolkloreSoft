@@ -21,18 +21,19 @@ enum Rol {
 }
 
 model User {
-  id              Int              @id @default(autoincrement())
-  nombre          String           @default("Sin nombre")
-  email           String           @unique
-  password_hash   String
-  rol             Rol              @default(VENDEDOR)
-  activo          Boolean          @default(true)
-  sucursalId      Int?
-  createdAt       DateTime         @default(now())
-  updatedAt       DateTime         @updatedAt
-  refreshTokens   RefreshToken[]
-  movimientosCaja MovimientoCaja[]
-  sucursal        Sucursal?        @relation(fields: [sucursalId], references: [id], onDelete: SetNull)
+  id               Int               @id @default(autoincrement())
+  nombre           String            @default("Sin nombre")
+  email            String            @unique
+  password_hash    String
+  rol              Rol               @default(VENDEDOR)
+  activo           Boolean           @default(true)
+  sucursalId       Int?
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  refreshTokens    RefreshToken[]
+  movimientosCaja  MovimientoCaja[]
+  movimientosStock MovimientoStock[]
+  sucursal         Sucursal?         @relation(fields: [sucursalId], references: [id], onDelete: SetNull)
 }
 
 model RefreshToken {
@@ -49,20 +50,17 @@ model RefreshToken {
 // ─────────────────────────────────────────
 
 model Sucursal {
-  id                      Int                 @id @default(autoincrement())
-  nombre                  String
-  ciudad                  String
-  direccion               String?
-  createdAt               DateTime            @default(now())
-  updatedAt               DateTime            @updatedAt
-  instanciasConjunto      InstanciaConjunto[]
-  instanciasComponente    InstanciaComponente[]
-  transferenciasOrigen    Transferencia[]     @relation("TransferenciaOrigen")
-  transferenciasDestino   Transferencia[]     @relation("TransferenciaDestino")
-  eventos                 EventoFolclorico[]
-  usuarios                User[]
-  movimientosCaja         MovimientoCaja[]
-  contratos               ContratoAlquiler[]
+  id                   Int                   @id @default(autoincrement())
+  nombre               String
+  ciudad               String
+  direccion            String?
+  createdAt            DateTime              @default(now())
+  updatedAt            DateTime              @updatedAt
+  instanciasComponente InstanciaComponente[]
+  eventos              EventoFolclorico[]
+  usuarios             User[]
+  movimientosCaja      MovimientoCaja[]
+  contratos            ContratoAlquiler[]
 }
 
 // ─────────────────────────────────────────
@@ -90,30 +88,30 @@ model Conjunto {
 }
 
 model VariacionConjunto {
-  id               Int                 @id @default(autoincrement())
-  codigo_variacion String              @unique
+  id               Int               @id @default(autoincrement())
+  codigo_variacion String            @unique
   nombre_variacion String
   talla            String?
   color            String?
   estilo           String?
-  precio_venta     Decimal?            @db.Decimal(10, 2)
-  precio_alquiler  Decimal?            @db.Decimal(10, 2)
-  activa           Boolean             @default(true)
+  precio_venta     Decimal?          @db.Decimal(10, 2)
+  precio_alquiler  Decimal?          @db.Decimal(10, 2)
+  activa           Boolean           @default(true)
   conjuntoId       Int
-  createdAt        DateTime            @default(now())
-  updatedAt        DateTime            @updatedAt
-  conjunto         Conjunto            @relation(fields: [conjuntoId], references: [id], onDelete: Cascade)
-  instancias       InstanciaConjunto[]
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  conjunto         Conjunto          @relation(fields: [conjuntoId], references: [id], onDelete: Cascade)
   contratoPrendas  ContratoPrenda[]
+  movimientosStock MovimientoStock[]
 }
 
 model Componente {
-  id          Int                  @id @default(autoincrement())
+  id          Int                   @id @default(autoincrement())
   nombre      String
-  tipo        String               // BLUSA | POLLERA | SOMBRERO | BOTAS | MASCARA | etc.
+  tipo        String                // BLUSA | POLLERA | SOMBRERO | BOTAS | MASCARA | etc.
   descripcion String?
-  createdAt   DateTime             @default(now())
-  updatedAt   DateTime             @updatedAt
+  createdAt   DateTime              @default(now())
+  updatedAt   DateTime              @updatedAt
   conjuntos   ConjuntoComponente[]
   instancias  InstanciaComponente[]
 }
@@ -134,46 +132,30 @@ model ConjuntoComponente {
 }
 
 // ─────────────────────────────────────────
-// Inventario físico (instancias reales)
+// Stock de conjuntos (por cantidad, sin instancias individuales)
 // ─────────────────────────────────────────
 
-enum EstadoInstanciaConjunto {
-  DISPONIBLE
-  RESERVADO
-  ALQUILADO
-  EN_TRANSFERENCIA
-  DADO_DE_BAJA
+enum TipoMovimientoStock {
+  COMPRA  // Entrada de nuevos trajes al inventario
+  BAJA    // Traje dañado, perdido o dado de baja
+  AJUSTE  // Corrección manual del inventario
 }
 
-model InstanciaConjunto {
-  id                      Int                       @id @default(autoincrement())
-  codigo                  String                    @unique // Ej: "CAP-001"
-  variacionId             Int
-  sucursalId              Int
-  estado                  EstadoInstanciaConjunto   @default(DISPONIBLE)
-  notas                   String?                   @db.Text
-  contratoReservaId       Int?
-  createdAt               DateTime                  @default(now())
-  updatedAt               DateTime                  @updatedAt
-  variacion               VariacionConjunto         @relation(fields: [variacionId], references: [id])
-  sucursal                Sucursal                  @relation(fields: [sucursalId], references: [id])
-  contratoReserva         ContratoAlquiler?         @relation("instanciasReservadas", fields: [contratoReservaId], references: [id], onDelete: SetNull)
-  componentes             InstanciaComponente[]
-  transferencias          Transferencia[]
-  contratoParticipantes   ContratoParticipante[]
-  historial               MovimientoInstancia[]
+model MovimientoStock {
+  id          Int                 @id @default(autoincrement())
+  variacionId Int
+  tipo        TipoMovimientoStock
+  cantidad    Int                 // positivo = entrada, negativo = salida
+  motivo      String?
+  userId      Int?
+  createdAt   DateTime            @default(now())
+  variacion   VariacionConjunto   @relation(fields: [variacionId], references: [id], onDelete: Cascade)
+  user        User?               @relation(fields: [userId], references: [id], onDelete: SetNull)
 }
 
-model MovimientoInstancia {
-  id            Int                       @id @default(autoincrement())
-  instanciaId   Int
-  tipo          String                    // CREADO | ESTADO_CAMBIO | NOTA | DADO_DE_BAJA
-  estadoAntes   EstadoInstanciaConjunto?
-  estadoDespues EstadoInstanciaConjunto?
-  notas         String?                   @db.Text
-  createdAt     DateTime                  @default(now())
-  instancia     InstanciaConjunto         @relation(fields: [instanciaId], references: [id], onDelete: Cascade)
-}
+// ─────────────────────────────────────────
+// Inventario físico de componentes sueltos
+// ─────────────────────────────────────────
 
 enum EstadoInstanciaComponente {
   DISPONIBLE_POOL
@@ -183,23 +165,21 @@ enum EstadoInstanciaComponente {
 }
 
 model InstanciaComponente {
-  id                  Int                        @id @default(autoincrement())
-  serial              String                     @unique           // Ej: "SOMB-042"
-  talla               String?
-  componenteId        Int
-  sucursalId          Int
-  instanciaConjuntoId Int?
-  estado              EstadoInstanciaComponente  @default(DISPONIBLE_POOL)
-  notas               String?
-  createdAt           DateTime                   @default(now())
-  updatedAt           DateTime                   @updatedAt
-  componente          Componente                 @relation(fields: [componenteId], references: [id])
-  sucursal            Sucursal                   @relation(fields: [sucursalId], references: [id])
-  instanciaConjunto   InstanciaConjunto?         @relation(fields: [instanciaConjuntoId], references: [id])
+  id           Int                       @id @default(autoincrement())
+  serial       String                    @unique
+  talla        String?
+  componenteId Int
+  sucursalId   Int
+  estado       EstadoInstanciaComponente @default(DISPONIBLE_POOL)
+  notas        String?
+  createdAt    DateTime                  @default(now())
+  updatedAt    DateTime                  @updatedAt
+  componente   Componente                @relation(fields: [componenteId], references: [id])
+  sucursal     Sucursal                  @relation(fields: [sucursalId], references: [id])
 }
 
 // ─────────────────────────────────────────
-// Eventos Folklóricos (agrupadores simples)
+// Eventos Folklóricos
 // ─────────────────────────────────────────
 
 enum TipoEvento {
@@ -244,7 +224,7 @@ model Cliente {
   celular   String?
   ci        String?
   email     String?
-  rol       String             @default("OTRO") // padre, docente, organizador, otro
+  rol       String             @default("OTRO")
   createdAt DateTime           @default(now())
   updatedAt DateTime           @updatedAt
   contratos ContratoAlquiler[]
@@ -332,13 +312,12 @@ model ContratoAlquiler {
   participantes         ContratoParticipante[]
   historial             ContratoHistorial[]
   movimientosCaja       MovimientoCaja[]
-  instanciasReservadas  InstanciaConjunto[]    @relation("instanciasReservadas")
 }
 
 model ContratoHistorial {
   id          Int              @id @default(autoincrement())
   contratoId  Int
-  tipo        String           // CREADO, CONFIRMADO, ENTREGADO, EN_USO, DEVUELTO, CON_DEUDA, CERRADO, CANCELADO, GARANTIA_RETENIDA, PRENDA_AGREGADA, PRENDA_REMOVIDA, PARTICIPANTE_AGREGADO, PARTICIPANTE_DEVOLVIO, PARTICIPANTE_REMOVIDO, GARANTIA_AGREGADA, GARANTIA_REMOVIDA
+  tipo        String
   descripcion String?          @db.Text
   createdAt   DateTime         @default(now())
   contrato    ContratoAlquiler @relation(fields: [contratoId], references: [id], onDelete: Cascade)
@@ -378,21 +357,20 @@ model ContratoGarantia {
 }
 
 model ContratoParticipante {
-  id                  Int                @id @default(autoincrement())
-  contratoId          Int
-  prendaId            Int?
-  instanciaConjuntoId Int?
-  nombre              String
-  ci                  String?
-  tipo                TipoParticipante   @default(OTRO)
-  notas               String?            @db.Text
-  devuelto            Boolean            @default(false)
-  fecha_devolucion    DateTime?
-  createdAt           DateTime           @default(now())
-  contrato            ContratoAlquiler   @relation(fields: [contratoId], references: [id], onDelete: Cascade)
-  prenda              ContratoPrenda?    @relation(fields: [prendaId], references: [id], onDelete: SetNull)
-  instanciaConjunto   InstanciaConjunto? @relation(fields: [instanciaConjuntoId], references: [id], onDelete: SetNull)
-  garantias           ContratoGarantia[]
+  id               Int              @id @default(autoincrement())
+  contratoId       Int
+  prendaId         Int?
+  nombre           String
+  ci               String?
+  celular          String?
+  tipo             TipoParticipante @default(OTRO)
+  notas            String?          @db.Text
+  devuelto         Boolean          @default(false)
+  fecha_devolucion DateTime?
+  createdAt        DateTime         @default(now())
+  contrato         ContratoAlquiler @relation(fields: [contratoId], references: [id], onDelete: Cascade)
+  prenda           ContratoPrenda?  @relation(fields: [prendaId], references: [id], onDelete: SetNull)
+  garantias        ContratoGarantia[]
 }
 
 // ─────────────────────────────────────────
@@ -433,25 +411,21 @@ model MovimientoCaja {
 }
 
 // ─────────────────────────────────────────
-// Transferencias entre sucursales
+// Solicitudes web (catálogo público)
 // ─────────────────────────────────────────
 
-enum EstadoTransferencia {
-  SOLICITADO
-  EN_TRANSITO
-  RECIBIDO
-}
-
-model Transferencia {
-  id                  Int                  @id @default(autoincrement())
-  instanciaConjuntoId Int
-  sucursalOrigenId    Int
-  sucursalDestinoId   Int
-  estado              EstadoTransferencia  @default(SOLICITADO)
-  notas               String?              @db.Text
-  createdAt           DateTime             @default(now())
-  updatedAt           DateTime             @updatedAt
-  instanciaConjunto   InstanciaConjunto    @relation(fields: [instanciaConjuntoId], references: [id])
-  sucursalOrigen      Sucursal             @relation("TransferenciaOrigen", fields: [sucursalOrigenId], references: [id])
-  sucursalDestino     Sucursal             @relation("TransferenciaDestino", fields: [sucursalDestinoId], references: [id])
+model SolicitudReservaWeb {
+  id             Int       @id @default(autoincrement())
+  nombre         String
+  ci             String?
+  celular        String
+  evento         String?
+  fecha_evento   DateTime?
+  items          Json
+  total_estimado Decimal   @db.Decimal(10, 2)
+  anticipo_min   Decimal   @db.Decimal(10, 2)
+  estado         String    @default("PENDIENTE") // PENDIENTE | CONTACTADO | CONVERTIDO | CANCELADO
+  notas          String?   @db.Text
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
 }

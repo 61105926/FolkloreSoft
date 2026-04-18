@@ -20,13 +20,6 @@ interface ConjuntoComponente {
   componente: Componente;
 }
 
-interface Instancia {
-  id: number;
-  codigo: string;
-  estado: "DISPONIBLE" | "RESERVADO" | "ALQUILADO" | "EN_TRANSFERENCIA" | "DADO_DE_BAJA";
-  sucursal: { id: number; nombre: string };
-}
-
 interface Variacion {
   id: number;
   codigo_variacion: string;
@@ -37,7 +30,8 @@ interface Variacion {
   precio_venta: string | null;
   precio_alquiler: string | null;
   activa: boolean;
-  instancias: Instancia[];
+  movimientosStock: { cantidad: number }[];
+  contratoPrendas: { total: number }[];
 }
 
 interface Conjunto {
@@ -126,22 +120,26 @@ function formatPrecio(precio: string) {
   });
 }
 
+function stockVariacion(v: Variacion): number {
+  return v.movimientosStock.reduce((s, m) => s + m.cantidad, 0);
+}
+
+function reservadosVariacion(v: Variacion): number {
+  return v.contratoPrendas.reduce((s, p) => s + p.total, 0);
+}
+
 function getStats(c: Conjunto) {
-  const all = c.variaciones.flatMap((v) => v.instancias);
-  const total = all.length;
-  const disponibles = all.filter((i) => i.estado === "DISPONIBLE").length;
-  const alquilados  = all.filter((i) => i.estado === "ALQUILADO").length;
-  const reservados  = all.filter((i) => i.estado === "RESERVADO").length;
-  const limpieza    = all.filter((i) => i.estado === "DADO_DE_BAJA").length;
-  const pct = total > 0 ? Math.round((disponibles / total) * 100) : 0;
-  return { total, disponibles, alquilados, reservados, limpieza, pct };
+  const total      = c.variaciones.reduce((s, v) => s + stockVariacion(v), 0);
+  const reservados = c.variaciones.reduce((s, v) => s + reservadosVariacion(v), 0);
+  const disponibles = Math.max(0, total - reservados);
+  return { total, disponibles, reservados };
 }
 
 // ── Stats Bar ─────────────────────────────────────────────────────────────────
 
 function StatsBar({ conjuntos }: { conjuntos: Conjunto[] }) {
   const totalConjuntos = conjuntos.length;
-  const totalInstancias = conjuntos.reduce((s, c) => s + getStats(c).total, 0);
+  const totalInstancias = conjuntos.reduce((s, c) => s + getStats(c).disponibles, 0);
   const conStock = conjuntos.filter((c) => getStats(c).disponibles > 0).length;
   const sinStock = totalConjuntos - conStock;
 
@@ -151,7 +149,7 @@ function StatsBar({ conjuntos }: { conjuntos: Conjunto[] }) {
         { label: "Conjuntos", value: totalConjuntos, color: "text-foreground" },
         { label: "Con stock", value: conStock, color: "text-coca" },
         { label: "Sin stock", value: sinStock, color: "text-crimson" },
-        { label: "Instancias totales", value: totalInstancias, color: "text-primary" },
+        { label: "Uds. disponibles", value: totalInstancias, color: "text-primary" },
       ].map((s) => (
         <div key={s.label} className="bg-card rounded-2xl border border-border px-4 py-3">
           <p className={`text-2xl font-bold ${s.color}`} style={{ fontFamily: "var(--font-outfit)" }}>
@@ -181,7 +179,7 @@ function ConjuntoCard({
 }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const colors = getDanzaColor(conjunto.danza);
-  const { total, disponibles, alquilados, reservados, limpieza, pct } = getStats(conjunto);
+  const { total, disponibles, reservados } = getStats(conjunto);
 
   return (
     <div className="group relative rounded-2xl border border-border bg-card overflow-hidden hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200">
@@ -265,7 +263,7 @@ function ConjuntoCard({
       <div className="grid grid-cols-2 divide-x divide-border border-y border-border mx-0">
         {[
           { label: "Variaciones", value: conjunto.variaciones.length },
-          { label: "Instancias",  value: total },
+          { label: "Stock",  value: total },
         ].map((kpi) => (
           <div key={kpi.label} className="flex flex-col items-center py-2.5 px-1 text-center">
             <span className="text-base font-bold leading-none" style={{ fontFamily: "var(--font-outfit)" }}>
@@ -276,32 +274,30 @@ function ConjuntoCard({
         ))}
       </div>
 
-      {/* Disponibilidad section */}
+      {/* Stock section */}
       <div className="px-4 pt-3 pb-4 space-y-2.5">
         {/* Label + ratio */}
         <div className="flex items-center justify-between">
           <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Disponibilidad</span>
-          <span className={`text-xs font-bold ${disponibles > 0 ? "text-coca" : "text-muted-foreground"}`}>
+          <span className={`text-xs font-bold ${disponibles > 0 ? "text-coca" : "text-crimson"}`}>
             {disponibles}/{total}
           </span>
         </div>
 
-        {/* Stacked progress bar */}
+        {/* Stacked bar: disponibles (verde) + reservados (rojo) */}
         <div className="h-2 bg-muted rounded-full overflow-hidden flex">
           {total > 0 && (
             <>
-              <div className="h-full bg-coca transition-all"       style={{ width: `${(disponibles / total) * 100}%` }} />
-              <div className="h-full bg-gold transition-all"       style={{ width: `${(alquilados  / total) * 100}%` }} />
-              <div className="h-full bg-primary/60 transition-all" style={{ width: `${(reservados  / total) * 100}%` }} />
+              <div className="h-full bg-coca transition-all" style={{ width: `${(disponibles / total) * 100}%` }} />
+              <div className="h-full bg-primary/60 transition-all" style={{ width: `${(reservados / total) * 100}%` }} />
             </>
           )}
         </div>
 
-        {/* 3-col breakdown */}
-        <div className="grid grid-cols-3 gap-1 text-center">
+        {/* 2-col breakdown */}
+        <div className="grid grid-cols-2 gap-1 text-center">
           {[
             { label: "Disponibles", value: disponibles, color: "text-coca" },
-            { label: "Alquilados",  value: alquilados,  color: "text-gold" },
             { label: "Reservados",  value: reservados,  color: "text-primary" },
           ].map((s) => (
             <div key={s.label} className="space-y-0.5">
@@ -313,15 +309,37 @@ function ConjuntoCard({
           ))}
         </div>
 
-        {/* Add instances button */}
+        {/* Per-variacion breakdown */}
+        <div className="space-y-1">
+          {conjunto.variaciones.slice(0, 3).map((v) => {
+            const vStock = stockVariacion(v);
+            const vReservados = reservadosVariacion(v);
+            const vDisp = Math.max(0, vStock - vReservados);
+            return (
+              <div key={v.id} className="flex items-center justify-between text-[11px]">
+                <span className="text-muted-foreground truncate max-w-[120px]">
+                  {v.nombre_variacion}{v.talla ? ` (${v.talla})` : ""}
+                </span>
+                <span className={`font-semibold ${vDisp === 0 ? "text-crimson" : vDisp < 3 ? "text-gold" : "text-coca"}`}>
+                  {vDisp}/{vStock}
+                </span>
+              </div>
+            );
+          })}
+          {conjunto.variaciones.length > 3 && (
+            <p className="text-[10px] text-muted-foreground">+{conjunto.variaciones.length - 3} más…</p>
+          )}
+        </div>
+
+        {/* Gestionar stock button */}
         <button
           onClick={() => onInstancias(conjunto)}
           className="mt-2 w-full py-2 rounded-xl border border-dashed border-primary/40 text-xs font-medium text-primary hover:bg-primary/5 hover:border-primary transition-colors flex items-center justify-center gap-1.5"
         >
           <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
           </svg>
-          Agregar instancias
+          Gestionar stock
         </button>
       </div>
     </div>
@@ -367,11 +385,8 @@ function ConjuntoRow({
         </span>
       </td>
       <td className="px-4 py-3 text-center hidden sm:table-cell">
-        <span className="text-sm font-medium">{total}</span>
-      </td>
-      <td className="px-4 py-3 text-center hidden sm:table-cell">
         <span className={`text-sm font-medium ${disponibles > 0 ? "text-coca" : "text-crimson"}`}>
-          {disponibles}
+          {disponibles}/{total}
         </span>
       </td>
       <td className="px-4 py-3 hidden lg:table-cell">
@@ -395,7 +410,7 @@ function ConjuntoRow({
             onClick={() => onInstancias(conjunto)}
             className="text-xs text-primary px-2 py-1 rounded-lg hover:bg-primary/10 transition-colors"
           >
-            +Inst.
+            Stock
           </button>
           <button
             onClick={() => onDelete(conjunto)}
@@ -639,7 +654,8 @@ function ConjuntoModal({
               precio_venta: row.precio_venta || null,
               precio_alquiler: row.precio_alquiler || null,
               activa: true,
-              instancias: conjunto?.variaciones.find((v) => v.id === row.id)?.instancias ?? [],
+              movimientosStock: conjunto?.variaciones.find((v) => v.id === row.id)?.movimientosStock ?? [],
+              contratoPrendas: conjunto?.variaciones.find((v) => v.id === row.id)?.contratoPrendas ?? [],
             }))
           : [];
         onSaved({ variaciones: mergedVariaciones, ...data });
@@ -1385,7 +1401,7 @@ function DetalleConjuntoModal({
   onInstancias: () => void;
 }) {
   const colors = getDanzaColor(conjunto.danza);
-  const { total, disponibles, alquilados, reservados, limpieza } = getStats(conjunto);
+  const { total, disponibles, reservados } = getStats(conjunto);
   const [selectedVarId, setSelectedVarId] = useState<number | null>(
     conjunto.variaciones[0]?.id ?? null
   );
@@ -1430,10 +1446,10 @@ function DetalleConjuntoModal({
         <div className="grid grid-cols-5 divide-x divide-border border-b border-border shrink-0">
           {[
             { label: "Variaciones", value: conjunto.variaciones.length, color: "text-foreground",  warn: false },
-            { label: "Instancias",  value: total,       color: "text-foreground",  warn: false },
-            { label: "Disponibles", value: disponibles, color: "text-coca",         warn: false },
-            { label: "Alquilados",  value: alquilados,  color: "text-gold",         warn: false },
-            { label: "Dados de baja", value: limpieza,  color: limpieza > 0 ? "text-crimson" : "text-muted-foreground", warn: limpieza > 0 },
+            { label: "Stock total",  value: total,        color: "text-foreground",  warn: false },
+            { label: "Disponibles", value: disponibles,   color: "text-coca",        warn: false },
+            { label: "Reservados",  value: reservados,    color: "text-primary",     warn: reservados > 0 },
+            { label: "Sin stock",   value: conjunto.variaciones.filter(v => stockVariacion(v) === 0).length, color: "text-crimson", warn: conjunto.variaciones.filter(v => stockVariacion(v) === 0).length > 0 },
           ].map((s) => (
             <div key={s.label} className={`flex flex-col items-center py-3 text-center ${s.warn ? "bg-crimson/5" : ""}`}>
               <span className={`text-2xl font-bold leading-none ${s.color}`} style={{ fontFamily: "var(--font-outfit)" }}>
@@ -1467,8 +1483,9 @@ function DetalleConjuntoModal({
                 Variaciones
               </p>
               {conjunto.variaciones.map((v) => {
-                const vTotal = v.instancias.length;
-                const vDisp  = v.instancias.filter((i) => i.estado === "DISPONIBLE").length;
+                const vStock = stockVariacion(v);
+                const vReservados = reservadosVariacion(v);
+                const vDisp = Math.max(0, vStock - vReservados);
                 const isSelected = v.id === selectedVarId;
                 return (
                   <button
@@ -1482,8 +1499,8 @@ function DetalleConjuntoModal({
                   >
                     <div className="flex items-center justify-between gap-1 mb-0.5">
                       <span className="text-sm font-medium truncate leading-tight">{v.nombre_variacion}</span>
-                      <span className={`text-xs font-bold tabular-nums shrink-0 ${vDisp > 0 ? "text-coca" : "text-muted-foreground"}`}>
-                        {vDisp}/{vTotal}
+                      <span className={`text-xs font-bold tabular-nums shrink-0 ${vDisp > 0 ? "text-coca" : "text-crimson"}`}>
+                        {vDisp}/{vStock}
                       </span>
                     </div>
                     <span className="text-[10px] font-mono text-muted-foreground/70">{v.codigo_variacion}</span>
@@ -1544,88 +1561,35 @@ function DetalleConjuntoModal({
                         </div>
                       </div>
                       <div className="text-right shrink-0">
-                        <p className="text-2xl font-bold leading-none" style={{ fontFamily: "var(--font-outfit)" }}>
-                          {selectedVar.instancias.length}
+                        <p className={`text-2xl font-bold leading-none ${Math.max(0, stockVariacion(selectedVar) - reservadosVariacion(selectedVar)) > 0 ? "text-coca" : "text-crimson"}`} style={{ fontFamily: "var(--font-outfit)" }}>
+                          {Math.max(0, stockVariacion(selectedVar) - reservadosVariacion(selectedVar))}
                         </p>
-                        <p className="text-[10px] text-muted-foreground mt-0.5">instancias</p>
+                        <p className="text-[10px] text-muted-foreground mt-0.5">disponibles</p>
+                        {reservadosVariacion(selectedVar) > 0 && (
+                          <p className="text-[10px] text-primary font-medium mt-0.5">{reservadosVariacion(selectedVar)} reserv.</p>
+                        )}
                       </div>
                     </div>
-
-                    {/* Mini bar */}
-                    {selectedVar.instancias.length > 0 && (() => {
-                      const t = selectedVar.instancias.length;
-                      const d = selectedVar.instancias.filter((i) => i.estado === "DISPONIBLE").length;
-                      const a = selectedVar.instancias.filter((i) => i.estado === "ALQUILADO").length;
-                      const r = selectedVar.instancias.filter((i) => i.estado === "RESERVADO").length;
-                      return (
-                        <div className="mt-2.5 space-y-1.5">
-                          <div className="h-1.5 bg-muted rounded-full overflow-hidden flex">
-                            <div className="h-full bg-coca" style={{ width: `${(d / t) * 100}%` }} />
-                            <div className="h-full bg-gold" style={{ width: `${(a / t) * 100}%` }} />
-                            <div className="h-full bg-primary/60" style={{ width: `${(r / t) * 100}%` }} />
-                          </div>
-                          <div className="flex items-center gap-4">
-                            {[
-                              { label: "Disponibles", value: d, color: "text-coca" },
-                              { label: "Alquilados",  value: a, color: "text-gold" },
-                              { label: "Reservados",  value: r, color: "text-primary" },
-                            ].map((s) => (
-                              <span key={s.label} className="text-xs text-muted-foreground">
-                                <span className={`font-bold ${s.color}`}>{s.value}</span> {s.label}
-                              </span>
-                            ))}
-                          </div>
-                        </div>
-                      );
-                    })()}
                   </div>
 
-                  {/* Instances table */}
-                  {selectedVar.instancias.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center flex-1 py-10 text-center">
-                      <p className="text-sm text-muted-foreground">Sin instancias para esta variación</p>
-                      <button onClick={onInstancias} className="mt-2 text-xs text-primary hover:underline">
-                        Agregar instancias →
-                      </button>
+                  {/* Info stock */}
+                  <div className="flex-1 overflow-y-auto p-5">
+                    <div className="grid grid-cols-3 gap-3 mb-4">
+                      {[
+                        { label: "Stock total",  value: stockVariacion(selectedVar),                                              color: "text-foreground" },
+                        { label: "Disponibles",  value: Math.max(0, stockVariacion(selectedVar) - reservadosVariacion(selectedVar)), color: "text-coca" },
+                        { label: "Reservados",   value: reservadosVariacion(selectedVar),                                          color: "text-primary" },
+                      ].map((s) => (
+                        <div key={s.label} className="bg-muted/30 rounded-xl p-3 text-center">
+                          <p className={`text-2xl font-bold leading-none ${s.color}`} style={{ fontFamily: "var(--font-outfit)" }}>{s.value}</p>
+                          <p className="text-[10px] text-muted-foreground mt-1">{s.label}</p>
+                        </div>
+                      ))}
                     </div>
-                  ) : (
-                    <div className="flex-1 overflow-y-auto">
-                      <table className="w-full">
-                        <thead className="sticky top-0 bg-card border-b border-border z-10">
-                          <tr>
-                            <th className="text-left text-xs font-semibold text-muted-foreground px-5 py-2.5">#</th>
-                            <th className="text-left text-xs font-semibold text-muted-foreground px-5 py-2.5">Código</th>
-                            <th className="text-left text-xs font-semibold text-muted-foreground px-5 py-2.5">Estado</th>
-                            <th className="text-left text-xs font-semibold text-muted-foreground px-5 py-2.5">Sucursal</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {selectedVar.instancias.map((inst, idx) => {
-                            const b = ESTADO_BADGE[inst.estado] ?? { label: inst.estado, dot: "bg-muted-foreground", badge: "bg-muted text-muted-foreground border-muted-foreground/20" };
-                            return (
-                              <tr key={inst.id} className="border-b border-border last:border-0 hover:bg-muted/20 transition-colors">
-                                <td className="px-5 py-2.5 text-xs text-muted-foreground tabular-nums">
-                                  {idx + 1}
-                                </td>
-                                <td className="px-5 py-2.5">
-                                  <span className="text-sm font-mono font-medium">{inst.codigo}</span>
-                                </td>
-                                <td className="px-5 py-2.5">
-                                  <span className={`inline-flex items-center gap-1.5 text-xs font-semibold px-2 py-0.5 rounded-full border ${b.badge}`}>
-                                    <span className={`w-1.5 h-1.5 rounded-full ${b.dot}`} />
-                                    {b.label}
-                                  </span>
-                                </td>
-                                <td className="px-5 py-2.5">
-                                  <span className="text-xs text-muted-foreground">{inst.sucursal.nombre}</span>
-                                </td>
-                              </tr>
-                            );
-                          })}
-                        </tbody>
-                      </table>
-                    </div>
-                  )}
+                    <p className="text-xs text-muted-foreground text-center">
+                      Para agregar o ajustar stock, usá la sección <strong>Stock</strong> del menú.
+                    </p>
+                  </div>
                 </>
               ) : (
                 <div className="flex items-center justify-center flex-1">
@@ -1641,11 +1605,11 @@ function DetalleConjuntoModal({
           <Button variant="outline" className="flex-1" onClick={onEdit}>
             Editar conjunto
           </Button>
-          <Button className="flex-1 bg-primary text-primary-foreground" onClick={onInstancias}>
+          <Button className="flex-1 bg-primary text-primary-foreground" onClick={() => window.location.href = "/instancias"}>
             <svg className="h-4 w-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
             </svg>
-            Agregar instancias
+            Gestionar stock
           </Button>
         </div>
       </div>
@@ -2064,7 +2028,6 @@ export function ConjuntosClient({ initialConjuntos, componentes, sucursales, tok
   const [editando, setEditando] = useState<Conjunto | null>(null);
   const [editandoInitialTab, setEditandoInitialTab] = useState<ModalTab>("general");
   const [eliminando, setEliminando] = useState<Conjunto | null>(null);
-  const [instanciando, setInstanciando] = useState<Conjunto | null>(null);
   const [viendo, setViendo] = useState<Conjunto | null>(null);
   const [refreshing, setRefreshing] = useState(false);
 
@@ -2256,7 +2219,7 @@ export function ConjuntosClient({ initialConjuntos, componentes, sucursales, tok
       ) : viewMode === "grid" ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
           {filtered.map((c) => (
-            <ConjuntoCard key={c.id} conjunto={c} onEdit={handleEditConjunto} onDelete={setEliminando} onInstancias={setInstanciando} onDetalle={setViendo} />
+            <ConjuntoCard key={c.id} conjunto={c} onEdit={handleEditConjunto} onDelete={setEliminando} onInstancias={() => window.location.href = "/instancias"} onDetalle={setViendo} />
           ))}
         </div>
       ) : (
@@ -2267,15 +2230,14 @@ export function ConjuntosClient({ initialConjuntos, componentes, sucursales, tok
                 <th className="text-left text-xs font-semibold text-muted-foreground px-4 py-3">Nombre</th>
                 <th className="text-left text-xs font-semibold text-muted-foreground px-4 py-3">Danza</th>
                 <th className="text-left text-xs font-semibold text-muted-foreground px-4 py-3 hidden md:table-cell">Detalle</th>
-                <th className="text-center text-xs font-semibold text-muted-foreground px-4 py-3 hidden sm:table-cell">Instancias</th>
-                <th className="text-center text-xs font-semibold text-muted-foreground px-4 py-3 hidden sm:table-cell">Disponibles</th>
+                <th className="text-center text-xs font-semibold text-muted-foreground px-4 py-3 hidden sm:table-cell">Disp./Stock</th>
                 <th className="text-left text-xs font-semibold text-muted-foreground px-4 py-3 hidden lg:table-cell">Precio</th>
                 <th className="text-right text-xs font-semibold text-muted-foreground px-4 py-3">Acciones</th>
               </tr>
             </thead>
             <tbody>
               {filtered.map((c) => (
-                <ConjuntoRow key={c.id} conjunto={c} onEdit={handleEditConjunto} onDelete={setEliminando} onDetalle={setViendo} onInstancias={setInstanciando} />
+                <ConjuntoRow key={c.id} conjunto={c} onEdit={handleEditConjunto} onDelete={setEliminando} onDetalle={setViendo} onInstancias={() => window.location.href = "/instancias"} />
               ))}
             </tbody>
           </table>
@@ -2310,25 +2272,10 @@ export function ConjuntosClient({ initialConjuntos, componentes, sucursales, tok
           conjunto={viendo}
           onClose={() => setViendo(null)}
           onEdit={() => { setViendo(null); handleEditConjunto(viendo); }}
-          onInstancias={() => { setViendo(null); setInstanciando(viendo); }}
+          onInstancias={() => { setViendo(null); window.location.href = "/instancias"; }}
         />
       )}
 
-      {instanciando && (
-        <CrearInstanciasModal
-          conjunto={instanciando}
-          sucursales={sucursales}
-          token={token}
-          backendUrl={backendUrl}
-          onClose={() => setInstanciando(null)}
-          onCreated={(_count) => setInstanciando(null)}
-          onOpenEditVariaciones={() => {
-            const c = instanciando;
-            setInstanciando(null);
-            handleEditConjunto(c, "variaciones");
-          }}
-        />
-      )}
     </div>
   );
 }

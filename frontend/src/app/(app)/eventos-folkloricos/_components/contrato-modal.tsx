@@ -246,7 +246,8 @@ function ParticipanteCard({ p, prendas, contratoId, token, backendUrl, onUpdated
           <div className="flex items-center gap-2 flex-wrap">
             <p className="text-sm font-semibold">{p.nombre}</p>
             <span className="text-xs bg-muted text-muted-foreground px-2 py-0.5 rounded-full">{tipoLabel}</span>
-            {p.ci && <span className="text-xs text-muted-foreground font-mono">{p.ci}</span>}
+            {p.ci && <span className="text-xs text-muted-foreground font-mono">CI: {p.ci}</span>}
+            {p.celular && <span className="text-xs text-muted-foreground">📱 {p.celular}</span>}
             {p.prendaId && prendas.find((pr) => pr.id === p.prendaId) && (
               <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full">
                 {prendas.find((pr) => pr.id === p.prendaId)?.modelo}
@@ -462,13 +463,18 @@ export function ContratoModal({
   const [catalogSearch, setCatalogSearch] = useState("");
   const [stockCache, setStockCache] = useState<Record<number, number>>({});
 
-  // ── Garantías staged (create mode) ────────────────────────────────────────
-  const [garantias, setGarantias] = useState<GarantiaRow[]>(() =>
-    (contrato?.garantias ?? []).filter((g) => !g.participanteId).map((g) => ({
-      _key: `g-${g.id}`, id: g.id, tipo: g.tipo,
-      descripcion: g.descripcion ?? "", valor: g.valor ?? "", deleted: false,
-    }))
+  // ── Garantías (3-checkbox UI — shared create/edit) ────────────────────────
+  const contractGarantias = (contrato?.garantias ?? []).filter((g) => !g.participanteId);
+  const [gEfectivo, setGEfectivo] = useState(() => contractGarantias.some((g) => g.tipo === "EFECTIVO"));
+  const [gEfectivoMonto, setGEfectivoMonto] = useState(() => {
+    const g = contractGarantias.find((g) => g.tipo === "EFECTIVO");
+    return g?.valor ? String(parseFloat(String(g.valor))) : "";
+  });
+  const [gEfectivoFormaPago, setGEfectivoFormaPago] = useState<FormaPago | "">(
+    () => (contractGarantias.find((g) => g.tipo === "EFECTIVO")?.descripcion as FormaPago | undefined) ?? "EFECTIVO"
   );
+  const [gCarnet, setGCarnet] = useState(() => contractGarantias.some((g) => g.tipo === "DOCUMENTO_CARNET"));
+  const [gCarta, setGCarta] = useState(() => contractGarantias.some((g) => g.tipo === "CARTA_INSTITUCIONAL"));
 
   // ── Live participants + contract garantías (edit mode) ─────────────────────
   const [liveParticipantes, setLiveParticipantes] = useState<ContratoParticipante[]>(
@@ -486,15 +492,13 @@ export function ContratoModal({
 
   // Add participant form state
   const [showAddParticipante, setShowAddParticipante] = useState(false);
-  const [newP, setNewP] = useState({ nombre: "", ci: "", tipo: "OTRO" as TipoParticipante, prendaId: "", instanciaConjuntoId: "" });
+  const [newP, setNewP] = useState({ nombre: "", ci: "", celular: "", tipo: "HOMBRE" as TipoParticipante, prendaId: "", instanciaConjuntoId: "" });
   const [addingP, setAddingP] = useState(false);
   const [instanciaOptions, setInstanciaOptions] = useState<InstanciaOption[]>([]);
   const [loadingInstancias, setLoadingInstancias] = useState(false);
 
-  // Contract-level garantía form (edit mode)
-  const [showAddCG, setShowAddCG] = useState(false);
-  const [newCG, setNewCG] = useState({ tipo: "EFECTIVO" as TipoGarantia, descripcion: "", valor: "" });
-  const [addingCG, setAddingCG] = useState(false);
+  // Saving state for edit-mode guarantee toggles
+  const [savingGarantia, setSavingGarantia] = useState(false);
 
   // ── Finanzas state ─────────────────────────────────────────────────────────
   const [estado, setEstado] = useState<EstadoContrato>(contrato?.estado ?? "RESERVADO");
@@ -601,10 +605,31 @@ export function ContratoModal({
   const updPrenda = (key: string, field: keyof PrendaRow, val: unknown) => setPrendas((p) => p.map((r) => r._key === key ? { ...r, [field]: val } : r));
   const delPrenda = (key: string) => setPrendas((p) => p.map((r) => r._key === key ? { ...r, deleted: true } : r));
 
-  // ── Staged garantías helpers (create mode) ─────────────────────────────────
-  const addGarantia = () => setGarantias((g) => [...g, { _key: `gnew-${Date.now()}`, tipo: "EFECTIVO", descripcion: "", valor: "", deleted: false }]);
-  const updGarantia = (key: string, field: keyof GarantiaRow, val: unknown) => setGarantias((g) => g.map((r) => r._key === key ? { ...r, [field]: val } : r));
-  const delGarantia = (key: string) => setGarantias((g) => g.map((r) => r._key === key ? { ...r, deleted: true } : r));
+  // ── Edit-mode: toggle a contract-level guarantee via API ───────────────────
+  const toggleContractGarantia = async (
+    tipo: TipoGarantia,
+    opts?: { valor?: number; descripcion?: string }
+  ) => {
+    const cid = fullContrato?.id ?? contrato?.id;
+    if (!cid) return;
+    setSavingGarantia(true);
+    try {
+      const existing = liveGarantias.find((g) => g.tipo === tipo);
+      if (existing) {
+        const res = await fetch(`${backendUrl}/contratos/garantias/${existing.id}`, {
+          method: "DELETE", headers: { Authorization: `Bearer ${token}` },
+        });
+        if (res.ok) { setLiveGarantias((prev) => prev.filter((g) => g.id !== existing.id)); void refreshHistorial(); }
+      } else {
+        const res = await fetch(`${backendUrl}/contratos/${cid}/garantias`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+          body: JSON.stringify({ tipo, ...(opts ?? {}) }),
+        });
+        if (res.ok) { const nuevo = await res.json(); setLiveGarantias((prev) => [...prev, nuevo]); void refreshHistorial(); }
+      }
+    } finally { setSavingGarantia(false); }
+  };
 
   // ── Instancias disponibles for prenda ──────────────────────────────────────
   const handlePrendaParticipanteChange = async (prendaId: string) => {
@@ -633,46 +658,24 @@ export function ContratoModal({
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({
-          nombre: newP.nombre.trim(), ci: newP.ci.trim() || undefined,
-          tipo: newP.tipo, prendaId: newP.prendaId ? parseInt(newP.prendaId) : undefined,
-          instanciaConjuntoId: newP.instanciaConjuntoId ? parseInt(newP.instanciaConjuntoId) : undefined,
+          nombre: newP.nombre.trim(),
+          ci: newP.ci.trim() || undefined,
+          celular: newP.celular.trim() || undefined,
+          tipo: newP.tipo,
+          prendaId: newP.prendaId ? parseInt(newP.prendaId) : undefined,
         }),
       });
       if (res.ok) {
-        const data = await res.json();
-        setLiveParticipantes((prev) => [...prev, { ...data, garantias: [] }]);
+        const nuevoP = await res.json();
+        setLiveParticipantes((prev) => [...prev, { ...nuevoP, garantias: [] }]);
         setShowAddParticipante(false);
-        setNewP({ nombre: "", ci: "", tipo: "OTRO", prendaId: "", instanciaConjuntoId: "" });
+        setNewP({ nombre: "", ci: "", celular: "", tipo: "HOMBRE", prendaId: "", instanciaConjuntoId: "" });
         setInstanciaOptions([]);
         void refreshHistorial();
       }
     } finally { setAddingP(false); }
   };
 
-  const handleAddContractGarantia = async () => {
-    const cid = fullContrato?.id ?? contrato?.id;
-    if (!cid) return;
-    setAddingCG(true);
-    try {
-      const res = await fetch(`${backendUrl}/contratos/${cid}/garantias`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ tipo: newCG.tipo, descripcion: newCG.descripcion.trim() || undefined, valor: newCG.valor ? parseFloat(newCG.valor) : undefined }),
-      });
-      if (res.ok) {
-        const data = await res.json();
-        setLiveGarantias((prev) => [...prev, data]);
-        setShowAddCG(false);
-        setNewCG({ tipo: "EFECTIVO", descripcion: "", valor: "" });
-        void refreshHistorial();
-      }
-    } finally { setAddingCG(false); }
-  };
-
-  const handleRemoveLiveGarantia = async (gid: number) => {
-    const res = await fetch(`${backendUrl}/contratos/garantias/${gid}`, { method: "DELETE", headers: { Authorization: `Bearer ${token}` } });
-    if (res.ok) { setLiveGarantias((prev) => prev.filter((g) => g.id !== gid)); void refreshHistorial(); }
-  };
 
   // ── Refresh historial helper ───────────────────────────────────────────────
   const refreshHistorial = async () => {
@@ -879,7 +882,11 @@ export function ContratoModal({
         onSaved(full.ok ? await full.json() : await patchRes.json());
       } else {
         const activePrendas = prendas.filter((p) => !p.deleted && p.modelo.trim());
-        const activeGarantias = garantias.filter((g) => !g.deleted);
+        const garantiasToSubmit = [
+          ...(gEfectivo ? [{ tipo: "EFECTIVO" as TipoGarantia, valor: gEfectivoMonto ? parseFloat(gEfectivoMonto) : undefined, descripcion: gEfectivoFormaPago || undefined }] : []),
+          ...(gCarnet ? [{ tipo: "DOCUMENTO_CARNET" as TipoGarantia }] : []),
+          ...(gCarta  ? [{ tipo: "CARTA_INSTITUCIONAL" as TipoGarantia }] : []),
+        ];
 
         const res = await fetch(`${backendUrl}/contratos`, {
           method: "POST",
@@ -901,10 +908,7 @@ export function ContratoModal({
               cantidad_machas: 0, cantidad_ninos: 0,
               costo_unitario: parseFloat(p.costoUnitario || "0"),
             })),
-            garantias: activeGarantias.map((g) => ({
-              tipo: g.tipo, descripcion: g.descripcion.trim() || undefined,
-              valor: g.valor ? parseFloat(g.valor) : undefined,
-            })),
+            garantias: garantiasToSubmit,
           }),
         });
         if (res.ok) { onSaved(await res.json()); }
@@ -926,9 +930,14 @@ export function ContratoModal({
   }
 
   const activePrendas = prendas.filter((p) => !p.deleted);
-  const activeGarantias = garantias.filter((g) => !g.deleted);
+  const activeGarantiasCount = (gEfectivo ? 1 : 0) + (gCarnet ? 1 : 0) + (gCarta ? 1 : 0);
   const tabIdx = TABS.findIndex((t) => t.key === activeTab);
-  const prendaOptions = (fullContrato?.prendas ?? []).map((p) => ({ id: p.id, modelo: p.modelo, variacionId: p.variacionId }));
+  const prendaOptions = (fullContrato?.prendas ?? []).map((p) => ({
+    id: p.id,
+    modelo: p.modelo,
+    variacionId: p.variacionId,
+    variacion: p.variacion ?? null,
+  }));
   const currentContrato = fullContrato ?? contrato;
 
   // ── Comprobante imprimible ──────────────────────────────────────────────────
@@ -983,9 +992,9 @@ export function ContratoModal({
               className={`px-4 py-3 text-sm font-semibold border-b-2 -mb-px transition-colors whitespace-nowrap ${activeTab === t.key ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground"}`}>
               {t.label}
               {t.key === "prendas" && activePrendas.length > 0 && <span className="ml-1.5 text-xs bg-primary/10 text-primary px-1.5 py-0.5 rounded-full">{activePrendas.length}</span>}
-              {t.key === "personas" && (isEdit ? liveParticipantes.length + liveGarantias.length : activeGarantias.length) > 0 && (
+              {t.key === "personas" && (isEdit ? liveParticipantes.length + liveGarantias.length : activeGarantiasCount) > 0 && (
                 <span className="ml-1.5 text-xs bg-amber-500/10 text-amber-600 px-1.5 py-0.5 rounded-full">
-                  {isEdit ? liveParticipantes.length + liveGarantias.length : activeGarantias.length}
+                  {isEdit ? liveParticipantes.length + liveGarantias.length : activeGarantiasCount}
                 </span>
               )}
             </button>
@@ -1104,7 +1113,7 @@ export function ContratoModal({
                   <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Tipo</label>
                   <div className="flex gap-2">
                     {(["DIRECTO", "RESERVA"] as TipoContrato[]).map((t) => (
-                      <button key={t} onClick={() => setTipo(t)}
+                      <button key={t} onClick={() => { setTipo(t); if (t === "DIRECTO") setAnticipo("0"); }}
                         className={`flex-1 py-2 rounded-xl text-xs font-semibold border transition-all ${tipo === t ? "bg-primary text-primary-foreground border-primary" : "border-border text-muted-foreground hover:bg-muted"}`}>
                         {t === "DIRECTO" ? "Directo" : "Reserva"}
                       </button>
@@ -1306,65 +1315,58 @@ export function ContratoModal({
                 {isEdit && showAddParticipante && (
                   <div className="rounded-xl border border-primary/30 bg-primary/5 p-4 space-y-3">
                     <p className="text-xs font-semibold text-primary uppercase tracking-wide">Nuevo participante</p>
-                    <div className="grid grid-cols-2 gap-3">
-                      <div className="space-y-1"><label className="text-xs text-muted-foreground">Nombre <span className="text-crimson">*</span></label><input className={inp} value={newP.nombre} onChange={(e) => setNewP((p) => ({ ...p, nombre: e.target.value }))} placeholder="Nombre completo" /></div>
-                      <div className="space-y-1"><label className="text-xs text-muted-foreground">CI</label><input className={inp} value={newP.ci} onChange={(e) => setNewP((p) => ({ ...p, ci: e.target.value }))} /></div>
+
+                    {/* Nombre + CI + Celular */}
+                    <div className="grid grid-cols-3 gap-3">
+                      <div className="space-y-1">
+                        <label className="text-xs text-muted-foreground">Nombre <span className="text-crimson">*</span></label>
+                        <input className={inp} value={newP.nombre} onChange={(e) => setNewP((p) => ({ ...p, nombre: e.target.value }))} placeholder="Nombre completo" />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-xs text-muted-foreground">CI</label>
+                        <input className={inp} value={newP.ci} onChange={(e) => setNewP((p) => ({ ...p, ci: e.target.value }))} placeholder="12345678" />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-xs text-muted-foreground">Celular</label>
+                        <input type="tel" className={inp} value={newP.celular} onChange={(e) => setNewP((p) => ({ ...p, celular: e.target.value }))} placeholder="70000000" />
+                      </div>
                     </div>
+
+                    {/* Tipo — solo Hombre / Mujer / Otro */}
                     <div className="space-y-1">
                       <label className="text-xs text-muted-foreground">Tipo</label>
-                      <div className="flex flex-wrap gap-1.5">
-                        {TIPO_PARTICIPANTE_OPTIONS.map((t) => (
+                      <div className="flex gap-2">
+                        {([
+                          { value: "HOMBRE", label: "Hombre" },
+                          { value: "CHOLITA", label: "Mujer" },
+                          { value: "OTRO",   label: "Otro"  },
+                        ] as { value: TipoParticipante; label: string }[]).map((t) => (
                           <button key={t.value} onClick={() => setNewP((p) => ({ ...p, tipo: t.value }))}
-                            className={`px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all ${newP.tipo === t.value ? "bg-primary text-primary-foreground border-primary" : "border-border text-muted-foreground hover:bg-muted"}`}>
+                            className={`flex-1 py-1.5 rounded-xl text-xs font-semibold border transition-all ${newP.tipo === t.value ? "bg-primary text-primary-foreground border-primary" : "border-border text-muted-foreground hover:bg-muted"}`}>
                             {t.label}
                           </button>
                         ))}
                       </div>
                     </div>
+
+                    {/* Prenda asignada — muestra variación */}
                     {prendaOptions.length > 0 && (
                       <div className="space-y-1">
-                        <label className="text-xs text-muted-foreground">Prenda asignada</label>
-                        <select className={`${inp} cursor-pointer`} value={newP.prendaId} onChange={(e) => handlePrendaParticipanteChange(e.target.value)}>
+                        <label className="text-xs text-muted-foreground">Prenda / Variación asignada</label>
+                        <select className={`${inp} cursor-pointer`} value={newP.prendaId} onChange={(e) => { setNewP((p) => ({ ...p, prendaId: e.target.value, instanciaConjuntoId: "" })); }}>
                           <option value="">Sin prenda específica</option>
-                          {prendaOptions.map((pr) => <option key={pr.id} value={pr.id}>{pr.modelo}{pr.variacionId ? " ★" : ""}</option>)}
+                          {prendaOptions.map((pr) => {
+                            const varLabel = pr.variacion
+                              ? ` — ${pr.variacion.nombre_variacion}${pr.variacion.talla ? " T." + pr.variacion.talla : ""}${pr.variacion.color ? " / " + pr.variacion.color : ""}`
+                              : "";
+                            return <option key={pr.id} value={pr.id}>{pr.modelo}{varLabel}</option>;
+                          })}
                         </select>
                       </div>
                     )}
-                    {newP.prendaId && (() => {
-                      const selectedPrenda = prendaOptions.find((pr) => pr.id === parseInt(newP.prendaId));
-                      if (!selectedPrenda) return null;
-                      if (!selectedPrenda.variacionId) {
-                        return (
-                          <div className="rounded-lg bg-amber-500/10 border border-amber-300/30 px-3 py-2 text-xs text-amber-700">
-                            Esta prenda no tiene variación asignada. Ve a la tab <span className="font-semibold">Prendas</span>, selecciona una variación y guarda el contrato.
-                          </div>
-                        );
-                      }
-                      return (
-                        <div className="space-y-1">
-                          <label className="text-xs text-muted-foreground">
-                            Instancia física{" "}
-                            {loadingInstancias && <span className="italic">(cargando…)</span>}
-                            {!loadingInstancias && instanciaOptions.length === 0 && <span className="text-amber-600">(sin disponibles en inventario)</span>}
-                          </label>
-                          <select
-                            className={`${inp} cursor-pointer`}
-                            value={newP.instanciaConjuntoId}
-                            onChange={(e) => setNewP((pp) => ({ ...pp, instanciaConjuntoId: e.target.value }))}
-                            disabled={loadingInstancias || instanciaOptions.length === 0}
-                          >
-                            <option value="">Sin instancia asignada</option>
-                            {instanciaOptions.map((inst) => (
-                              <option key={inst.id} value={inst.id}>
-                                {inst.codigo}{(inst as { estado?: string }).estado === "RESERVADO" ? " ★" : ""}
-                              </option>
-                            ))}
-                          </select>
-                        </div>
-                      );
-                    })()}
+
                     <div className="flex gap-2">
-                      <button onClick={() => setShowAddParticipante(false)} className="flex-1 text-xs py-1.5 rounded-lg border border-border hover:bg-muted transition-colors">Cancelar</button>
+                      <button onClick={() => { setShowAddParticipante(false); setNewP({ nombre: "", ci: "", celular: "", tipo: "HOMBRE", prendaId: "", instanciaConjuntoId: "" }); }} className="flex-1 text-xs py-1.5 rounded-lg border border-border hover:bg-muted transition-colors">Cancelar</button>
                       <button onClick={handleAddParticipante} disabled={addingP || !newP.nombre.trim()} className="flex-1 text-xs py-1.5 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50">
                         {addingP ? "Agregando…" : "Agregar"}
                       </button>
@@ -1413,87 +1415,136 @@ export function ContratoModal({
 
               {/* Section B: Garantías */}
               <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-semibold">Garantías del contrato</p>
-                    <p className="text-xs text-muted-foreground">Documentos o valores dejados como garantía general</p>
-                  </div>
-                  {isEdit ? (
-                    <button onClick={() => setShowAddCG((v) => !v)} className="flex items-center gap-1.5 text-xs font-semibold text-amber-600 px-3 py-1.5 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 transition-colors">
-                      <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
-                      Agregar
-                    </button>
-                  ) : (
-                    <button onClick={addGarantia} className="flex items-center gap-1.5 text-xs font-semibold text-amber-600 px-3 py-1.5 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 transition-colors">
-                      <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
-                      Agregar
-                    </button>
-                  )}
+                <div>
+                  <p className="text-sm font-semibold">Garantías del contrato</p>
+                  <p className="text-xs text-muted-foreground">Documentos o valores dejados como garantía general</p>
                 </div>
 
-                {/* Edit mode: live garantías */}
-                {isEdit && showAddCG && (
-                  <div className="grid grid-cols-3 gap-2 items-end">
-                    <select className={`${inp} text-xs cursor-pointer`} value={newCG.tipo} onChange={(e) => setNewCG((g) => ({ ...g, tipo: e.target.value as TipoGarantia }))}>
-                      {TIPO_GARANTIA_OPTIONS.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
-                    </select>
-                    <input className={`${inp} text-xs`} placeholder="Descripción" value={newCG.descripcion} onChange={(e) => setNewCG((g) => ({ ...g, descripcion: e.target.value }))} />
-                    <div className="flex gap-1">
-                      <input type="number" min="0" className={`${inp} text-xs`} placeholder="Valor Bs." value={newCG.valor} onChange={(e) => setNewCG((g) => ({ ...g, valor: e.target.value }))} />
-                      <button onClick={handleAddContractGarantia} disabled={addingCG} className="px-2 rounded-xl bg-amber-500/20 text-amber-700 text-xs font-bold hover:bg-amber-500/30 transition-colors disabled:opacity-50 whitespace-nowrap">{addingCG ? "…" : "+"}</button>
-                      <button onClick={() => setShowAddCG(false)} className="px-2 rounded-xl border border-border text-xs hover:bg-muted transition-colors">×</button>
-                    </div>
-                  </div>
-                )}
+                <div className="space-y-2">
+                  {/* ── Efectivo ────────────────────────────────────────────── */}
+                  {(() => {
+                    const liveEfectivo = isEdit ? liveGarantias.find((g) => g.tipo === "EFECTIVO") : undefined;
+                    const checked = isEdit ? (!!liveEfectivo || gEfectivo) : gEfectivo;
+                    return (
+                      <div className={`rounded-xl border p-3 space-y-2.5 transition-colors ${checked ? "border-amber-300 bg-amber-50/40 dark:bg-amber-900/10" : "border-border"}`}>
+                        <label className="flex items-center gap-3 cursor-pointer select-none">
+                          <input
+                            type="checkbox"
+                            className="w-4 h-4 accent-amber-500 cursor-pointer"
+                            checked={checked}
+                            disabled={savingGarantia}
+                            onChange={async (e) => {
+                              if (isEdit) {
+                                if (!e.target.checked && liveEfectivo) {
+                                  await toggleContractGarantia("EFECTIVO");
+                                } else if (e.target.checked && !liveEfectivo) {
+                                  setGEfectivo(true);
+                                } else if (!e.target.checked) {
+                                  setGEfectivo(false);
+                                  setGEfectivoMonto("");
+                                }
+                              } else {
+                                setGEfectivo(e.target.checked);
+                                if (!e.target.checked) { setGEfectivoMonto(""); setGEfectivoFormaPago("EFECTIVO"); }
+                              }
+                            }}
+                          />
+                          <span className="text-sm font-medium">Efectivo</span>
+                          {liveEfectivo?.valor && (
+                            <span className="ml-auto text-sm font-bold text-coca">{formatBs(liveEfectivo.valor)}</span>
+                          )}
+                        </label>
 
-                {isEdit && liveGarantias.length === 0 && !showAddCG && (
-                  <p className="text-sm text-muted-foreground text-center py-4">Sin garantías generales</p>
-                )}
-
-                {isEdit && liveGarantias.map((g) => (
-                  <div key={g.id} className="flex items-center gap-3 p-3 rounded-xl border border-border">
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs font-semibold">{TIPO_GARANTIA_OPTIONS.find((t) => t.value === g.tipo)?.label}</span>
-                        {g.retenida && <span className="text-xs bg-orange-500/10 text-orange-600 px-1.5 py-0.5 rounded-full font-semibold">Retenida</span>}
-                      </div>
-                      {g.descripcion && <p className="text-xs text-muted-foreground mt-0.5">{g.descripcion}</p>}
-                      {g.valor && <p className="text-xs text-coca font-semibold mt-0.5">{formatBs(g.valor)}</p>}
-                    </div>
-                    <button onClick={() => handleRemoveLiveGarantia(g.id)} className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-crimson/10 text-crimson transition-colors shrink-0">
-                      <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
-                    </button>
-                  </div>
-                ))}
-
-                {/* Create mode: staged garantías */}
-                {!isEdit && (
-                  <div className="space-y-3">
-                    {activeGarantias.length === 0 && <p className="text-sm text-muted-foreground text-center py-4">Sin garantías aún</p>}
-                    {garantias.filter((g) => !g.deleted).map((g) => (
-                      <div key={g._key} className="rounded-xl border border-border p-4 space-y-3">
-                        <div className="flex items-start gap-3">
-                          <div className="flex-1 grid grid-cols-2 gap-3">
-                            <div className="space-y-1"><label className="text-xs text-muted-foreground">Tipo</label>
-                              <select className={`${inp} cursor-pointer`} value={g.tipo} onChange={(e) => updGarantia(g._key, "tipo", e.target.value as TipoGarantia)}>
-                                {TIPO_GARANTIA_OPTIONS.map((opt) => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
-                              </select>
+                        {checked && (
+                          <div className="pl-7 space-y-2">
+                            <div className="grid grid-cols-2 gap-2">
+                              <div className="space-y-1">
+                                <label className="text-[10px] text-muted-foreground font-medium uppercase tracking-wide">Monto (Bs.)</label>
+                                <input
+                                  type="number" min="0"
+                                  className={`${inp} text-sm w-full`}
+                                  placeholder="0"
+                                  value={liveEfectivo?.valor ? String(parseFloat(String(liveEfectivo.valor))) : gEfectivoMonto}
+                                  readOnly={!!liveEfectivo}
+                                  onChange={(e) => setGEfectivoMonto(e.target.value)}
+                                />
+                              </div>
+                              <div className="space-y-1">
+                                <label className="text-[10px] text-muted-foreground font-medium uppercase tracking-wide">Tipo de pago</label>
+                                <select
+                                  className={`${inp} text-sm cursor-pointer w-full`}
+                                  value={liveEfectivo?.descripcion ?? gEfectivoFormaPago}
+                                  disabled={!!liveEfectivo}
+                                  onChange={(e) => setGEfectivoFormaPago(e.target.value as FormaPago)}
+                                >
+                                  <option value="">— Seleccionar —</option>
+                                  {FORMA_PAGO_OPTIONS.map((opt) => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
+                                </select>
+                              </div>
                             </div>
-                            <div className="space-y-1"><label className="text-xs text-muted-foreground">Valor (Bs.) — opcional</label>
-                              <input type="number" min="0" className={inp} value={g.valor} onChange={(e) => updGarantia(g._key, "valor", e.target.value)} placeholder="0" />
-                            </div>
+                            {isEdit && !liveEfectivo && (
+                              <button
+                                onClick={async () => {
+                                  await toggleContractGarantia("EFECTIVO", {
+                                    valor: gEfectivoMonto ? parseFloat(gEfectivoMonto) : undefined,
+                                    descripcion: gEfectivoFormaPago || undefined,
+                                  });
+                                  setGEfectivo(false);
+                                  setGEfectivoMonto("");
+                                  setGEfectivoFormaPago("EFECTIVO");
+                                }}
+                                disabled={savingGarantia || !gEfectivoMonto}
+                                className="w-full py-1.5 rounded-xl bg-amber-500/20 text-amber-700 text-xs font-bold hover:bg-amber-500/30 transition-colors disabled:opacity-50"
+                              >
+                                {savingGarantia ? "Guardando…" : "Guardar garantía"}
+                              </button>
+                            )}
                           </div>
-                          <button onClick={() => delGarantia(g._key)} className="w-8 h-8 flex items-center justify-center rounded-xl hover:bg-crimson/10 text-crimson transition-colors shrink-0 mt-5">
-                            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
-                          </button>
-                        </div>
-                        <div className="space-y-1"><label className="text-xs text-muted-foreground">Descripción</label>
-                          <input className={inp} value={g.descripcion} onChange={(e) => updGarantia(g._key, "descripcion", e.target.value)} placeholder="CI 12345678, carta membretada, Bs. 500 en efectivo…" />
-                        </div>
+                        )}
                       </div>
-                    ))}
-                  </div>
-                )}
+                    );
+                  })()}
+
+                  {/* ── Documento / Carnet ──────────────────────────────────── */}
+                  {(() => {
+                    const checked = isEdit ? liveGarantias.some((g) => g.tipo === "DOCUMENTO_CARNET") : gCarnet;
+                    return (
+                      <label className={`flex items-center gap-3 cursor-pointer select-none rounded-xl border p-3 transition-colors ${checked ? "border-amber-300 bg-amber-50/40 dark:bg-amber-900/10" : "border-border hover:bg-muted/30"}`}>
+                        <input
+                          type="checkbox"
+                          className="w-4 h-4 accent-amber-500 cursor-pointer"
+                          checked={checked}
+                          disabled={savingGarantia}
+                          onChange={async () => {
+                            if (isEdit) await toggleContractGarantia("DOCUMENTO_CARNET");
+                            else setGCarnet((v) => !v);
+                          }}
+                        />
+                        <span className="text-sm font-medium">Documento / Carnet</span>
+                      </label>
+                    );
+                  })()}
+
+                  {/* ── Carta institucional ─────────────────────────────────── */}
+                  {(() => {
+                    const checked = isEdit ? liveGarantias.some((g) => g.tipo === "CARTA_INSTITUCIONAL") : gCarta;
+                    return (
+                      <label className={`flex items-center gap-3 cursor-pointer select-none rounded-xl border p-3 transition-colors ${checked ? "border-amber-300 bg-amber-50/40 dark:bg-amber-900/10" : "border-border hover:bg-muted/30"}`}>
+                        <input
+                          type="checkbox"
+                          className="w-4 h-4 accent-amber-500 cursor-pointer"
+                          checked={checked}
+                          disabled={savingGarantia}
+                          onChange={async () => {
+                            if (isEdit) await toggleContractGarantia("CARTA_INSTITUCIONAL");
+                            else setGCarta((v) => !v);
+                          }}
+                        />
+                        <span className="text-sm font-medium">Carta institucional</span>
+                      </label>
+                    );
+                  })()}
+                </div>
               </div>
             </div>
           )}
@@ -1522,13 +1573,15 @@ export function ContratoModal({
                 {overrideEnabled && <p className="text-sm text-muted-foreground">Total final: <span className="font-bold text-foreground">{formatBs(totalFinal)}</span></p>}
               </div>
 
-              {/* Anticipo acordado (editable — es el monto pactado, no el recibido) */}
-              <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Anticipo acordado (Bs.)</label>
-                <input type="number" min="0" className={inp} value={anticipo} onChange={(e) => setAnticipo(e.target.value)}
-                  placeholder="Monto de anticipo pactado en el contrato" />
-                <p className="text-[10px] text-muted-foreground">Monto acordado contractualmente. Los pagos reales se registran en caja.</p>
-              </div>
+              {/* Anticipo acordado — solo para contratos de RESERVA */}
+              {tipo === "RESERVA" && (
+                <div className="space-y-1.5">
+                  <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Anticipo acordado (Bs.)</label>
+                  <input type="number" min="0" className={inp} value={anticipo} onChange={(e) => setAnticipo(e.target.value)}
+                    placeholder="Monto de anticipo pactado en el contrato" />
+                  <p className="text-[10px] text-muted-foreground">Monto acordado contractualmente. Los pagos reales se registran en caja.</p>
+                </div>
+              )}
 
               {/* Resumen financiero (read-only) */}
               <div className="rounded-xl border border-border overflow-hidden">
@@ -1540,10 +1593,12 @@ export function ContratoModal({
                     <span className="text-xs text-muted-foreground">Total del contrato</span>
                     <span className="text-sm font-bold text-foreground">{formatBs(totalFinal)}</span>
                   </div>
-                  <div className="flex items-center justify-between px-4 py-2.5">
-                    <span className="text-xs text-muted-foreground">Anticipo acordado</span>
-                    <span className="text-sm text-muted-foreground">{formatBs(parseFloat(anticipo || "0"))}</span>
-                  </div>
+                  {tipo === "RESERVA" && (
+                    <div className="flex items-center justify-between px-4 py-2.5">
+                      <span className="text-xs text-muted-foreground">Anticipo acordado</span>
+                      <span className="text-sm text-muted-foreground">{formatBs(parseFloat(anticipo || "0"))}</span>
+                    </div>
+                  )}
                   <div className="flex items-center justify-between px-4 py-2.5 bg-emerald-500/5">
                     <span className="text-xs font-semibold text-emerald-700">Cobrado en caja</span>
                     <span className="text-sm font-bold text-emerald-600">{formatBs(parseFloat(totalPagado || "0"))}</span>

@@ -580,6 +580,15 @@ function CuentasPorCobrarList({
 
 // ── Print Report ──────────────────────────────────────────────────────────────
 
+const CONCEPTOS_GARANTIA: ConceptoCaja[] = ["GARANTIA_EFECTIVO"];
+
+function calcTotalesCaja(movimientos: MovimientoCaja[]) {
+  const ganancia  = movimientos.filter((m) => m.tipo === "INGRESO" && !CONCEPTOS_GARANTIA.includes(m.concepto)).reduce((s, m) => s + Number(m.monto), 0);
+  const garantia  = movimientos.filter((m) => m.concepto === "GARANTIA_EFECTIVO").reduce((s, m) => s + Number(m.monto), 0);
+  const egresos   = movimientos.filter((m) => m.tipo === "EGRESO").reduce((s, m) => s + Number(m.monto), 0);
+  return { ganancia, garantia, egresos };
+}
+
 function PrintReport({
   movimientos, fechaDesde, fechaHasta,
 }: {
@@ -587,25 +596,30 @@ function PrintReport({
   fechaDesde: string;
   fechaHasta: string;
 }) {
-  const ingresos = movimientos.filter((m) => m.tipo === "INGRESO").reduce((s, m) => s + Number(m.monto), 0);
-  const egresos  = movimientos.filter((m) => m.tipo === "EGRESO").reduce((s, m) => s + Number(m.monto), 0);
+  const { ganancia, garantia, egresos } = calcTotalesCaja(movimientos);
+  const balanceReal = ganancia - egresos;
 
   const handlePrint = () => {
     const win = window.open("", "_blank", "width=800,height=600");
     if (!win) return;
 
-    const rows = movimientos.map((m) => `
-      <tr>
-        <td>${new Date(m.createdAt).toLocaleString("es-BO")}</td>
-        <td>${m.tipo === "INGRESO" ? "↑" : "↓"} ${CONCEPTO_META[m.concepto].label}</td>
-        <td>${m.contrato ? `${m.contrato.codigo} — ${m.contrato.cliente.nombre}` : "—"}</td>
-        <td>${FORMA_PAGO_LABEL[m.forma_pago]}</td>
-        <td>${m.descripcion ?? "—"}</td>
-        <td style="text-align:right;font-weight:bold;color:${m.tipo === "INGRESO" ? "#16a34a" : "#dc2626"}">
-          ${m.tipo === "INGRESO" ? "+" : "−"}${formatBs(Number(m.monto))}
-        </td>
-      </tr>
-    `).join("");
+    const rows = movimientos.map((m) => {
+      const esGarantia = CONCEPTOS_GARANTIA.includes(m.concepto);
+      const color = m.tipo === "INGRESO"
+        ? (esGarantia ? "#1d4ed8" : "#16a34a")
+        : "#dc2626";
+      return `
+        <tr${esGarantia ? ' style="background:#eff6ff"' : ""}>
+          <td>${new Date(m.createdAt).toLocaleString("es-BO")}</td>
+          <td>${m.tipo === "INGRESO" ? "↑" : "↓"} ${CONCEPTO_META[m.concepto].label}</td>
+          <td>${m.contrato ? `${m.contrato.codigo} — ${m.contrato.cliente.nombre}` : "—"}</td>
+          <td>${FORMA_PAGO_LABEL[m.forma_pago]}</td>
+          <td>${m.descripcion ?? "—"}</td>
+          <td style="text-align:right;font-weight:bold;color:${color}">
+            ${m.tipo === "INGRESO" ? "+" : "−"}${formatBs(Number(m.monto))}
+          </td>
+        </tr>`;
+    }).join("");
 
     const periodo = fechaDesde || fechaHasta
       ? `${fechaDesde ? `Desde ${fechaDesde}` : ""} ${fechaHasta ? `hasta ${fechaHasta}` : ""}`.trim()
@@ -620,9 +634,14 @@ function PrintReport({
         table { width: 100%; border-collapse: collapse; }
         th { background: #f5f5f5; padding: 6px 8px; text-align: left; font-size: 11px; border-bottom: 2px solid #ddd; }
         td { padding: 5px 8px; border-bottom: 1px solid #eee; }
-        .totals { margin-top: 16px; display: flex; gap: 24px; font-weight: bold; }
-        .ing { color: #16a34a; } .egr { color: #dc2626; }
-        .bal { color: ${ingresos - egresos >= 0 ? "#16a34a" : "#dc2626"}; }
+        .totals { margin-top: 16px; display: grid; grid-template-columns: repeat(4,auto); gap: 0; border: 1px solid #ddd; border-radius: 6px; overflow: hidden; max-width: 560px; }
+        .total-cell { padding: 8px 14px; border-right: 1px solid #ddd; }
+        .total-cell:last-child { border-right: none; }
+        .total-label { font-size: 10px; color: #666; text-transform: uppercase; letter-spacing: 0.04em; }
+        .total-value { font-size: 14px; font-weight: bold; margin-top: 2px; }
+        .ing { color: #16a34a; } .grt { color: #1d4ed8; } .egr { color: #dc2626; }
+        .bal { color: ${balanceReal >= 0 ? "#16a34a" : "#dc2626"}; }
+        .note { font-size: 10px; color: #888; margin-top: 12px; }
         .footer { margin-top: 20px; font-size: 10px; color: #999; }
       </style>
     </head><body>
@@ -635,10 +654,24 @@ function PrintReport({
         <tbody>${rows}</tbody>
       </table>
       <div class="totals">
-        <span class="ing">Ingresos: ${formatBs(ingresos)}</span>
-        <span class="egr">Egresos: ${formatBs(egresos)}</span>
-        <span class="bal">Balance: ${formatBs(ingresos - egresos)}</span>
+        <div class="total-cell">
+          <div class="total-label">Ganancia (alquiler)</div>
+          <div class="total-value ing">+${formatBs(ganancia)}</div>
+        </div>
+        <div class="total-cell">
+          <div class="total-label">Garantía efectivo</div>
+          <div class="total-value grt">${formatBs(garantia)}</div>
+        </div>
+        <div class="total-cell">
+          <div class="total-label">Egresos</div>
+          <div class="total-value egr">−${formatBs(egresos)}</div>
+        </div>
+        <div class="total-cell">
+          <div class="total-label">Balance real</div>
+          <div class="total-value bal">${formatBs(balanceReal)}</div>
+        </div>
       </div>
+      <p class="note">* La garantía en efectivo (azul) es depósito a devolver al cliente — no se incluye en el balance real.</p>
       <p class="footer">Generado el ${new Date().toLocaleString("es-BO")}</p>
     </body></html>`);
     win.document.close();
@@ -770,8 +803,7 @@ export function CajaClient({ initialMovimientos, initialStats, initialCuentas, t
   };
   const hasFilters = !!(tipoFilter || conceptoFilter || formaPagoFilter || fechaDesde || fechaHasta || search);
 
-  const ingresosFiltered = filtered.filter((m) => m.tipo === "INGRESO").reduce((s, m) => s + Number(m.monto), 0);
-  const egresosFiltered  = filtered.filter((m) => m.tipo === "EGRESO").reduce((s, m) => s + Number(m.monto), 0);
+  const { ganancia: gananciaFiltered, garantia: garantiaFiltered, egresos: egresosFiltered } = calcTotalesCaja(filtered);
 
   return (
     <>
@@ -881,12 +913,17 @@ export function CajaClient({ initialMovimientos, initialStats, initialCuentas, t
 
             {/* Summary */}
             {filtered.length > 0 && (
-              <div className="flex items-center gap-4 text-xs text-muted-foreground bg-muted/40 rounded-xl px-3 py-2">
-                <span>{filtered.length} movimiento{filtered.length !== 1 ? "s" : ""}</span>
-                <span className="text-emerald-600 font-semibold">+ {formatBs(ingresosFiltered)}</span>
-                <span className="text-red-600 font-semibold">− {formatBs(egresosFiltered)}</span>
-                <span className={`font-bold ${ingresosFiltered - egresosFiltered >= 0 ? "text-emerald-600" : "text-red-600"}`}>
-                  = {formatBs(ingresosFiltered - egresosFiltered)}
+              <div className="flex items-center gap-3 flex-wrap text-xs bg-muted/40 rounded-xl px-3 py-2">
+                <span className="text-muted-foreground">{filtered.length} movimiento{filtered.length !== 1 ? "s" : ""}</span>
+                <span className="text-emerald-600 font-semibold">Ganancia +{formatBs(gananciaFiltered)}</span>
+                {garantiaFiltered > 0 && (
+                  <span className="text-blue-600 font-semibold">Garantía {formatBs(garantiaFiltered)}</span>
+                )}
+                {egresosFiltered > 0 && (
+                  <span className="text-red-600 font-semibold">Egresos −{formatBs(egresosFiltered)}</span>
+                )}
+                <span className={`font-bold ${gananciaFiltered - egresosFiltered >= 0 ? "text-emerald-600" : "text-red-600"}`}>
+                  = {formatBs(gananciaFiltered - egresosFiltered)}
                 </span>
               </div>
             )}
@@ -901,8 +938,7 @@ export function CajaClient({ initialMovimientos, initialStats, initialCuentas, t
             ) : (
               <div className="space-y-3">
                 {grouped.map(({ date, items }) => {
-                  const dayIng = items.filter((m) => m.tipo === "INGRESO").reduce((s, m) => s + Number(m.monto), 0);
-                  const dayEgr = items.filter((m) => m.tipo === "EGRESO").reduce((s, m) => s + Number(m.monto), 0);
+                  const { ganancia: dayGan, garantia: dayGrt, egresos: dayEgr } = calcTotalesCaja(items);
                   return (
                     <div key={date}>
                       {/* Day separator */}
@@ -911,7 +947,8 @@ export function CajaClient({ initialMovimientos, initialStats, initialCuentas, t
                           {formatFechaGrupo(date + "T12:00:00")}
                         </p>
                         <div className="flex gap-3 text-[11px]">
-                          <span className="text-emerald-600 font-semibold">+{formatBs(dayIng)}</span>
+                          <span className="text-emerald-600 font-semibold">+{formatBs(dayGan)}</span>
+                          {dayGrt > 0 && <span className="text-blue-600 font-semibold">garantía {formatBs(dayGrt)}</span>}
                           {dayEgr > 0 && <span className="text-red-600 font-semibold">−{formatBs(dayEgr)}</span>}
                         </div>
                       </div>

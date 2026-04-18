@@ -53,7 +53,7 @@ export interface ContratoParticipante {
   id: number; contratoId: number; prendaId: number | null;
   instanciaConjuntoId: number | null;
   instanciaConjunto?: { id: number; codigo: string; estado: string } | null;
-  nombre: string; ci: string | null; tipo: TipoParticipante;
+  nombre: string; ci: string | null; celular: string | null; tipo: TipoParticipante;
   notas: string | null; devuelto: boolean; fecha_devolucion: string | null;
   garantias?: ContratoGarantia[];
   createdAt: string;
@@ -173,7 +173,7 @@ export const FORMA_PAGO_OPTIONS: { value: FormaPago; label: string }[] = [
 
 export const TIPO_PARTICIPANTE_OPTIONS: { value: TipoParticipante; label: string }[] = [
   { value: "HOMBRE", label: "Hombre" },
-  { value: "CHOLITA", label: "Cholita" },
+  { value: "CHOLITA", label: "Mujer" },
   { value: "MACHA", label: "Macha" },
   { value: "NINO", label: "Niño" },
   { value: "OTRO", label: "Otro" },

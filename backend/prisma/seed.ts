@@ -116,50 +116,17 @@ async function main() {
     create: { conjuntoId: tinku.id, codigo_variacion: 'TNK-VAR-DEFAULT', nombre_variacion: 'Talla Única' },
   });
 
-  // ── InstanciasConjunto (artículos físicos) ──
-  const inst1 = await prisma.instanciaConjunto.upsert({
-    where: { codigo: 'CAP-001' },
-    update: {},
-    create: { codigo: 'CAP-001', variacionId: capoVar.id, sucursalId: lapaz.id, estado: 'DISPONIBLE' },
-  });
-  const inst2 = await prisma.instanciaConjunto.upsert({
-    where: { codigo: 'CAP-002' },
-    update: {},
-    create: { codigo: 'CAP-002', variacionId: capoVar.id, sucursalId: lapaz.id, estado: 'ALQUILADO' },
-  });
-  await prisma.instanciaConjunto.upsert({
-    where: { codigo: 'MOR-001' },
-    update: {},
-    create: { codigo: 'MOR-001', variacionId: morVar.id, sucursalId: lapaz.id, estado: 'DISPONIBLE' },
-  });
-  await prisma.instanciaConjunto.upsert({
-    where: { codigo: 'MOR-002' },
-    update: {},
-    create: { codigo: 'MOR-002', variacionId: morVar.id, sucursalId: cbba.id, estado: 'EN_TRANSFERENCIA' },
-  });
-  await prisma.instanciaConjunto.upsert({
-    where: { codigo: 'TNK-001' },
-    update: {},
-    create: { codigo: 'TNK-001', variacionId: tnkVar.id, sucursalId: cbba.id, estado: 'DISPONIBLE' },
+  // ── MovimientosStock (stock inicial de conjuntos) ──
+  await prisma.movimientoStock.createMany({
+    data: [
+      { variacionId: capoVar.id, tipo: 'COMPRA', cantidad: 15, motivo: 'Stock inicial Caporales' },
+      { variacionId: morVar.id,  tipo: 'COMPRA', cantidad: 12, motivo: 'Stock inicial Morenada' },
+      { variacionId: tnkVar.id,  tipo: 'COMPRA', cantidad: 10, motivo: 'Stock inicial Tinku' },
+    ],
+    skipDuplicates: false,
   });
 
   // ── InstanciasComponente (prendas sueltas en el Pool) ──
-  await prisma.instanciaComponente.upsert({
-    where: { serial: 'CHAQ-001' },
-    update: {},
-    create: { serial: 'CHAQ-001', talla: 'L', componenteId: chaqueta.id, sucursalId: lapaz.id, instanciaConjuntoId: inst1.id, estado: 'ASIGNADO' },
-  });
-  await prisma.instanciaComponente.upsert({
-    where: { serial: 'PANT-001' },
-    update: {},
-    create: { serial: 'PANT-001', talla: 'L', componenteId: pantalon.id, sucursalId: lapaz.id, instanciaConjuntoId: inst1.id, estado: 'ASIGNADO' },
-  });
-  await prisma.instanciaComponente.upsert({
-    where: { serial: 'SOMB-001' },
-    update: {},
-    create: { serial: 'SOMB-001', talla: 'M', componenteId: sombrero.id, sucursalId: lapaz.id, instanciaConjuntoId: inst1.id, estado: 'ASIGNADO' },
-  });
-  // Pool libre (sin conjunto asignado)
   await prisma.instanciaComponente.upsert({
     where: { serial: 'SOMB-002' },
     update: {},
@@ -181,20 +148,7 @@ async function main() {
     create: { serial: 'PANT-002', talla: 'XL', componenteId: pantalon.id, sucursalId: lapaz.id, estado: 'DANADO', notas: 'Rotura en costura lateral' },
   });
 
-  // ── Transferencia de muestra ──
-  await prisma.transferencia.upsert({
-    where: { id: 1 },
-    update: {},
-    create: {
-      instanciaConjuntoId: inst2.id,
-      sucursalOrigenId: lapaz.id,
-      sucursalDestinoId: cbba.id,
-      estado: 'EN_TRANSITO',
-      notas: 'Requerida para Entrada del Gran Poder 2026',
-    },
-  });
-
-  console.log('✓ Seed completo: sucursales, conjuntos, componentes, instancias, transferencias.');
+  console.log('✓ Seed completo: sucursales, conjuntos, componentes, stock inicial.');
 }
 
 main()

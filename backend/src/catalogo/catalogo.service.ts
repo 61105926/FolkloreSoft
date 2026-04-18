@@ -1,4 +1,5 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
+import { EstadoContrato } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { ImagenAutoService } from './imagen-auto.service.js';
 
@@ -10,6 +11,27 @@ export class CatalogoService {
   ) { }
 
   // ── Conjuntos ──
+  private readonly ESTADOS_ACTIVOS: EstadoContrato[] = [
+    EstadoContrato.RESERVADO,
+    EstadoContrato.CONFIRMADO,
+    EstadoContrato.ENTREGADO,
+    EstadoContrato.EN_USO,
+  ];
+
+  private variacionInclude() {
+    return {
+      movimientosStock: { select: { cantidad: true } },
+      contratoPrendas: {
+        where: {
+          contrato: {
+            is: { estado: { in: this.ESTADOS_ACTIVOS } },
+          },
+        },
+        select: { total: true },
+      },
+    };
+  }
+
   findAllConjuntos() {
     return this.prisma.conjunto.findMany({
       where: { activo: true },
@@ -17,7 +39,7 @@ export class CatalogoService {
         componentes: { include: { componente: true } },
         variaciones: {
           where: { activa: true },
-          include: { instancias: { include: { sucursal: true } } },
+          include: this.variacionInclude(),
         },
       },
       orderBy: { nombre: 'asc' },
@@ -31,7 +53,7 @@ export class CatalogoService {
         componentes: { include: { componente: true } },
         variaciones: {
           where: { activa: true },
-          include: { instancias: { include: { sucursal: true } } },
+          include: this.variacionInclude(),
         },
       },
     });

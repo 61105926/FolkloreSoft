@@ -1,50 +1,60 @@
 import { cookies } from "next/headers";
-import { ArmadoWorkspace } from "./_components/armado-workspace";
+import { StockClient } from "./_components/stock-client";
 
 const BACKEND = process.env.BACKEND_URL ?? "http://localhost:3001";
-const CLIENT_BACKEND = "/api/backend";
 
 async function fetchJson<T>(url: string, token: string): Promise<T> {
   const res = await fetch(url, {
     headers: { Authorization: `Bearer ${token}` },
     cache: "no-store",
   });
-  if (!res.ok) throw new Error(`Error ${res.status} en ${url}`);
+  if (!res.ok) throw new Error(`${res.status}`);
   return res.json();
 }
 
-export default async function ArmadoPage() {
+export default async function StockPage() {
   const cookieStore = await cookies();
   const token = cookieStore.get("accessToken")?.value ?? "";
 
-  const [sucursales, instanciasConjunto, statsSucursales] = await Promise.all([
-    fetchJson<{ id: number; nombre: string; ciudad: string }[]>(
-      `${BACKEND}/sucursales`,
-      token
-    ).catch(() => []),
-    fetchJson<{
+  const resumen = await fetchJson<
+    {
       id: number;
-      codigo: string;
-      estado: string;
-      notas: string | null;
-      sucursalId: number;
-      variacion: { conjunto: { id: number; nombre: string; danza: string; componentes: { cantidad: number; componente: { tipo: string; nombre: string } }[] } };
-      sucursal: { id: number; nombre: string };
-      componentes: { id: number; serial: string; talla: string | null; componente: { tipo: string; nombre: string }; estado: string }[];
-    }[]>(`${BACKEND}/inventario/instancias-conjunto`, token).catch(() => []),
-    fetchJson<{
-      sucursalId: number; nombre: string; ciudad: string;
-      disponible: number; alquilado: number; enTransferencia: number; dadoDeBaja: number; total: number;
-    }[]>(`${BACKEND}/inventario/stats-sucursales`, token).catch(() => []),
-  ]);
+      nombre: string;
+      danza: string;
+      imagen_url: string | null;
+      stockTotal: number;
+      variaciones: {
+        id: number;
+        nombre_variacion: string;
+        talla: string | null;
+        color: string | null;
+        stock: number;
+      }[];
+    }[]
+  >(`${BACKEND}/inventario/stock`, token).catch(() => []);
+
+  const movimientos = await fetchJson<
+    {
+      id: number;
+      tipo: string;
+      cantidad: number;
+      motivo: string | null;
+      createdAt: string;
+      variacion: {
+        id: number;
+        nombre_variacion: string;
+        talla: string | null;
+        conjunto: { id: number; nombre: string; danza: string };
+      };
+      user: { id: number; nombre: string } | null;
+    }[]
+  >(`${BACKEND}/inventario/movimientos`, token).catch(() => []);
 
   return (
-    <ArmadoWorkspace
-      sucursales={sucursales}
-      instanciasConjunto={instanciasConjunto}
-      statsSucursales={statsSucursales}
+    <StockClient
+      resumen={resumen}
+      movimientos={movimientos}
       token={token}
-      backendUrl={CLIENT_BACKEND}
     />
   );
 }
