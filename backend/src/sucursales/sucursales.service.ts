@@ -15,11 +15,11 @@ export class SucursalesService {
     return s;
   }
 
-  create(data: { nombre: string; ciudad: string; direccion?: string }) {
+  create(data: { nombre: string; ciudad: string; direccion?: string; telefono?: string; email?: string }) {
     return this.prisma.sucursal.create({ data });
   }
 
-  update(id: number, data: { nombre?: string; ciudad?: string; direccion?: string }) {
+  update(id: number, data: { nombre?: string; ciudad?: string; direccion?: string; telefono?: string; email?: string }) {
     return this.prisma.sucursal.update({ where: { id }, data });
   }
 

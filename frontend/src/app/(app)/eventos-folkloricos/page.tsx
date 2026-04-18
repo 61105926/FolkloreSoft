@@ -21,12 +21,13 @@ export default async function ContratosPage() {
   const cookieStore = await cookies();
   const token = cookieStore.get("accessToken")?.value ?? "";
 
-  const [contratos, clientes, eventos, sucursales, conjuntos] = await Promise.all([
+  const [contratos, clientes, eventos, sucursales, conjuntos, me] = await Promise.all([
     fetchJson(`${BACKEND}/contratos`, token),
     fetchJson(`${BACKEND}/clientes`, token),
     fetchJson(`${BACKEND}/eventos`, token),
     fetchJson(`${BACKEND}/sucursales`, token),
     fetchJson(`${BACKEND}/catalogo/conjuntos`, token),
+    fetchJson<{ rol: string }>(`${BACKEND}/auth/me`, token).catch(() => null),
   ]);
 
   return (
@@ -38,6 +39,7 @@ export default async function ContratosPage() {
       conjuntos={conjuntos as any[]}
       token={token}
       backendUrl={CLIENT_BACKEND}
+      userRol={(me as any)?.rol}
     />
   );
 }

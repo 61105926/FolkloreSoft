@@ -41,6 +41,7 @@ interface Props {
   clientes: Cliente[];
   conjuntos: ConjuntoCatalogo[];
   token: string; backendUrl: string;
+  userRol?: string;
   onClose: () => void;
   onSaved: (c: Contrato) => void;
   onDeleted?: (id: number) => void;
@@ -410,9 +411,10 @@ function ParticipanteCard({ p, prendas, contratoId, token, backendUrl, onUpdated
 
 export function ContratoModal({
   contrato, eventoPreset, clientes: initialClientes,
-  conjuntos, token, backendUrl,
+  conjuntos, token, backendUrl, userRol,
   onClose, onSaved, onDeleted, onClienteCreado,
 }: Props) {
+  const isAdmin = userRol === "ADMIN" || userRol === "SUPERADMIN";
   const isEdit = !!contrato;
   const [activeTab, setActiveTab] = useState<TabKey>("info");
   const [saving, setSaving] = useState(false);
@@ -931,7 +933,8 @@ export function ContratoModal({
 
   const activePrendas = prendas.filter((p) => !p.deleted);
   const activeGarantiasCount = (gEfectivo ? 1 : 0) + (gCarnet ? 1 : 0) + (gCarta ? 1 : 0);
-  const tabIdx = TABS.findIndex((t) => t.key === activeTab);
+  const visibleTabs = TABS.filter((t) => t.key !== "historial" || isAdmin);
+  const tabIdx = visibleTabs.findIndex((t) => t.key === activeTab);
   const prendaOptions = (fullContrato?.prendas ?? []).map((p) => ({
     id: p.id,
     modelo: p.modelo,
@@ -987,7 +990,7 @@ export function ContratoModal({
 
         {/* Tabs */}
         <div className="flex border-b border-border shrink-0 px-6 overflow-x-auto">
-          {TABS.map((t) => (
+          {TABS.filter((t) => t.key !== "historial" || isAdmin).map((t) => (
             <button key={t.key} onClick={() => setActiveTab(t.key)}
               className={`px-4 py-3 text-sm font-semibold border-b-2 -mb-px transition-colors whitespace-nowrap ${activeTab === t.key ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground"}`}>
               {t.label}
@@ -1131,7 +1134,18 @@ export function ContratoModal({
               {/* Nombre ext + Institución */}
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1.5"><label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Nombre evento externo</label><input className={inp} value={nombreEventoExt} onChange={(e) => setNombreEventoExt(e.target.value)} placeholder="Gran Poder, Carnaval…" /></div>
-                <div className="space-y-1.5"><label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Institución</label><input className={inp} value={institucion} onChange={(e) => setInstitucion(e.target.value)} placeholder="Colegio, municipio…" /></div>
+                <div className="space-y-1.5">
+                  <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Institución</label>
+                  <select className={inp} value={institucion} onChange={(e) => setInstitucion(e.target.value)}>
+                    <option value="">— Seleccionar —</option>
+                    <option value="Colegio">Colegio</option>
+                    <option value="Ballet">Ballet</option>
+                    <option value="Universidad">Universidad</option>
+                    <option value="Entrada Folklórica">Entrada Folklórica</option>
+                    <option value="Festival">Festival</option>
+                    <option value="Otro">Otro</option>
+                  </select>
+                </div>
               </div>
 
               {/* Ubicación */}
@@ -1887,7 +1901,7 @@ export function ContratoModal({
         {/* Footer */}
         <div className="px-6 py-4 border-t border-border flex items-center gap-2 shrink-0">
           {tabIdx > 0 && (
-            <button onClick={() => setActiveTab(TABS[tabIdx - 1].key)} className="px-4 py-2 rounded-xl border border-border text-sm text-muted-foreground hover:bg-muted transition-colors">← Anterior</button>
+            <button onClick={() => setActiveTab(visibleTabs[tabIdx - 1].key)} className="px-4 py-2 rounded-xl border border-border text-sm text-muted-foreground hover:bg-muted transition-colors">← Anterior</button>
           )}
           {isEdit && onDeleted && (
             <button
@@ -1901,7 +1915,7 @@ export function ContratoModal({
           <div className="flex-1" />
           <Button variant="outline" onClick={onClose} disabled={saving || deleting}>Cancelar</Button>
           {activeTab === "historial" ? null : activeTab !== "finanzas" ? (
-            <Button className="bg-primary text-primary-foreground" onClick={() => setActiveTab(TABS[tabIdx + 1].key)}>Siguiente →</Button>
+            <Button className="bg-primary text-primary-foreground" onClick={() => setActiveTab(visibleTabs[tabIdx + 1].key)}>Siguiente →</Button>
           ) : (
             <Button className="bg-primary text-primary-foreground min-w-[130px]" onClick={handleSubmit} disabled={saving || deleting}>
               {saving ? "Guardando…" : isEdit ? "Guardar cambios" : "Crear contrato"}

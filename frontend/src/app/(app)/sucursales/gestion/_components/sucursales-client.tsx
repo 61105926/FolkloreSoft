@@ -20,6 +20,8 @@ function SucursalModal({ sucursal, token, backendUrl, onClose, onSaved, onDelete
   const [nombre,    setNombre]    = useState(sucursal?.nombre    ?? "");
   const [ciudad,    setCiudad]    = useState(sucursal?.ciudad    ?? "La Paz");
   const [direccion, setDireccion] = useState(sucursal?.direccion ?? "");
+  const [telefono,  setTelefono]  = useState(sucursal?.telefono  ?? "");
+  const [email,     setEmail]     = useState(sucursal?.email     ?? "");
   const [saving,    setSaving]    = useState(false);
   const [deleting,  setDeleting]  = useState(false);
   const [confirmDel, setConfirmDel] = useState(false);
@@ -34,7 +36,12 @@ function SucursalModal({ sucursal, token, backendUrl, onClose, onSaved, onDelete
       const res = await fetch(url, {
         method,
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ nombre: nombre.trim(), ciudad, direccion: direccion.trim() || undefined }),
+        body: JSON.stringify({
+          nombre: nombre.trim(), ciudad,
+          direccion: direccion.trim() || undefined,
+          telefono:  telefono.trim()  || undefined,
+          email:     email.trim()     || undefined,
+        }),
       });
       if (res.ok) { onSaved(await res.json()); }
       else { const e = await res.json().catch(() => ({})) as { message?: string }; setError(e.message ?? "Error al guardar"); setSaving(false); }
@@ -84,6 +91,16 @@ function SucursalModal({ sucursal, token, backendUrl, onClose, onSaved, onDelete
           <div className="space-y-1">
             <label className="text-xs font-semibold text-muted-foreground">Dirección</label>
             <input className={inp} value={direccion} onChange={(e) => setDireccion(e.target.value)} placeholder="Av. Ejemplo #123" />
+          </div>
+
+          <div className="space-y-1">
+            <label className="text-xs font-semibold text-muted-foreground">Teléfono / WhatsApp</label>
+            <input className={inp} value={telefono} onChange={(e) => setTelefono(e.target.value)} placeholder="+591 2 1234567" type="tel" />
+          </div>
+
+          <div className="space-y-1">
+            <label className="text-xs font-semibold text-muted-foreground">Email</label>
+            <input className={inp} value={email} onChange={(e) => setEmail(e.target.value)} placeholder="sucursal@folcklore.com" type="email" />
           </div>
         </div>
 

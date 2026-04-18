@@ -94,6 +94,7 @@ export interface Contrato {
   forma_pago: FormaPago | null;
   observaciones: string | null; condiciones: string | null;
   cliente: { id: number; nombre: string; celular: string | null; ci: string | null };
+  sucursal: { id: number; nombre: string; ciudad: string; direccion: string | null; telefono: string | null; email: string | null } | null;
   evento: { id: number; nombre: string } | null;
   prendas?: ContratoPrenda[];
   garantias?: ContratoGarantia[];
@@ -129,6 +130,7 @@ interface Props {
   conjuntos: ConjuntoCatalogo[];
   token: string;
   backendUrl: string;
+  userRol?: string;
 }
 
 // ── Constants & Helpers ────────────────────────────────────────────────────────
@@ -510,7 +512,7 @@ function ContratoCard({
 
 // ── Main ContratosClient ───────────────────────────────────────────────────────
 
-export function ContratosClient({ initialContratos, initialClientes, initialEventos, sucursales, conjuntos, token, backendUrl }: Props) {
+export function ContratosClient({ initialContratos, initialClientes, initialEventos, sucursales, conjuntos, token, backendUrl, userRol }: Props) {
   const [contratos, setContratos] = useState<Contrato[]>(initialContratos);
   const [clientes, setClientes] = useState<Cliente[]>(initialClientes);
   const [eventos, setEventos] = useState<Evento[]>(initialEventos);
@@ -772,6 +774,7 @@ export function ContratosClient({ initialContratos, initialClientes, initialEven
           conjuntos={conjuntos}
           token={token}
           backendUrl={backendUrl}
+          userRol={userRol}
           onClose={() => { setShowContratoModal(false); setEditandoContrato(null); setContratoEventoPreset(null); }}
           onSaved={(c) => { handleContratoSaved(c); setShowContratoModal(false); setEditandoContrato(null); setContratoEventoPreset(null); }}
           onDeleted={(id) => { handleContratoDeleted(id); setShowContratoModal(false); setEditandoContrato(null); }}

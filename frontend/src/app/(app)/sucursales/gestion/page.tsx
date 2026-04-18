@@ -10,6 +10,8 @@ export interface SucursalRow {
   nombre: string;
   ciudad: string;
   direccion: string | null;
+  telefono: string | null;
+  email: string | null;
   createdAt: string;
   _count?: { instanciasConjunto: number; usuarios: number };
 }

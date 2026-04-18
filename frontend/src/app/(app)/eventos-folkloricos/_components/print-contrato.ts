@@ -65,7 +65,16 @@ export function imprimirContrato(c: Contrato) {
   </style>
   </head><body>
   <div style="display:flex;justify-content:space-between;align-items:flex-start;border-bottom:2px solid #000;padding-bottom:10px;margin-bottom:6px">
-    <div><h1>FOLCKLORE Bolivia</h1><p style="margin:2px 0;color:#555">Alquiler de trajes folklóricos</p></div>
+    <div>
+      <h1>FOLCKLORE Bolivia</h1>
+      <p style="margin:2px 0;color:#555">Alquiler de trajes folklóricos</p>
+      ${c.sucursal ? `
+        <p style="margin:2px 0;font-size:11px;color:#444">${c.sucursal.nombre}${c.sucursal.ciudad ? ` · ${c.sucursal.ciudad}` : ""}</p>
+        ${c.sucursal.direccion ? `<p style="margin:1px 0;font-size:11px;color:#666">${c.sucursal.direccion}</p>` : ""}
+        ${c.sucursal.telefono  ? `<p style="margin:1px 0;font-size:11px;color:#666">Tel: ${c.sucursal.telefono}</p>` : ""}
+        ${c.sucursal.email     ? `<p style="margin:1px 0;font-size:11px;color:#666">${c.sucursal.email}</p>` : ""}
+      ` : ""}
+    </div>
     <div style="text-align:right">
       <div style="font-size:15px;font-weight:bold">N° ${c.codigo}</div>
       <div style="color:#555">Contrato: ${new Date(c.fecha_contrato).toLocaleDateString("es-BO")}</div>

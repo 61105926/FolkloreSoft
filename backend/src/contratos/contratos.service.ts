@@ -5,6 +5,7 @@ import { EstadoContrato, TipoContrato, CiudadContrato, TipoGarantia, FormaPago, 
 
 const INCLUDE_FULL = {
   cliente: true,
+  sucursal: { select: { id: true, nombre: true, ciudad: true, direccion: true, telefono: true, email: true } },
   evento: { select: { id: true, nombre: true, tipo: true, fecha_inicio: true } },
   prendas: {
     include: {
@@ -528,7 +529,9 @@ export class ContratosService {
     await this.prisma.contratoGarantia.delete({ where: { id } });
     if (!g) return;
 
-    await this.log(g.contratoId, 'GARANTIA_REMOVIDA', `Garantía removida: ${g.tipo}`);
+    const montoStr = g.valor ? ` — Bs. ${Number(g.valor).toFixed(2)}` : '';
+    const descStr  = g.descripcion ? ` (${g.descripcion})` : '';
+    await this.log(g.contratoId, 'GARANTIA_REMOVIDA', `Garantía removida: ${g.tipo}${montoStr}${descStr}`);
 
     // Si era una sanción (tipo OTRO, retenida), revertir el ingreso en caja
     if (g.tipo === 'OTRO' && g.retenida && g.valor && Number(g.valor) > 0) {
