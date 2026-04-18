@@ -575,7 +575,9 @@ export function ContratoModal({
     [prendas]
   );
   const totalFinal = overrideEnabled && totalOverride ? parseFloat(totalOverride) : totalPrendas;
-  const deuda = totalFinal - parseFloat(totalPagado || "0");
+  const deuda = isEdit
+    ? totalFinal - parseFloat(totalPagado || "0")
+    : totalFinal - parseFloat(anticipo || "0");
 
   const filteredConjuntos = useMemo(() => {
     const q = catalogSearch.toLowerCase().trim();
