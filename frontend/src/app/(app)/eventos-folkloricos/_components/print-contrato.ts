@@ -4,10 +4,10 @@ const TIPO_P_LABEL: Record<string, string> = {
   HOMBRE: "Hombre", CHOLITA: "Mujer", MACHA: "Macha", NINO: "Niño", OTRO: "Otro",
 };
 
-function row(label: string, value: string, bold = false, color = "") {
+function row(label: string, value: string, big = false, color = "") {
   return `<tr>
-    <td style="padding:3px 4px;border-bottom:1px dashed #ddd;color:#555;font-size:10px">${label}</td>
-    <td style="padding:3px 4px;border-bottom:1px dashed #ddd;text-align:right;font-size:10px;${bold ? "font-weight:bold;" : ""}${color ? `color:${color};` : ""}">${value}</td>
+    <td style="padding:4px 5px;border-bottom:1px dashed #000;font-size:${big ? "11" : "10"}px;font-weight:900">${label}</td>
+    <td style="padding:4px 5px;border-bottom:1px dashed #000;text-align:right;font-size:${big ? "12" : "11"}px;font-weight:900${color ? `;color:${color}` : ""}">${value}</td>
   </tr>`;
 }
 
@@ -28,12 +28,12 @@ export function imprimirContrato(c: Contrato) {
       : "";
     const cant = (p.cantidad_hombres ?? 0) + (p.cantidad_cholitas ?? 0) + (p.cantidad_machas ?? 0) + (p.cantidad_ninos ?? 0);
     return `<tr>
-      <td style="padding:3px 4px;border-bottom:1px dashed #eee;font-size:10px">
-        <strong>${p.modelo}</strong>${varInfo ? `<br><span style="color:#666;font-size:9px">${varInfo}</span>` : ""}
+      <td style="padding:4px 5px;border-bottom:1px dashed #000;font-size:11px;font-weight:900">
+        ${p.modelo}${varInfo ? `<br><span style="font-size:9px;font-weight:900">${varInfo}</span>` : ""}
       </td>
-      <td style="padding:3px 4px;border-bottom:1px dashed #eee;text-align:center;font-size:10px">${cant}</td>
-      <td style="padding:3px 4px;border-bottom:1px dashed #eee;text-align:right;font-size:10px">Bs.${parseFloat(p.costo_unitario).toFixed(0)}</td>
-      <td style="padding:3px 4px;border-bottom:1px dashed #eee;text-align:right;font-size:10px;font-weight:bold">Bs.${parseFloat(p.subtotal).toFixed(0)}</td>
+      <td style="padding:4px 5px;border-bottom:1px dashed #000;text-align:center;font-size:12px;font-weight:900">${cant}</td>
+      <td style="padding:4px 5px;border-bottom:1px dashed #000;text-align:right;font-size:11px;font-weight:900">Bs.${parseFloat(p.costo_unitario).toFixed(0)}</td>
+      <td style="padding:4px 5px;border-bottom:1px dashed #000;text-align:right;font-size:12px;font-weight:900">Bs.${parseFloat(p.subtotal).toFixed(0)}</td>
     </tr>`;
   }).join("");
 
@@ -41,12 +41,12 @@ export function imprimirContrato(c: Contrato) {
   const filasParticipantes = participantes_.map((p) => {
     const prenda = prendas_.find((pr) => pr.id === p.prendaId);
     return `<tr>
-      <td style="padding:3px 4px;border-bottom:1px dashed #eee;font-size:10px">
-        <strong>${p.nombre}</strong>${p.ci ? `<br><span style="color:#666;font-size:9px">CI: ${p.ci}</span>` : ""}
-        ${p.celular ? `<br><span style="color:#666;font-size:9px">Tel: ${p.celular}</span>` : ""}
+      <td style="padding:4px 5px;border-bottom:1px dashed #000;font-size:10px;font-weight:900">
+        ${p.nombre}${p.ci ? `<br><span style="font-size:9px;font-weight:900">CI: ${p.ci}</span>` : ""}
+        ${p.celular ? `<br><span style="font-size:9px;font-weight:900">Tel: ${p.celular}</span>` : ""}
       </td>
-      <td style="padding:3px 4px;border-bottom:1px dashed #eee;font-size:10px;color:#555">${TIPO_P_LABEL[p.tipo] ?? p.tipo}</td>
-      <td style="padding:3px 4px;border-bottom:1px dashed #eee;font-size:10px;color:#555">${prenda?.modelo ?? "-"}</td>
+      <td style="padding:4px 5px;border-bottom:1px dashed #000;font-size:10px;font-weight:900">${TIPO_P_LABEL[p.tipo] ?? p.tipo}</td>
+      <td style="padding:4px 5px;border-bottom:1px dashed #000;font-size:10px;font-weight:900">${prenda?.modelo ?? "-"}</td>
     </tr>`;
   }).join("");
 
@@ -55,29 +55,30 @@ export function imprimirContrato(c: Contrato) {
   <style>
     @page { size: 80mm auto; margin: 4mm; }
     * { box-sizing: border-box; }
-    body { font-family: Arial, sans-serif; font-size: 10px; color: #111; margin: 0; padding: 0; width: 72mm; }
-    h2 { font-size: 11px; font-weight: 700; margin: 8px 0 3px; border-bottom: 1px solid #999; padding-bottom: 2px; text-transform: uppercase; letter-spacing: 0.04em; }
+    body { font-family: Arial, sans-serif; font-size: 11px; font-weight: 900; color: #000; margin: 0; padding: 0; width: 72mm; }
+    h2 { font-size: 12px; font-weight: 900; margin: 9px 0 3px; border-bottom: 2px solid #000; padding-bottom: 3px; text-transform: uppercase; letter-spacing: 0.05em; }
     table { width: 100%; border-collapse: collapse; }
+    td, th { font-weight: 900; }
     .center { text-align: center; }
-    .divider { border: none; border-top: 1px dashed #aaa; margin: 6px 0; }
-    .firma { border-top: 1px solid #000; padding-top: 4px; text-align: center; font-size: 9px; }
+    .divider { border: none; border-top: 2px dashed #000; margin: 6px 0; }
+    .firma { border-top: 2px solid #000; padding-top: 4px; text-align: center; font-size: 10px; font-weight: 900; }
     @media screen { body { width: 80mm; padding: 8px; border: 1px dashed #ccc; margin: 16px auto; } }
   </style>
   </head><body>
 
   <!-- ENCABEZADO -->
   <div class="center" style="margin-bottom:4px">
-    <div style="font-size:14px;font-weight:900;letter-spacing:0.05em">FOLCKLORE Bolivia</div>
-    <div style="font-size:9px;color:#555">Alquiler de trajes folklóricos</div>
+    <div style="font-size:16px;font-weight:900;letter-spacing:0.05em">FOLCKLORE Bolivia</div>
+    <div style="font-size:10px;font-weight:900">Alquiler de trajes folkloricos</div>
     ${c.sucursal ? `
-      <div style="font-size:9px;color:#444;margin-top:2px">${c.sucursal.nombre}${c.sucursal.ciudad ? ` · ${c.sucursal.ciudad}` : ""}</div>
-      ${c.sucursal.direccion ? `<div style="font-size:9px;color:#666">${c.sucursal.direccion}</div>` : ""}
-      ${c.sucursal.telefono  ? `<div style="font-size:9px;color:#666">Tel: ${c.sucursal.telefono}</div>` : ""}
-      ${c.sucursal.email     ? `<div style="font-size:9px;color:#666">${c.sucursal.email}</div>` : ""}
+      <div style="font-size:10px;font-weight:900;margin-top:2px">${c.sucursal.nombre}${c.sucursal.ciudad ? ` · ${c.sucursal.ciudad}` : ""}</div>
+      ${c.sucursal.direccion ? `<div style="font-size:10px;font-weight:900">${c.sucursal.direccion}</div>` : ""}
+      ${c.sucursal.telefono  ? `<div style="font-size:10px;font-weight:900">Tel: ${c.sucursal.telefono}</div>` : ""}
+      ${c.sucursal.email     ? `<div style="font-size:10px;font-weight:900">${c.sucursal.email}</div>` : ""}
     ` : ""}
   </div>
   <hr class="divider">
-  <div class="center" style="font-size:11px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;margin:4px 0">
+  <div class="center" style="font-size:13px;font-weight:900;letter-spacing:0.06em;text-transform:uppercase;margin:5px 0">
     Contrato ${c.tipo === "RESERVA" ? "de Reserva" : "Directo"}
   </div>
   <hr class="divider">
@@ -91,18 +92,18 @@ export function imprimirContrato(c: Contrato) {
   <h2>Cliente</h2>
   <table><tbody>
     ${row("Nombre", c.cliente.nombre, true)}
-    ${c.cliente.ci     ? row("CI",      c.cliente.ci) : ""}
-    ${c.cliente.celular ? row("Celular", c.cliente.celular) : ""}
-    ${c.institucion    ? row("Institución", c.institucion) : ""}
+    ${c.cliente.ci      ? row("CI",         c.cliente.ci) : ""}
+    ${c.cliente.celular ? row("Celular",     c.cliente.celular) : ""}
+    ${c.institucion     ? row("Institucion", c.institucion) : ""}
   </tbody></table>
 
   <!-- EVENTO -->
   <h2>Evento</h2>
   <table><tbody>
-    ${row("Nombre", c.nombre_evento_ext ?? c.evento?.nombre ?? "-")}
+    ${row("Nombre",     c.nombre_evento_ext ?? c.evento?.nombre ?? "-")}
     ${c.ubicacion ? row("Lugar", c.ubicacion) : ""}
     ${row("Entrega",    new Date(c.fecha_entrega).toLocaleDateString("es-BO"))}
-    ${row("Devolución", new Date(c.fecha_devolucion).toLocaleDateString("es-BO"))}
+    ${row("Devolucion", new Date(c.fecha_devolucion).toLocaleDateString("es-BO"))}
   </tbody></table>
 
   ${prendas_.length > 0 ? `
@@ -110,10 +111,10 @@ export function imprimirContrato(c: Contrato) {
   <h2>Prendas</h2>
   <table>
     <thead><tr>
-      <th style="text-align:left;font-size:9px;padding:2px 4px;border-bottom:1px solid #999">Modelo / Var.</th>
-      <th style="text-align:center;font-size:9px;padding:2px 4px;border-bottom:1px solid #999">Cant</th>
-      <th style="text-align:right;font-size:9px;padding:2px 4px;border-bottom:1px solid #999">P/u</th>
-      <th style="text-align:right;font-size:9px;padding:2px 4px;border-bottom:1px solid #999">Sub</th>
+      <th style="text-align:left;font-size:10px;padding:3px 5px;border-bottom:2px solid #000;font-weight:900">Modelo</th>
+      <th style="text-align:center;font-size:10px;padding:3px 5px;border-bottom:2px solid #000;font-weight:900">Cant</th>
+      <th style="text-align:right;font-size:10px;padding:3px 5px;border-bottom:2px solid #000;font-weight:900">P/u</th>
+      <th style="text-align:right;font-size:10px;padding:3px 5px;border-bottom:2px solid #000;font-weight:900">Sub</th>
     </tr></thead>
     <tbody>${filasPrendas}</tbody>
   </table>` : ""}
@@ -123,16 +124,16 @@ export function imprimirContrato(c: Contrato) {
   <h2>Participantes</h2>
   <table>
     <thead><tr>
-      <th style="text-align:left;font-size:9px;padding:2px 4px;border-bottom:1px solid #999">Nombre</th>
-      <th style="text-align:left;font-size:9px;padding:2px 4px;border-bottom:1px solid #999">Tipo</th>
-      <th style="text-align:left;font-size:9px;padding:2px 4px;border-bottom:1px solid #999">Prenda</th>
+      <th style="text-align:left;font-size:10px;padding:3px 5px;border-bottom:2px solid #000;font-weight:900">Nombre</th>
+      <th style="text-align:left;font-size:10px;padding:3px 5px;border-bottom:2px solid #000;font-weight:900">Tipo</th>
+      <th style="text-align:left;font-size:10px;padding:3px 5px;border-bottom:2px solid #000;font-weight:900">Prenda</th>
     </tr></thead>
     <tbody>${filasParticipantes}</tbody>
   </table>` : ""}
 
   ${garantiasOtras.length > 0 || garantiaEf > 0 ? `
-  <!-- GARANTÍAS -->
-  <h2>Garantías</h2>
+  <!-- GARANTIAS -->
+  <h2>Garantias</h2>
   <table><tbody>
     ${garantiasOtras.map((g) => row(g.tipo.replace(/_/g, " "), g.descripcion ?? "-")).join("")}
     ${garantiaEf > 0 ? row("Efectivo (a devolver)", `Bs. ${garantiaEf.toFixed(2)}`) : ""}
@@ -141,26 +142,26 @@ export function imprimirContrato(c: Contrato) {
   <!-- RESUMEN FINANCIERO -->
   <h2>Resumen Financiero</h2>
   <table><tbody>
-    ${row("Total contrato", `Bs. ${parseFloat(c.total).toFixed(2)}`, true)}
+    ${row("Total contrato",  `Bs. ${parseFloat(c.total).toFixed(2)}`, true)}
     ${c.tipo === "RESERVA" ? row("Anticipo pactado", `Bs. ${parseFloat(c.anticipo).toFixed(2)}`) : ""}
-    ${row("Total pagado", `Bs. ${parseFloat(c.total_pagado).toFixed(2)}`)}
+    ${row("Total pagado",    `Bs. ${parseFloat(c.total_pagado).toFixed(2)}`)}
     ${c.forma_pago ? row("Forma de pago", c.forma_pago) : ""}
     ${row("Saldo pendiente", `Bs. ${saldo}`, true, parseFloat(saldo) > 0 ? "#c00" : "#080")}
   </tbody></table>
 
   ${c.observaciones || c.condiciones ? `
   <h2>Observaciones</h2>
-  <div style="font-size:9px;color:#444;line-height:1.4">
+  <div style="font-size:10px;font-weight:900;line-height:1.4">
     ${c.observaciones ? `<p style="margin:2px 0">${c.observaciones}</p>` : ""}
     ${c.condiciones   ? `<p style="margin:2px 0">${c.condiciones}</p>`   : ""}
   </div>` : ""}
 
-  <hr class="divider" style="margin-top:12px">
-  <div style="display:flex;justify-content:space-between;margin-top:20px;gap:8px">
-    <div class="firma" style="flex:1">Firma cliente<br><span style="color:#888">${c.cliente.nombre}</span></div>
-    <div class="firma" style="flex:1">Firma responsable<br><span style="color:#888">FOLCKLORE Bolivia</span></div>
+  <hr class="divider" style="margin-top:14px">
+  <div style="display:flex;justify-content:space-between;margin-top:22px;gap:8px">
+    <div class="firma" style="flex:1">Firma cliente<br><span style="font-weight:900">${c.cliente.nombre}</span></div>
+    <div class="firma" style="flex:1">Firma responsable<br><span style="font-weight:900">FOLCKLORE Bolivia</span></div>
   </div>
-  <div class="center" style="margin-top:8px;font-size:8px;color:#aaa">
+  <div class="center" style="margin-top:8px;font-size:9px;font-weight:900">
     Generado el ${new Date().toLocaleString("es-BO")}
   </div>
 

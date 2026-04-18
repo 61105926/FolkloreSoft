@@ -600,79 +600,99 @@ function PrintReport({
   const balanceReal = ganancia - egresos;
 
   const handlePrint = () => {
-    const win = window.open("", "_blank", "width=800,height=600");
+    const win = window.open("", "_blank", "width=420,height=800");
     if (!win) return;
 
     const rows = movimientos.map((m) => {
       const esGarantia = CONCEPTOS_GARANTIA.includes(m.concepto);
-      const color = m.tipo === "INGRESO"
-        ? (esGarantia ? "#1d4ed8" : "#16a34a")
-        : "#dc2626";
-      return `
-        <tr${esGarantia ? ' style="background:#eff6ff"' : ""}>
-          <td>${new Date(m.createdAt).toLocaleString("es-BO")}</td>
-          <td>${m.tipo === "INGRESO" ? "↑" : "↓"} ${CONCEPTO_META[m.concepto].label}</td>
-          <td>${m.contrato ? `${m.contrato.codigo} — ${m.contrato.cliente.nombre}` : "—"}</td>
-          <td>${FORMA_PAGO_LABEL[m.forma_pago]}</td>
-          <td>${m.descripcion ?? "—"}</td>
-          <td style="text-align:right;font-weight:bold;color:${color}">
-            ${m.tipo === "INGRESO" ? "+" : "−"}${formatBs(Number(m.monto))}
-          </td>
-        </tr>`;
+      const signo = m.tipo === "INGRESO" ? "+" : "−";
+      return `<tr>
+        <td style="padding:3px 4px;border-bottom:1px dashed #000;font-size:9px">
+          ${new Date(m.createdAt).toLocaleDateString("es-BO")}<br>
+          <span style="font-size:8px">${new Date(m.createdAt).toLocaleTimeString("es-BO", { hour: "2-digit", minute: "2-digit" })}</span>
+        </td>
+        <td style="padding:3px 4px;border-bottom:1px dashed #000;font-size:9px">
+          ${CONCEPTO_META[m.concepto].label}
+          ${m.contrato ? `<br><span style="font-size:8px">${m.contrato.codigo}</span>` : ""}
+          ${m.descripcion ? `<br><span style="font-size:8px">${m.descripcion}</span>` : ""}
+          ${esGarantia ? `<br><span style="font-size:8px">[GARANTIA]</span>` : ""}
+        </td>
+        <td style="padding:3px 4px;border-bottom:1px dashed #000;text-align:right;font-size:10px;font-weight:900">
+          ${signo}${formatBs(Number(m.monto))}
+        </td>
+      </tr>`;
     }).join("");
 
     const periodo = fechaDesde || fechaHasta
       ? `${fechaDesde ? `Desde ${fechaDesde}` : ""} ${fechaHasta ? `hasta ${fechaHasta}` : ""}`.trim()
       : "Todo el período";
 
-    win.document.write(`<!DOCTYPE html><html><head>
-      <title>Reporte de Caja — FOLCKLORE</title>
+    win.document.write(`<!DOCTYPE html><html lang="es"><head>
+      <meta charset="utf-8">
+      <title>Reporte de Caja</title>
       <style>
-        body { font-family: Arial, sans-serif; padding: 24px; font-size: 12px; color: #111; }
-        h1 { font-size: 18px; margin: 0 0 2px 0; }
-        .subtitle { color: #666; font-size: 11px; margin-bottom: 16px; }
+        @page { size: 80mm auto; margin: 4mm; }
+        * { box-sizing: border-box; }
+        body { font-family: Arial, sans-serif; font-size: 10px; font-weight: bold; color: #111; margin: 0; padding: 0; width: 72mm; }
+        h2 { font-size: 11px; font-weight: 900; margin: 8px 0 3px; border-bottom: 2px solid #000; padding-bottom: 2px; text-transform: uppercase; letter-spacing: 0.04em; }
         table { width: 100%; border-collapse: collapse; }
-        th { background: #f5f5f5; padding: 6px 8px; text-align: left; font-size: 11px; border-bottom: 2px solid #ddd; }
-        td { padding: 5px 8px; border-bottom: 1px solid #eee; }
-        .totals { margin-top: 16px; display: grid; grid-template-columns: repeat(4,auto); gap: 0; border: 1px solid #ddd; border-radius: 6px; overflow: hidden; max-width: 560px; }
-        .total-cell { padding: 8px 14px; border-right: 1px solid #ddd; }
-        .total-cell:last-child { border-right: none; }
-        .total-label { font-size: 10px; color: #666; text-transform: uppercase; letter-spacing: 0.04em; }
-        .total-value { font-size: 14px; font-weight: bold; margin-top: 2px; }
-        .ing { color: #16a34a; } .grt { color: #1d4ed8; } .egr { color: #dc2626; }
-        .bal { color: ${balanceReal >= 0 ? "#16a34a" : "#dc2626"}; }
-        .note { font-size: 10px; color: #888; margin-top: 12px; }
-        .footer { margin-top: 20px; font-size: 10px; color: #999; }
+        td, th { font-weight: bold; }
+        .center { text-align: center; }
+        .divider { border: none; border-top: 2px dashed #000; margin: 6px 0; }
+        @media screen { body { width: 80mm; padding: 8px; border: 1px dashed #ccc; margin: 16px auto; } }
       </style>
     </head><body>
-      <h1>Reporte de Caja — FOLCKLORE</h1>
-      <p class="subtitle">${periodo} · ${movimientos.length} movimiento(s)</p>
-      <table>
-        <thead><tr>
-          <th>Fecha y hora</th><th>Concepto</th><th>Contrato</th><th>Forma pago</th><th>Descripción</th><th style="text-align:right">Monto</th>
-        </tr></thead>
-        <tbody>${rows}</tbody>
-      </table>
-      <div class="totals">
-        <div class="total-cell">
-          <div class="total-label">Ganancia (alquiler)</div>
-          <div class="total-value ing">+${formatBs(ganancia)}</div>
-        </div>
-        <div class="total-cell">
-          <div class="total-label">Garantía efectivo</div>
-          <div class="total-value grt">${formatBs(garantia)}</div>
-        </div>
-        <div class="total-cell">
-          <div class="total-label">Egresos</div>
-          <div class="total-value egr">−${formatBs(egresos)}</div>
-        </div>
-        <div class="total-cell">
-          <div class="total-label">Balance real</div>
-          <div class="total-value bal">${formatBs(balanceReal)}</div>
-        </div>
-      </div>
-      <p class="note">* La garantía en efectivo (azul) es depósito a devolver al cliente — no se incluye en el balance real.</p>
-      <p class="footer">Generado el ${new Date().toLocaleString("es-BO")}</p>
+
+    <div class="center">
+      <div style="font-size:14px;font-weight:900;letter-spacing:0.05em">FOLCKLORE Bolivia</div>
+      <div style="font-size:9px">Alquiler de trajes folklóricos</div>
+    </div>
+    <hr class="divider">
+    <div class="center" style="font-size:11px;font-weight:900;text-transform:uppercase;letter-spacing:0.06em;margin:4px 0">
+      Reporte de Caja
+    </div>
+    <div class="center" style="font-size:9px;margin-bottom:4px">${periodo}</div>
+    <hr class="divider">
+
+    <h2>Movimientos</h2>
+    <table>
+      <thead><tr>
+        <th style="text-align:left;font-size:8px;padding:2px 4px;border-bottom:2px solid #000">Fecha</th>
+        <th style="text-align:left;font-size:8px;padding:2px 4px;border-bottom:2px solid #000">Concepto</th>
+        <th style="text-align:right;font-size:8px;padding:2px 4px;border-bottom:2px solid #000">Monto</th>
+      </tr></thead>
+      <tbody>${rows}</tbody>
+    </table>
+
+    <hr class="divider" style="margin-top:8px">
+    <h2>Resumen</h2>
+    <table><tbody>
+      <tr>
+        <td style="padding:3px 4px;border-bottom:1px dashed #000;font-size:10px">Ganancia (alquiler)</td>
+        <td style="padding:3px 4px;border-bottom:1px dashed #000;text-align:right;font-size:11px;font-weight:900">+${formatBs(ganancia)}</td>
+      </tr>
+      <tr>
+        <td style="padding:3px 4px;border-bottom:1px dashed #000;font-size:10px">Garantia efectivo</td>
+        <td style="padding:3px 4px;border-bottom:1px dashed #000;text-align:right;font-size:11px;font-weight:900">${formatBs(garantia)}</td>
+      </tr>
+      <tr>
+        <td style="padding:3px 4px;border-bottom:1px dashed #000;font-size:10px">Egresos</td>
+        <td style="padding:3px 4px;border-bottom:1px dashed #000;text-align:right;font-size:11px;font-weight:900">-${formatBs(egresos)}</td>
+      </tr>
+      <tr>
+        <td style="padding:3px 4px;font-size:11px;font-weight:900">BALANCE REAL</td>
+        <td style="padding:3px 4px;text-align:right;font-size:13px;font-weight:900">${balanceReal >= 0 ? "+" : ""}${formatBs(balanceReal)}</td>
+      </tr>
+    </tbody></table>
+
+    <hr class="divider" style="margin-top:8px">
+    <div style="font-size:8px;text-align:center;margin-top:4px">
+      * Garantia = deposito a devolver al cliente<br>
+      no se incluye en el balance real
+    </div>
+    <div class="center" style="margin-top:6px;font-size:8px">${movimientos.length} movimiento(s)</div>
+    <div class="center" style="margin-top:4px;font-size:8px">Generado el ${new Date().toLocaleString("es-BO")}</div>
+
     </body></html>`);
     win.document.close();
     win.print();
