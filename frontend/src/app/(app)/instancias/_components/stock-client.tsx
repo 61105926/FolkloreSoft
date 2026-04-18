@@ -46,6 +46,7 @@ type Props = {
   resumen: Conjunto[];
   movimientos: Movimiento[];
   token: string;
+  backendUrl: string;
 };
 
 const TIPO_LABELS: Record<string, string> = {
@@ -59,11 +60,10 @@ const TIPO_COLORS: Record<string, string> = {
   AJUSTE: "bg-blue-100 text-blue-800",
 };
 
-const BACKEND = process.env.NEXT_PUBLIC_BACKEND_URL ?? "http://localhost:3001";
 
 // ── Component ─────────────────────────────────────────────────────────────────
 
-export function StockClient({ resumen, movimientos: initMovimientos, token }: Props) {
+export function StockClient({ resumen, movimientos: initMovimientos, token, backendUrl }: Props) {
   const [tab, setTab] = useState<"resumen" | "movimientos" | "nuevo">("resumen");
   const [movimientos, setMovimientos] = useState(initMovimientos);
   const [conjuntos] = useState(resumen);
@@ -101,7 +101,7 @@ export function StockClient({ resumen, movimientos: initMovimientos, token }: Pr
     setSaving(true);
     setError(null);
     try {
-      const res = await fetch(`${BACKEND}/inventario/movimientos`, {
+      const res = await fetch(`${backendUrl}/inventario/movimientos`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

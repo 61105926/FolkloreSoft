@@ -55,6 +55,7 @@ export default async function StockPage() {
       resumen={resumen}
       movimientos={movimientos}
       token={token}
+      backendUrl="/api/backend"
     />
   );
 }
