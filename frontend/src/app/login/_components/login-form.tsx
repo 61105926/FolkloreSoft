@@ -25,7 +25,7 @@ export function LoginForm() {
           placeholder="usuario@ejemplo.com"
           required
           disabled={isPending}
-          className="h-11 rounded-xl border-border/60 focus-visible:ring-crimson/50 focus-visible:border-crimson"
+          className="h-11 rounded-xl border-2 border-gray-200 bg-white focus-visible:ring-2 focus-visible:ring-crimson/30 focus-visible:border-crimson"
         />
       </div>
 
@@ -41,7 +41,7 @@ export function LoginForm() {
           placeholder="••••••••"
           required
           disabled={isPending}
-          className="h-11 rounded-xl border-border/60 focus-visible:ring-crimson/50 focus-visible:border-crimson"
+          className="h-11 rounded-xl border-2 border-gray-200 bg-white focus-visible:ring-2 focus-visible:ring-crimson/30 focus-visible:border-crimson"
         />
       </div>
 

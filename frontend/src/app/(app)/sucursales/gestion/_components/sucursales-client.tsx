@@ -3,7 +3,7 @@
 import { useState } from "react";
 import type { SucursalRow } from "../page";
 
-const inp = "w-full rounded-xl border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 transition-all";
+const inp = "w-full rounded-xl border-2 border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/40 transition-all";
 
 const CIUDADES = ["La Paz", "El Alto", "Cochabamba", "Santa Cruz", "Oruro", "Potosí", "Sucre", "Tarija", "Beni", "Pando", "Otra"];
 
@@ -63,12 +63,12 @@ function SucursalModal({ sucursal, token, backendUrl, onClose, onSaved, onDelete
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-      <div className="bg-background border border-border rounded-2xl w-full max-w-md shadow-2xl">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-border">
-          <h2 className="font-bold text-base" style={{ fontFamily: "var(--font-outfit)" }}>
+      <div className="bg-white border-2 border-gray-200 rounded-2xl w-full max-w-md shadow-2xl">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 bg-gray-50 rounded-t-2xl">
+          <h2 className="font-bold text-base text-gray-900" style={{ fontFamily: "var(--font-outfit)" }}>
             {isEdit ? "Editar sucursal" : "Nueva sucursal"}
           </h2>
-          <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-xl hover:bg-muted transition-colors">
+          <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-xl hover:bg-gray-200 transition-colors">
             <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
           </button>
         </div>
@@ -77,36 +77,36 @@ function SucursalModal({ sucursal, token, backendUrl, onClose, onSaved, onDelete
           {error && <p className="text-xs text-red-500 bg-red-500/10 rounded-xl px-3 py-2">{error}</p>}
 
           <div className="space-y-1">
-            <label className="text-xs font-semibold text-muted-foreground">Nombre <span className="text-red-500">*</span></label>
+            <label className="text-xs font-semibold text-gray-700">Nombre <span className="text-red-500">*</span></label>
             <input className={inp} value={nombre} onChange={(e) => setNombre(e.target.value)} placeholder="Ej: Sede Central La Paz" />
           </div>
 
           <div className="space-y-1">
-            <label className="text-xs font-semibold text-muted-foreground">Ciudad <span className="text-red-500">*</span></label>
+            <label className="text-xs font-semibold text-gray-700">Ciudad <span className="text-red-500">*</span></label>
             <select className={`${inp} cursor-pointer`} value={ciudad} onChange={(e) => setCiudad(e.target.value)}>
               {CIUDADES.map((c) => <option key={c} value={c}>{c}</option>)}
             </select>
           </div>
 
           <div className="space-y-1">
-            <label className="text-xs font-semibold text-muted-foreground">Dirección</label>
+            <label className="text-xs font-semibold text-gray-700">Dirección</label>
             <input className={inp} value={direccion} onChange={(e) => setDireccion(e.target.value)} placeholder="Av. Ejemplo #123" />
           </div>
 
           <div className="space-y-1">
-            <label className="text-xs font-semibold text-muted-foreground">Teléfono / WhatsApp</label>
+            <label className="text-xs font-semibold text-gray-700">Teléfono / WhatsApp</label>
             <input className={inp} value={telefono} onChange={(e) => setTelefono(e.target.value)} placeholder="+591 2 1234567" type="tel" />
           </div>
 
           <div className="space-y-1">
-            <label className="text-xs font-semibold text-muted-foreground">Email</label>
+            <label className="text-xs font-semibold text-gray-700">Email</label>
             <input className={inp} value={email} onChange={(e) => setEmail(e.target.value)} placeholder="sucursal@folcklore.com" type="email" />
           </div>
         </div>
 
         <div className="px-6 pb-6 space-y-3">
           <div className="flex gap-3">
-            <button onClick={onClose} className="flex-1 py-2 rounded-xl border border-border text-sm hover:bg-muted transition-colors">
+            <button onClick={onClose} className="flex-1 py-2 rounded-xl border-2 border-gray-300 text-gray-700 text-sm font-medium hover:bg-gray-50 transition-colors">
               Cancelar
             </button>
             <button onClick={() => void handleSave()} disabled={saving}
@@ -125,7 +125,7 @@ function SucursalModal({ sucursal, token, backendUrl, onClose, onSaved, onDelete
             <div className="rounded-xl border border-red-500/30 bg-red-500/5 p-3 space-y-2">
               <p className="text-xs text-red-500 font-semibold">¿Confirmar eliminación? Esta acción no se puede deshacer.</p>
               <div className="flex gap-2">
-                <button onClick={() => setConfirmDel(false)} className="flex-1 py-1.5 text-xs rounded-lg border border-border hover:bg-muted transition-colors">
+                <button onClick={() => setConfirmDel(false)} className="flex-1 py-1.5 text-xs rounded-lg border-2 border-gray-300 text-gray-700 font-medium hover:bg-gray-50 transition-colors">
                   Cancelar
                 </button>
                 <button onClick={() => void handleDelete()} disabled={deleting}
@@ -170,8 +170,8 @@ export function SucursalesClient({ initialSucursales, token, backendUrl }: {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold" style={{ fontFamily: "var(--font-outfit)" }}>Sucursales</h1>
-          <p className="text-sm text-muted-foreground mt-0.5">Gestión de sedes y puntos de venta</p>
+          <h1 className="text-3xl font-extrabold text-gray-900" style={{ fontFamily: "var(--font-outfit)" }}>Sucursales</h1>
+          <p className="text-sm text-gray-500 font-medium mt-0.5">Gestión de sedes y puntos de venta</p>
         </div>
         <button
           onClick={() => setSelected("new")}
@@ -186,7 +186,7 @@ export function SucursalesClient({ initialSucursales, token, backendUrl }: {
 
       {/* Grid */}
       {sucursales.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-border py-20 flex flex-col items-center gap-3 text-muted-foreground">
+        <div className="rounded-2xl border-2 border-dashed border-gray-300 py-20 flex flex-col items-center gap-3 text-gray-500">
           <svg className="h-10 w-10 opacity-30" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
           </svg>
@@ -201,7 +201,7 @@ export function SucursalesClient({ initialSucursales, token, backendUrl }: {
             <button
               key={s.id}
               onClick={() => setSelected(s)}
-              className="text-left rounded-2xl border border-border bg-card p-5 hover:border-primary/40 hover:shadow-md transition-all group"
+              className="text-left rounded-2xl border-2 border-gray-200 bg-white p-5 hover:border-primary/50 hover:shadow-lg transition-all group shadow-sm"
             >
               <div className="flex items-start justify-between gap-3">
                 <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0 group-hover:bg-primary/20 transition-colors">
@@ -219,10 +219,10 @@ export function SucursalesClient({ initialSucursales, token, backendUrl }: {
                   <svg className="h-3 w-3 text-muted-foreground shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                   </svg>
-                  <span className="text-xs text-muted-foreground">{s.ciudad}</span>
+                  <span className="text-xs text-gray-500 font-medium">{s.ciudad}</span>
                 </div>
                 {s.direccion && (
-                  <p className="text-xs text-muted-foreground mt-0.5 truncate">{s.direccion}</p>
+                  <p className="text-xs text-gray-500 font-medium mt-0.5 truncate">{s.direccion}</p>
                 )}
               </div>
             </button>

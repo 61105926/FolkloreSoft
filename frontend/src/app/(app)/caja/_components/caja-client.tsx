@@ -108,64 +108,64 @@ function StatsCards({ stats }: { stats: CajaStats }) {
   return (
     <div className="space-y-3 no-print">
       {/* Balance hoy — hero */}
-      <div className={`rounded-2xl border px-5 py-4 flex items-center justify-between gap-4 ${
-        hoy.balance >= 0 ? "bg-emerald-500/5 border-emerald-300/40" : "bg-red-500/5 border-red-300/40"
+      <div className={`rounded-2xl border-2 px-5 py-4 flex items-center justify-between gap-4 ${
+        hoy.balance >= 0 ? "bg-emerald-50 border-emerald-300" : "bg-red-50 border-red-300"
       }`}>
         <div>
-          <p className="text-[11px] text-muted-foreground uppercase tracking-wide font-semibold">Balance del día</p>
+          <p className="text-xs text-gray-600 uppercase tracking-wide font-semibold">Balance del día</p>
           <p className={`text-3xl font-bold mt-0.5 ${hoy.balance >= 0 ? "text-emerald-600" : "text-red-600"}`}
              style={{ fontFamily: "var(--font-outfit)" }}>
             {formatBs(hoy.balance)}
           </p>
-          <p className="text-[11px] text-muted-foreground mt-1">
+          <p className="text-xs text-gray-600 font-medium mt-1">
             {new Date().toLocaleDateString("es-BO", { weekday: "long", day: "2-digit", month: "long", year: "numeric" })}
           </p>
         </div>
         <div className="text-right space-y-1 shrink-0">
           <div>
             <p className="text-base font-bold text-emerald-600">{formatBs(hoy.ingresos)}</p>
-            <p className="text-[10px] text-muted-foreground">Ingresos hoy</p>
+            <p className="text-xs text-gray-600 font-medium">Ingresos hoy</p>
           </div>
           <div>
             <p className="text-base font-bold text-red-600">{formatBs(hoy.egresos)}</p>
-            <p className="text-[10px] text-muted-foreground">Egresos hoy</p>
+            <p className="text-xs text-gray-600 font-medium">Egresos hoy</p>
           </div>
         </div>
       </div>
 
       {/* Period + forma pago */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <div className="bg-card border border-border rounded-2xl px-4 py-3">
-          <p className="text-base font-bold text-emerald-600">{formatBs(semana.ingresos)}</p>
-          <p className="text-[10px] text-muted-foreground mt-0.5">Ingresos esta semana</p>
+        <div className="bg-emerald-50 border-2 border-emerald-200 rounded-2xl px-4 py-3">
+          <p className="text-base font-bold text-emerald-700">{formatBs(semana.ingresos)}</p>
+          <p className="text-xs text-gray-600 font-medium mt-0.5">Ingresos esta semana</p>
         </div>
-        <div className="bg-card border border-border rounded-2xl px-4 py-3">
-          <p className="text-base font-bold text-emerald-600">{formatBs(mes.ingresos)}</p>
-          <p className="text-[10px] text-muted-foreground mt-0.5">Ingresos este mes</p>
+        <div className="bg-emerald-50 border-2 border-emerald-200 rounded-2xl px-4 py-3">
+          <p className="text-base font-bold text-emerald-700">{formatBs(mes.ingresos)}</p>
+          <p className="text-xs text-gray-600 font-medium mt-0.5">Ingresos este mes</p>
         </div>
         {Object.entries(hoy.porFormaPago).map(([fp, monto]) => (
-          <div key={fp} className="bg-card border border-border rounded-2xl px-4 py-3">
+          <div key={fp} className="bg-white border-2 border-gray-200 rounded-2xl px-4 py-3">
             <p className="text-base font-bold text-primary">{formatBs(monto ?? 0)}</p>
-            <p className="text-[10px] text-muted-foreground mt-0.5">{FORMA_PAGO_LABEL[fp as FormaPago] ?? fp} hoy</p>
+            <p className="text-xs text-gray-600 font-medium mt-0.5">{FORMA_PAGO_LABEL[fp as FormaPago] ?? fp} hoy</p>
           </div>
         ))}
       </div>
 
       {/* Totales acumulados por categoría */}
-      <div className="rounded-2xl border border-border bg-card px-5 py-4">
-        <p className="text-[11px] text-muted-foreground uppercase tracking-wide font-semibold mb-3">Composición de ingresos (acumulado)</p>
+      <div className="rounded-2xl border-2 border-gray-200 bg-white px-5 py-4">
+        <p className="text-xs text-gray-700 uppercase tracking-wide font-semibold mb-3">Composición de ingresos (acumulado)</p>
         <div className="grid grid-cols-3 gap-3">
-          <div className="rounded-xl bg-emerald-500/5 border border-emerald-300/30 px-3 py-2.5">
+          <div className="rounded-xl bg-emerald-50 border border-emerald-200 px-3 py-2.5">
             <p className="text-base font-bold text-emerald-700">{formatBs(totales.anticipo)}</p>
-            <p className="text-[10px] text-muted-foreground mt-0.5">Por anticipo</p>
+            <p className="text-xs text-gray-600 font-medium mt-0.5">Por anticipo</p>
           </div>
-          <div className="rounded-xl bg-blue-500/5 border border-blue-300/30 px-3 py-2.5">
+          <div className="rounded-xl bg-blue-50 border border-blue-200 px-3 py-2.5">
             <p className="text-base font-bold text-blue-700">{formatBs(totales.garantia)}</p>
-            <p className="text-[10px] text-muted-foreground mt-0.5">Por garantía</p>
+            <p className="text-xs text-gray-600 font-medium mt-0.5">Por garantía</p>
           </div>
-          <div className="rounded-xl bg-emerald-500/5 border border-emerald-300/30 px-3 py-2.5">
+          <div className="rounded-xl bg-emerald-50 border border-emerald-200 px-3 py-2.5">
             <p className="text-base font-bold text-emerald-700">{formatBs(totales.saldo)}</p>
-            <p className="text-[10px] text-muted-foreground mt-0.5">Por saldo/prenda</p>
+            <p className="text-xs text-gray-600 font-medium mt-0.5">Por saldo/prenda</p>
           </div>
         </div>
       </div>
@@ -470,7 +470,7 @@ function MovimientoRow({
 
   return (
     <div
-      className="flex items-center gap-3 px-4 py-3 border-b border-border/50 last:border-0 hover:bg-muted/30 transition-colors group cursor-pointer"
+      className="flex items-center gap-3 px-4 py-3 border-b border-gray-200 last:border-0 hover:bg-gray-50 transition-colors group cursor-pointer"
       onClick={onRecibo}
     >
       {/* Icon */}
@@ -483,24 +483,24 @@ function MovimientoRow({
       {/* Info */}
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-1.5 flex-wrap">
-          <span className={`inline-flex text-[10px] font-bold px-1.5 py-0.5 rounded-md border ${meta.color}`}>
+          <span className={`inline-flex text-xs font-bold px-1.5 py-0.5 rounded-md border ${meta.color}`}>
             {meta.label}
           </span>
-          <span className="text-[10px] text-muted-foreground bg-muted px-1.5 py-0.5 rounded-md">
+          <span className="text-xs text-gray-600 font-medium bg-gray-100 border border-gray-200 px-1.5 py-0.5 rounded-md">
             {FORMA_PAGO_LABEL[m.forma_pago]}
           </span>
           {m.referencia && (
-            <span className="text-[10px] text-muted-foreground font-mono">{m.referencia}</span>
+            <span className="text-xs text-gray-600 font-mono">{m.referencia}</span>
           )}
         </div>
-        {m.descripcion && <p className="text-xs text-muted-foreground mt-0.5 truncate">{m.descripcion}</p>}
+        {m.descripcion && <p className="text-xs text-gray-600 mt-0.5 truncate">{m.descripcion}</p>}
         {m.contrato && (
-          <p className="text-[11px] text-muted-foreground mt-0.5">
+          <p className="text-xs text-gray-600 font-medium mt-0.5">
             <span className="font-mono">{m.contrato.codigo}</span>
             {" — "}{m.contrato.cliente.nombre}
           </p>
         )}
-        <p className="text-[10px] text-muted-foreground mt-0.5">{formatFechaHora(m.createdAt)}</p>
+        <p className="text-xs text-gray-500 mt-0.5">{formatFechaHora(m.createdAt)}</p>
       </div>
 
       {/* Monto */}
@@ -546,23 +546,23 @@ function CuentasPorCobrarList({
         const deuda   = Number(c.total) - Number(c.total_pagado);
         const vencido = new Date(c.fecha_devolucion) < new Date();
         return (
-          <div key={c.id} className={`bg-card border rounded-2xl px-4 py-3 flex items-center gap-3 ${vencido ? "border-amber-400/50" : "border-border"}`}>
+          <div key={c.id} className={`bg-white border-2 rounded-2xl px-4 py-3 flex items-center gap-3 ${vencido ? "border-amber-300" : "border-gray-200"}`}>
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-1.5 flex-wrap">
-                <span className="text-xs font-mono font-semibold">{c.codigo}</span>
-                <span className="text-[10px] bg-muted text-muted-foreground px-1.5 py-0.5 rounded-md">{ESTADO_CONTRATO_LABEL[c.estado]}</span>
-                {vencido && <span className="text-[10px] font-bold text-amber-600 bg-amber-500/10 px-1.5 py-0.5 rounded-md border border-amber-300/40">VENCIDO</span>}
+                <span className="text-xs font-mono font-semibold text-gray-900">{c.codigo}</span>
+                <span className="text-xs font-medium bg-gray-100 border border-gray-200 text-gray-600 px-1.5 py-0.5 rounded-md">{ESTADO_CONTRATO_LABEL[c.estado]}</span>
+                {vencido && <span className="text-xs font-bold text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded-md border border-amber-300">VENCIDO</span>}
               </div>
-              <p className="text-sm font-semibold mt-0.5">{c.cliente.nombre}</p>
-              {c.cliente.celular && <p className="text-xs text-muted-foreground">{c.cliente.celular}</p>}
-              <p className="text-[11px] text-muted-foreground mt-0.5">
+              <p className="text-sm font-semibold mt-0.5 text-gray-900">{c.cliente.nombre}</p>
+              {c.cliente.celular && <p className="text-xs text-gray-600 font-medium">{c.cliente.celular}</p>}
+              <p className="text-xs text-gray-600 font-medium mt-0.5">
                 Dev: {formatFecha(c.fecha_devolucion)} · Total: {formatBs(Number(c.total))} · Pagado: {formatBs(Number(c.total_pagado))}
               </p>
             </div>
             <div className="text-right shrink-0 space-y-1.5">
               <div>
                 <p className="text-base font-bold text-red-600">{formatBs(deuda)}</p>
-                <p className="text-[10px] text-muted-foreground">pendiente</p>
+                <p className="text-xs text-gray-600 font-medium">pendiente</p>
               </div>
               <button
                 onClick={() => onRegistrarPago(c)}
@@ -701,7 +701,7 @@ function PrintReport({
   return (
     <button
       onClick={handlePrint}
-      className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-border bg-background text-sm font-medium hover:bg-muted transition-colors no-print"
+      className="flex items-center gap-1.5 px-3 py-2 rounded-xl border-2 border-gray-200 bg-white text-sm font-semibold text-gray-700 hover:bg-gray-50 transition-colors no-print"
     >
       <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" /></svg>
       Imprimir reporte
@@ -833,10 +833,10 @@ export function CajaClient({ initialMovimientos, initialStats, initialCuentas, t
         {/* Header */}
         <div className="flex items-center justify-between gap-3 flex-wrap no-print">
           <div>
-            <h1 className="text-xl font-bold" style={{ fontFamily: "var(--font-outfit)" }}>
+            <h1 className="text-3xl font-extrabold text-gray-900" style={{ fontFamily: "var(--font-outfit)" }}>
               {currentUser?.rol === "ADMIN" ? "Caja — Vista global" : `Mi Caja`}
             </h1>
-            <p className="text-xs text-muted-foreground mt-0.5">
+            <p className="text-xs text-gray-600 font-medium mt-0.5">
               {currentUser ? (
                 <>
                   {currentUser.nombre}
@@ -867,11 +867,11 @@ export function CajaClient({ initialMovimientos, initialStats, initialCuentas, t
         <StatsCards stats={stats} />
 
         {/* Tabs */}
-        <div className="flex gap-1 border-b border-border no-print">
+        <div className="flex gap-1 border-b border-gray-200 no-print">
           {(["movimientos", "cuentas"] as const).map((tab) => (
             <button key={tab} onClick={() => setActiveTab(tab)}
               className={`px-4 py-2 text-sm font-semibold border-b-2 transition-colors -mb-px ${
-                activeTab === tab ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground"
+                activeTab === tab ? "border-primary text-primary" : "border-transparent text-gray-500 hover:text-gray-900"
               }`}>
               {tab === "movimientos" ? `Movimientos (${movimientos.length})` : `Cuentas por cobrar (${cuentas.length})`}
             </button>
@@ -883,22 +883,22 @@ export function CajaClient({ initialMovimientos, initialStats, initialCuentas, t
           <div className="space-y-3">
             {/* Date shortcuts */}
             <div className="flex items-center gap-2 flex-wrap no-print">
-              <span className="text-xs text-muted-foreground font-medium">Período:</span>
+              <span className="text-xs text-gray-700 font-semibold">Período:</span>
               {(["hoy", "semana", "mes"] as const).map((s) => (
                 <button key={s} onClick={() => applyShortcut(s)}
-                  className="px-3 py-1.5 rounded-lg border border-border text-xs font-medium hover:bg-muted transition-colors capitalize">
+                  className="px-3 py-1.5 rounded-lg border border-gray-300 text-xs font-medium text-gray-700 hover:bg-gray-100 transition-colors capitalize">
                   {s === "hoy" ? "Hoy" : s === "semana" ? "Esta semana" : "Este mes"}
                 </button>
               ))}
               <input type="date" value={fechaDesde} onChange={(e) => setFechaDesde(e.target.value)}
                 title="Desde"
-                className="px-3 py-1.5 rounded-xl border border-border bg-background text-xs focus:outline-none focus:ring-2 focus:ring-primary/30" />
-              <span className="text-xs text-muted-foreground">→</span>
+                className="px-3 py-1.5 rounded-xl border-2 border-gray-200 bg-background text-xs focus:outline-none focus:ring-2 focus:ring-primary/30" />
+              <span className="text-xs text-gray-600 font-medium">→</span>
               <input type="date" value={fechaHasta} onChange={(e) => setFechaHasta(e.target.value)}
                 title="Hasta"
-                className="px-3 py-1.5 rounded-xl border border-border bg-background text-xs focus:outline-none focus:ring-2 focus:ring-primary/30" />
+                className="px-3 py-1.5 rounded-xl border-2 border-gray-200 bg-background text-xs focus:outline-none focus:ring-2 focus:ring-primary/30" />
               {hasFilters && (
-                <button onClick={clearFilters} className="text-xs text-muted-foreground hover:text-foreground underline underline-offset-2">
+                <button onClick={clearFilters} className="text-xs text-gray-600 font-medium hover:text-gray-900 underline underline-offset-2">
                   Limpiar
                 </button>
               )}
@@ -933,8 +933,8 @@ export function CajaClient({ initialMovimientos, initialStats, initialCuentas, t
 
             {/* Summary */}
             {filtered.length > 0 && (
-              <div className="flex items-center gap-3 flex-wrap text-xs bg-muted/40 rounded-xl px-3 py-2">
-                <span className="text-muted-foreground">{filtered.length} movimiento{filtered.length !== 1 ? "s" : ""}</span>
+              <div className="flex items-center gap-3 flex-wrap text-xs bg-gray-100 border border-gray-200 rounded-xl px-3 py-2">
+                <span className="text-gray-600 font-medium">{filtered.length} movimiento{filtered.length !== 1 ? "s" : ""}</span>
                 <span className="text-emerald-600 font-semibold">Ganancia +{formatBs(gananciaFiltered)}</span>
                 {garantiaFiltered > 0 && (
                   <span className="text-blue-600 font-semibold">Garantía {formatBs(garantiaFiltered)}</span>
@@ -963,16 +963,16 @@ export function CajaClient({ initialMovimientos, initialStats, initialCuentas, t
                     <div key={date}>
                       {/* Day separator */}
                       <div className="flex items-center justify-between px-1 mb-1">
-                        <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">
+                        <p className="text-xs font-semibold text-gray-700 uppercase tracking-wide">
                           {formatFechaGrupo(date + "T12:00:00")}
                         </p>
-                        <div className="flex gap-3 text-[11px]">
+                        <div className="flex gap-3 text-xs">
                           <span className="text-emerald-600 font-semibold">+{formatBs(dayGan)}</span>
                           {dayGrt > 0 && <span className="text-blue-600 font-semibold">garantía {formatBs(dayGrt)}</span>}
                           {dayEgr > 0 && <span className="text-red-600 font-semibold">−{formatBs(dayEgr)}</span>}
                         </div>
                       </div>
-                      <div className="bg-card border border-border rounded-2xl overflow-hidden">
+                      <div className="bg-white border-2 border-gray-200 rounded-2xl overflow-hidden">
                         {items.map((m) => (
                           <MovimientoRow
                             key={m.id} m={m}

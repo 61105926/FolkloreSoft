@@ -66,29 +66,29 @@
   --radius: 0.75rem;
 
   --background:          oklch(1 0 0);          /* Blanco puro */
-  --foreground:          oklch(0.13 0 0);        /* Negro profundo */
+  --foreground:          oklch(0.10 0 0);        /* Negro profundo */
 
   --card:                oklch(0.99 0 0);        /* Blanco casi puro */
-  --card-foreground:     oklch(0.13 0 0);
+  --card-foreground:     oklch(0.10 0 0);
 
   --popover:             oklch(1 0 0);
-  --popover-foreground:  oklch(0.13 0 0);
+  --popover-foreground:  oklch(0.10 0 0);
 
   --primary:             oklch(0.35 0.17 25);    /* Carmín #991B1B */
   --primary-foreground:  oklch(1 0 0);
 
-  --secondary:           oklch(0.96 0 0);        /* Gris muy claro */
-  --secondary-foreground:oklch(0.25 0 0);
+  --secondary:           oklch(0.94 0 0);
+  --secondary-foreground:oklch(0.18 0 0);
 
-  --muted:               oklch(0.96 0 0);
-  --muted-foreground:    oklch(0.50 0 0);
+  --muted:               oklch(0.93 0 0);        /* Más distinguible del fondo */
+  --muted-foreground:    oklch(0.38 0 0);        /* Texto gris oscuro legible */
 
-  --accent:              oklch(0.96 0 0);
-  --accent-foreground:   oklch(0.25 0 0);
+  --accent:              oklch(0.93 0 0);
+  --accent-foreground:   oklch(0.18 0 0);
 
   --destructive:         oklch(0.577 0.245 27.325);
-  --border:              oklch(0.90 0 0);        /* Gris claro */
-  --input:               oklch(0.92 0 0);
+  --border:              oklch(0.82 0 0);        /* Borde visible */
+  --input:               oklch(0.86 0 0);        /* Input claramente distinguible */
   --ring:                oklch(0.35 0.17 25);    /* Carmín */
 
   --chart-1:             oklch(0.35 0.17 25);    /* Carmín */
@@ -181,5 +181,32 @@
   }
   h1, h2, h3, h4 {
     font-family: var(--font-outfit), var(--font-geist-sans), sans-serif;
+  }
+
+  /* ── Inputs & Selects: borde visible por defecto ── */
+  input:not([type="checkbox"]):not([type="radio"]),
+  select,
+  textarea {
+    border-color: oklch(0.82 0 0);
+  }
+  input:not([type="checkbox"]):not([type="radio"]):focus,
+  select:focus,
+  textarea:focus {
+    border-color: oklch(0.35 0.17 25 / 60%);
+  }
+
+  /* ── Tables: headers con peso visual ── */
+  thead th {
+    @apply text-foreground font-semibold bg-muted;
+  }
+
+  /* ── Mínimo legible para texto muy pequeño ── */
+  .text-\[10px\] {
+    font-size: 0.6875rem;
+    font-weight: 500;
+  }
+  .text-\[11px\] {
+    font-size: 0.71875rem;
+    font-weight: 500;
   }
 }

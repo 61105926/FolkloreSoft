@@ -68,14 +68,14 @@ interface Props {
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 const DANZA_COLORS: Record<string, { bg: string; text: string }> = {
-  Morenada:  { bg: "bg-crimson/10",      text: "text-crimson" },
-  Caporales: { bg: "bg-gold/10",         text: "text-gold" },
-  Tinku:     { bg: "bg-coca/10",         text: "text-coca" },
-  Diablada:  { bg: "bg-purple-500/10",   text: "text-purple-600" },
-  Llamerada: { bg: "bg-orange-500/10",   text: "text-orange-600" },
-  Saya:      { bg: "bg-blue-500/10",     text: "text-blue-600" },
-  Pujllay:   { bg: "bg-emerald-500/10",  text: "text-emerald-600" },
-  Kullawada: { bg: "bg-indigo-500/10",   text: "text-indigo-600" },
+  Morenada:  { bg: "bg-crimson/20",      text: "text-crimson" },
+  Caporales: { bg: "bg-gold/20",         text: "text-yellow-700" },
+  Tinku:     { bg: "bg-coca/20",         text: "text-coca" },
+  Diablada:  { bg: "bg-purple-500/20",   text: "text-purple-700" },
+  Llamerada: { bg: "bg-orange-500/20",   text: "text-orange-700" },
+  Saya:      { bg: "bg-blue-500/20",     text: "text-blue-700" },
+  Pujllay:   { bg: "bg-emerald-500/20",  text: "text-emerald-700" },
+  Kullawada: { bg: "bg-indigo-500/20",   text: "text-indigo-700" },
 };
 
 const DANZA_OPTIONS = [
@@ -146,16 +146,16 @@ function StatsBar({ conjuntos }: { conjuntos: Conjunto[] }) {
   return (
     <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
       {[
-        { label: "Conjuntos", value: totalConjuntos, color: "text-foreground" },
-        { label: "Con stock", value: conStock, color: "text-coca" },
-        { label: "Sin stock", value: sinStock, color: "text-crimson" },
-        { label: "Uds. disponibles", value: totalInstancias, color: "text-primary" },
+        { label: "Conjuntos",        value: totalConjuntos, bg: "bg-white",        border: "border-gray-200",   num: "text-gray-800" },
+        { label: "Con stock",        value: conStock,       bg: "bg-emerald-50",   border: "border-emerald-200", num: "text-coca" },
+        { label: "Sin stock",        value: sinStock,       bg: "bg-red-50",       border: "border-red-200",    num: "text-crimson" },
+        { label: "Uds. disponibles", value: totalInstancias,bg: "bg-primary/5",    border: "border-primary/20", num: "text-primary" },
       ].map((s) => (
-        <div key={s.label} className="bg-card rounded-2xl border border-border px-4 py-3">
-          <p className={`text-2xl font-bold ${s.color}`} style={{ fontFamily: "var(--font-outfit)" }}>
+        <div key={s.label} className={`${s.bg} rounded-2xl border-2 ${s.border} px-4 py-3 shadow-sm`}>
+          <p className={`text-3xl font-bold ${s.num}`} style={{ fontFamily: "var(--font-outfit)" }}>
             {s.value}
           </p>
-          <p className="text-xs text-muted-foreground mt-0.5">{s.label}</p>
+          <p className="text-xs font-medium text-gray-600 mt-0.5">{s.label}</p>
         </div>
       ))}
     </div>
@@ -182,15 +182,15 @@ function ConjuntoCard({
   const { total, disponibles, reservados } = getStats(conjunto);
 
   return (
-    <div className="group relative rounded-2xl border border-border bg-card overflow-hidden hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200">
+    <div className="group relative rounded-2xl border-2 border-border bg-white overflow-hidden hover:shadow-xl hover:-translate-y-0.5 transition-all duration-200 shadow-sm">
       {/* Danza banner */}
-      <div className={`${colors.bg} px-4 py-2.5 flex items-center justify-between`}>
+      <div className={`${colors.bg} px-4 py-3 flex items-center justify-between border-b border-black/5`}>
         <div className="flex items-center gap-2 min-w-0">
-          <span className={`text-xs font-bold uppercase tracking-wider ${colors.text}`}>
+          <span className={`text-sm font-extrabold uppercase tracking-wider ${colors.text}`}>
             {conjunto.danza}
           </span>
           {conjunto.codigo && (
-            <span className="text-xs font-mono text-muted-foreground/70 truncate">
+            <span className="text-xs font-mono text-gray-500 truncate">
               {conjunto.codigo}
             </span>
           )}
@@ -251,92 +251,92 @@ function ConjuntoCard({
 
       {/* Name + description */}
       <div className="px-4 pt-3 pb-2">
-        <h3 className="font-semibold text-sm leading-snug" style={{ fontFamily: "var(--font-outfit)" }}>
+        <h3 className="font-bold text-base leading-snug text-gray-900" style={{ fontFamily: "var(--font-outfit)" }}>
           {conjunto.nombre}
         </h3>
         {conjunto.descripcion && (
-          <p className="text-xs text-muted-foreground line-clamp-1 mt-0.5">{conjunto.descripcion}</p>
+          <p className="text-xs text-gray-500 line-clamp-1 mt-0.5">{conjunto.descripcion}</p>
         )}
       </div>
 
       {/* 2-col KPIs */}
-      <div className="grid grid-cols-2 divide-x divide-border border-y border-border mx-0">
+      <div className="grid grid-cols-2 divide-x divide-gray-200 border-y-2 border-gray-100 mx-0 bg-gray-50">
         {[
           { label: "Variaciones", value: conjunto.variaciones.length },
-          { label: "Stock",  value: total },
+          { label: "Stock total",  value: total },
         ].map((kpi) => (
-          <div key={kpi.label} className="flex flex-col items-center py-2.5 px-1 text-center">
-            <span className="text-base font-bold leading-none" style={{ fontFamily: "var(--font-outfit)" }}>
+          <div key={kpi.label} className="flex flex-col items-center py-3 px-1 text-center">
+            <span className="text-xl font-bold leading-none text-gray-800" style={{ fontFamily: "var(--font-outfit)" }}>
               {kpi.value}
             </span>
-            <span className="text-[10px] text-muted-foreground mt-0.5 leading-tight">{kpi.label}</span>
+            <span className="text-xs text-gray-500 mt-1 font-medium leading-tight">{kpi.label}</span>
           </div>
         ))}
       </div>
 
       {/* Stock section */}
-      <div className="px-4 pt-3 pb-4 space-y-2.5">
+      <div className="px-4 pt-3 pb-4 space-y-3">
         {/* Label + ratio */}
         <div className="flex items-center justify-between">
-          <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Disponibilidad</span>
-          <span className={`text-xs font-bold ${disponibles > 0 ? "text-coca" : "text-crimson"}`}>
+          <span className="text-xs font-bold text-gray-500 uppercase tracking-wide">Disponibilidad</span>
+          <span className={`text-sm font-bold ${disponibles > 0 ? "text-coca" : "text-crimson"}`}>
             {disponibles}/{total}
           </span>
         </div>
 
-        {/* Stacked bar: disponibles (verde) + reservados (rojo) */}
-        <div className="h-2 bg-muted rounded-full overflow-hidden flex">
+        {/* Stacked bar */}
+        <div className="h-2.5 bg-gray-200 rounded-full overflow-hidden flex">
           {total > 0 && (
             <>
               <div className="h-full bg-coca transition-all" style={{ width: `${(disponibles / total) * 100}%` }} />
-              <div className="h-full bg-primary/60 transition-all" style={{ width: `${(reservados / total) * 100}%` }} />
+              <div className="h-full bg-primary/70 transition-all" style={{ width: `${(reservados / total) * 100}%` }} />
             </>
           )}
         </div>
 
         {/* 2-col breakdown */}
-        <div className="grid grid-cols-2 gap-1 text-center">
+        <div className="grid grid-cols-2 gap-2 text-center">
           {[
-            { label: "Disponibles", value: disponibles, color: "text-coca" },
-            { label: "Reservados",  value: reservados,  color: "text-primary" },
+            { label: "Disponibles", value: disponibles, color: "text-coca",    bg: "bg-emerald-50 border-emerald-200" },
+            { label: "Reservados",  value: reservados,  color: "text-primary", bg: "bg-red-50 border-red-200" },
           ].map((s) => (
-            <div key={s.label} className="space-y-0.5">
-              <p className={`text-base font-bold leading-none ${s.color}`} style={{ fontFamily: "var(--font-outfit)" }}>
+            <div key={s.label} className={`rounded-xl border-2 ${s.bg} py-2`}>
+              <p className={`text-xl font-bold leading-none ${s.color}`} style={{ fontFamily: "var(--font-outfit)" }}>
                 {s.value}
               </p>
-              <p className="text-[10px] text-muted-foreground leading-tight">{s.label}</p>
+              <p className="text-xs text-gray-500 font-medium mt-1">{s.label}</p>
             </div>
           ))}
         </div>
 
         {/* Per-variacion breakdown */}
-        <div className="space-y-1">
+        <div className="space-y-1.5">
           {conjunto.variaciones.slice(0, 3).map((v) => {
             const vStock = stockVariacion(v);
             const vReservados = reservadosVariacion(v);
             const vDisp = Math.max(0, vStock - vReservados);
             return (
-              <div key={v.id} className="flex items-center justify-between text-[11px]">
-                <span className="text-muted-foreground truncate max-w-[120px]">
+              <div key={v.id} className="flex items-center justify-between text-xs bg-gray-50 rounded-lg px-2.5 py-1.5">
+                <span className="text-gray-700 font-medium truncate max-w-[120px]">
                   {v.nombre_variacion}{v.talla ? ` (${v.talla})` : ""}
                 </span>
-                <span className={`font-semibold ${vDisp === 0 ? "text-crimson" : vDisp < 3 ? "text-gold" : "text-coca"}`}>
+                <span className={`font-bold ${vDisp === 0 ? "text-crimson" : vDisp < 3 ? "text-yellow-700" : "text-coca"}`}>
                   {vDisp}/{vStock}
                 </span>
               </div>
             );
           })}
           {conjunto.variaciones.length > 3 && (
-            <p className="text-[10px] text-muted-foreground">+{conjunto.variaciones.length - 3} más…</p>
+            <p className="text-xs text-gray-400 font-medium pl-1">+{conjunto.variaciones.length - 3} variaciones más…</p>
           )}
         </div>
 
         {/* Gestionar stock button */}
         <button
           onClick={() => onInstancias(conjunto)}
-          className="mt-2 w-full py-2 rounded-xl border border-dashed border-primary/40 text-xs font-medium text-primary hover:bg-primary/5 hover:border-primary transition-colors flex items-center justify-center gap-1.5"
+          className="mt-1 w-full py-2.5 rounded-xl bg-primary text-white text-sm font-semibold hover:bg-primary/90 active:scale-[0.98] transition-all flex items-center justify-center gap-2 shadow-sm"
         >
-          <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
           </svg>
           Gestionar stock
@@ -2100,10 +2100,10 @@ export function ConjuntosClient({ initialConjuntos, componentes, sucursales, tok
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold" style={{ fontFamily: "var(--font-outfit)" }}>
+          <h1 className="text-3xl font-extrabold text-gray-900" style={{ fontFamily: "var(--font-outfit)" }}>
             Conjuntos Folklóricos
           </h1>
-          <p className="text-sm text-muted-foreground mt-0.5">
+          <p className="text-sm text-gray-500 font-medium mt-0.5">
             {conjuntos.length} conjunto{conjuntos.length !== 1 ? "s" : ""} en catálogo
           </p>
         </div>
@@ -2114,7 +2114,7 @@ export function ConjuntosClient({ initialConjuntos, componentes, sucursales, tok
             onClick={() => void refreshConjuntos()}
             disabled={refreshing}
             title="Actualizar disponibilidad"
-            className="text-muted-foreground hover:text-foreground"
+            className="text-gray-500 hover:text-gray-800"
           >
             <svg className={`h-4 w-4 ${refreshing ? "animate-spin" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
@@ -2122,11 +2122,11 @@ export function ConjuntosClient({ initialConjuntos, componentes, sucursales, tok
           </Button>
           <Button
             onClick={() => setShowCrear(true)}
-            className="bg-primary text-primary-foreground"
+            className="bg-primary text-white font-semibold shadow-sm hover:bg-primary/90 px-4"
             size="sm"
           >
             <svg className="h-4 w-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" />
             </svg>
             Nuevo conjunto
           </Button>
@@ -2151,7 +2151,7 @@ export function ConjuntosClient({ initialConjuntos, componentes, sucursales, tok
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Buscar conjunto…"
-            className="w-full rounded-xl border border-border bg-background pl-9 pr-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+            className="w-full rounded-xl border-2 border-gray-200 bg-white pl-9 pr-3 py-2 text-sm font-medium placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/40"
           />
         </div>
 
@@ -2161,10 +2161,10 @@ export function ConjuntosClient({ initialConjuntos, componentes, sucursales, tok
             <button
               key={d}
               onClick={() => setDanzaFilter(d)}
-              className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
+              className={`px-3.5 py-1.5 rounded-full text-xs font-semibold transition-colors border ${
                 danzaFilter === d
-                  ? "bg-primary text-primary-foreground"
-                  : "bg-muted text-muted-foreground hover:bg-muted/70"
+                  ? "bg-primary text-white border-primary shadow-sm"
+                  : "bg-white text-gray-600 border-gray-300 hover:border-primary/50 hover:text-primary"
               }`}
             >
               {d}

@@ -8,10 +8,10 @@ import type { UsuarioRow, SucursalOption } from "../page";
 type Rol = "ADMIN" | "VENDEDOR" | "BODEGUERO" | "CAJERO";
 
 const ROL_CONFIG: Record<Rol, { label: string; chip: string; desc: string; color: string }> = {
-  ADMIN:     { label: "Administrador", chip: "bg-red-500/10 text-red-600 border-red-500/20",       desc: "Acceso total al sistema. Gestiona usuarios, configuración y todos los módulos.", color: "#ef4444" },
-  VENDEDOR:  { label: "Vendedor",      chip: "bg-blue-500/10 text-blue-600 border-blue-500/20",    desc: "Crea y gestiona contratos, eventos y clientes. Puede registrar pagos.",          color: "#3b82f6" },
-  BODEGUERO: { label: "Bodeguero",     chip: "bg-emerald-500/10 text-emerald-600 border-emerald-500/20", desc: "Gestiona el inventario físico, armado de conjuntos y transferencias.", color: "#10b981" },
-  CAJERO:    { label: "Cajero",        chip: "bg-amber-500/10 text-amber-600 border-amber-500/20", desc: "Registra movimientos de caja, pagos y genera reportes financieros.",            color: "#f59e0b" },
+  ADMIN:     { label: "Administrador", chip: "bg-red-50 text-red-700 border-red-200",         desc: "Acceso total al sistema. Gestiona usuarios, configuración y todos los módulos.", color: "#ef4444" },
+  VENDEDOR:  { label: "Vendedor",      chip: "bg-blue-50 text-blue-700 border-blue-200",      desc: "Crea y gestiona contratos, eventos y clientes. Puede registrar pagos.",          color: "#3b82f6" },
+  BODEGUERO: { label: "Bodeguero",     chip: "bg-emerald-50 text-emerald-700 border-emerald-200", desc: "Gestiona el inventario físico, armado de conjuntos y transferencias.",       color: "#10b981" },
+  CAJERO:    { label: "Cajero",        chip: "bg-amber-50 text-amber-700 border-amber-200",   desc: "Registra movimientos de caja, pagos y genera reportes financieros.",            color: "#f59e0b" },
 };
 
 const ROL_OPTIONS: Rol[] = ["ADMIN", "VENDEDOR", "BODEGUERO", "CAJERO"];
@@ -42,7 +42,7 @@ const PERMISOS_MATRIZ: ModuloPermiso[] = [
   { modulo: "Configuración",       descripcion: "Configuración general del sistema",         permisos: { ADMIN: "full", VENDEDOR: "none", BODEGUERO: "none", CAJERO: "none" } },
 ];
 
-const inp = "w-full rounded-xl border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 transition-all";
+const inp = "w-full rounded-xl border-2 border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/40 transition-all";
 
 // ── PermBadge ──────────────────────────────────────────────────────────────────
 
@@ -50,7 +50,7 @@ function PermBadge({ level }: { level: PermLevel }) {
   if (level === "full")
     return (
       <div className="flex items-center justify-center">
-        <span className="inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-700 border border-emerald-500/20">
+        <span className="inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
           <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" /></svg>
           Completo
         </span>
@@ -59,7 +59,7 @@ function PermBadge({ level }: { level: PermLevel }) {
   if (level === "read")
     return (
       <div className="flex items-center justify-center">
-        <span className="inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-600 border border-blue-500/20">
+        <span className="inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200">
           <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
           Solo lectura
         </span>
@@ -67,7 +67,7 @@ function PermBadge({ level }: { level: PermLevel }) {
     );
   return (
     <div className="flex items-center justify-center">
-      <span className="inline-flex items-center gap-1 text-xs text-muted-foreground px-2 py-0.5 rounded-full bg-muted border border-border">
+      <span className="inline-flex items-center gap-1 text-xs font-medium text-gray-400 px-2 py-0.5 rounded-full bg-gray-100 border border-gray-200">
         <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" /></svg>
         Sin acceso
       </span>
@@ -115,31 +115,31 @@ function UsuarioModal({ usuario, token, backendUrl, sucursales, onClose, onSaved
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-      <div className="bg-background border border-border rounded-2xl w-full max-w-md shadow-2xl">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-border">
-          <h2 className="font-bold text-base" style={{ fontFamily: "var(--font-outfit)" }}>
+      <div className="bg-white border-2 border-gray-200 rounded-2xl w-full max-w-md shadow-2xl">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
+          <h2 className="font-bold text-base text-gray-900" style={{ fontFamily: "var(--font-outfit)" }}>
             {isEdit ? "Editar usuario" : "Nuevo usuario"}
           </h2>
-          <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-xl hover:bg-muted transition-colors">
+          <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-xl hover:bg-gray-100 transition-colors text-gray-500 hover:text-gray-700">
             <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
           </button>
         </div>
 
         <div className="p-6 space-y-4">
-          {error && <p className="text-xs text-red-500 bg-red-500/10 rounded-xl px-3 py-2">{error}</p>}
+          {error && <p className="text-xs text-red-700 bg-red-50 border border-red-200 rounded-xl px-3 py-2 font-medium">{error}</p>}
 
           <div className="space-y-1">
-            <label className="text-xs font-semibold text-muted-foreground">Nombre completo *</label>
+            <label className="text-xs font-semibold text-gray-600">Nombre completo *</label>
             <input className={inp} value={nombre} onChange={(e) => setNombre(e.target.value)} placeholder="Nombre completo" />
           </div>
           <div className="space-y-1">
-            <label className="text-xs font-semibold text-muted-foreground">Email *</label>
+            <label className="text-xs font-semibold text-gray-600">Email *</label>
             <input className={inp} type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="correo@ejemplo.com" />
           </div>
 
           {/* Rol con preview de permisos */}
           <div className="space-y-2">
-            <label className="text-xs font-semibold text-muted-foreground">Rol</label>
+            <label className="text-xs font-semibold text-gray-600">Rol</label>
             <select className={`${inp} cursor-pointer`} value={rol} onChange={(e) => setRol(e.target.value as Rol)}>
               {ROL_OPTIONS.map((r) => <option key={r} value={r}>{ROL_CONFIG[r].label}</option>)}
             </select>
@@ -148,7 +148,7 @@ function UsuarioModal({ usuario, token, backendUrl, sucursales, onClose, onSaved
               <p className="text-muted-foreground">{rolInfo.desc}</p>
               <div className="mt-2 flex flex-wrap gap-1">
                 {PERMISOS_MATRIZ.filter((m) => m.permisos[rol] !== "none").map((m) => (
-                  <span key={m.modulo} className="px-1.5 py-0.5 rounded text-[10px] font-medium"
+                  <span key={m.modulo} className="px-1.5 py-0.5 rounded text-xs font-medium"
                     style={{ background: `${rolInfo.color}15`, color: rolInfo.color }}>
                     {m.modulo}
                   </span>
@@ -159,7 +159,7 @@ function UsuarioModal({ usuario, token, backendUrl, sucursales, onClose, onSaved
 
           {/* Sucursal */}
           <div className="space-y-1">
-            <label className="text-xs font-semibold text-muted-foreground">Sucursal asignada</label>
+            <label className="text-xs font-semibold text-gray-600">Sucursal asignada</label>
             <select className={`${inp} cursor-pointer`} value={sucursalId ?? ""} onChange={(e) => setSucursalId(e.target.value ? Number(e.target.value) : null)}>
               <option value="">Sin sucursal</option>
               {sucursales.map((s) => <option key={s.id} value={s.id}>{s.nombre} — {s.ciudad}</option>)}
@@ -167,8 +167,8 @@ function UsuarioModal({ usuario, token, backendUrl, sucursales, onClose, onSaved
           </div>
 
           {isEdit && (
-            <div className="flex items-center justify-between py-2 border-t border-border">
-              <span className="text-sm text-muted-foreground">Usuario activo</span>
+            <div className="flex items-center justify-between py-2 border-t border-gray-200">
+              <span className="text-sm text-gray-700 font-medium">Usuario activo</span>
               <button onClick={() => setActivo((v) => !v)}
                 className={`relative w-10 h-6 rounded-full transition-colors ${activo ? "bg-primary" : "bg-muted-foreground/30"}`}>
                 <span className={`absolute top-1 w-4 h-4 rounded-full bg-white shadow transition-transform ${activo ? "translate-x-5" : "translate-x-1"}`} />
@@ -177,15 +177,15 @@ function UsuarioModal({ usuario, token, backendUrl, sucursales, onClose, onSaved
           )}
 
           <div className="space-y-1">
-            <label className="text-xs font-semibold text-muted-foreground">{isEdit ? "Nueva contraseña (dejar vacío para no cambiar)" : "Contraseña *"}</label>
+            <label className="text-xs font-semibold text-gray-600">{isEdit ? "Nueva contraseña (dejar vacío para no cambiar)" : "Contraseña *"}</label>
             <input className={inp} type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" />
           </div>
         </div>
 
         <div className="flex gap-3 px-6 pb-6">
-          <button onClick={onClose} className="flex-1 py-2 rounded-xl border border-border text-sm hover:bg-muted transition-colors">Cancelar</button>
+          <button onClick={onClose} className="flex-1 py-2 rounded-xl border-2 border-gray-300 text-sm text-gray-700 font-medium hover:border-gray-400 hover:bg-gray-50 transition-colors">Cancelar</button>
           <button onClick={() => void handleSave()} disabled={saving}
-            className="flex-1 py-2 rounded-xl bg-primary text-primary-foreground text-sm hover:bg-primary/90 transition-colors disabled:opacity-50">
+            className="flex-1 py-2 rounded-xl bg-primary text-white text-sm font-semibold shadow-sm hover:bg-primary/90 transition-colors disabled:opacity-50">
             {saving ? "Guardando…" : isEdit ? "Guardar cambios" : "Crear usuario"}
           </button>
         </div>
@@ -220,9 +220,9 @@ function UsuariosTab({ usuarios, sucursales, token, backendUrl, onSaved }: {
         {ROL_OPTIONS.map((r) => {
           const cfg = ROL_CONFIG[r];
           return (
-            <div key={r} className={`rounded-2xl border p-4 ${cfg.chip.replace("text-", "border-").split(" ").slice(-1)[0].replace("border-", "bg-").replace("/20", "/5")} border`}
-              style={{ borderColor: `${cfg.color}30`, backgroundColor: `${cfg.color}08` }}>
-              <p className="text-xl font-bold" style={{ color: cfg.color, fontFamily: "var(--font-outfit)" }}>{countByRol[r] ?? 0}</p>
+            <div key={r} className="rounded-2xl border-2 bg-white p-4"
+              style={{ borderColor: `${cfg.color}40`, backgroundColor: `${cfg.color}08` }}>
+              <p className="text-3xl font-bold" style={{ color: cfg.color, fontFamily: "var(--font-outfit)" }}>{countByRol[r] ?? 0}</p>
               <p className="text-xs font-semibold mt-0.5" style={{ color: cfg.color }}>{cfg.label}</p>
             </div>
           );
@@ -231,7 +231,7 @@ function UsuariosTab({ usuarios, sucursales, token, backendUrl, onSaved }: {
 
       {/* Filters + action */}
       <div className="flex gap-2 flex-wrap items-center">
-        <input className="rounded-xl border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 flex-1 min-w-[180px]"
+        <input className="rounded-xl border-2 border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/40 flex-1 min-w-45"
           placeholder="Buscar por nombre o email…" value={search} onChange={(e) => setSearch(e.target.value)} />
         <button onClick={() => setSelected("new")}
           className="px-4 py-2 rounded-xl bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 transition-colors flex items-center gap-1.5">
@@ -241,19 +241,19 @@ function UsuariosTab({ usuarios, sucursales, token, backendUrl, onSaved }: {
       </div>
 
       {/* Table */}
-      <div className="rounded-2xl border border-border bg-card overflow-hidden">
+      <div className="rounded-2xl border-2 border-gray-200 bg-white overflow-hidden shadow-sm">
         {filtered.length === 0 ? (
-          <div className="py-14 text-center text-muted-foreground text-sm">Sin usuarios</div>
+          <div className="py-14 text-center text-gray-500 text-sm font-medium">Sin usuarios</div>
         ) : (
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-border bg-muted/30">
-                <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Usuario</th>
-                <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide hidden sm:table-cell">Email</th>
-                <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Rol</th>
-                <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide hidden md:table-cell">Accesos</th>
-                <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide hidden lg:table-cell">Sucursal</th>
-                <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Estado</th>
+              <tr className="border-b border-gray-200 bg-gray-50">
+                <th className="text-left px-4 py-3 text-xs font-semibold text-gray-700 uppercase tracking-wide">Usuario</th>
+                <th className="text-left px-4 py-3 text-xs font-semibold text-gray-700 uppercase tracking-wide hidden sm:table-cell">Email</th>
+                <th className="text-left px-4 py-3 text-xs font-semibold text-gray-700 uppercase tracking-wide">Rol</th>
+                <th className="text-left px-4 py-3 text-xs font-semibold text-gray-700 uppercase tracking-wide hidden md:table-cell">Accesos</th>
+                <th className="text-left px-4 py-3 text-xs font-semibold text-gray-700 uppercase tracking-wide hidden lg:table-cell">Sucursal</th>
+                <th className="text-left px-4 py-3 text-xs font-semibold text-gray-700 uppercase tracking-wide">Estado</th>
               </tr>
             </thead>
             <tbody>
@@ -263,7 +263,7 @@ function UsuariosTab({ usuarios, sucursales, token, backendUrl, onSaved }: {
                 const lecturas = PERMISOS_MATRIZ.filter((m) => m.permisos[u.rol as Rol] === "read").length;
                 return (
                   <tr key={u.id} onClick={() => setSelected(u)}
-                    className="border-b border-border last:border-0 hover:bg-muted/20 cursor-pointer transition-colors">
+                    className="border-b border-gray-100 last:border-0 hover:bg-gray-50 cursor-pointer transition-colors">
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-3">
                         <div className="w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold shrink-0"
@@ -271,31 +271,31 @@ function UsuariosTab({ usuarios, sucursales, token, backendUrl, onSaved }: {
                           {u.nombre?.charAt(0).toUpperCase() ?? "?"}
                         </div>
                         <div>
-                          <p className="font-semibold">{u.nombre}</p>
-                          <p className="text-xs text-muted-foreground sm:hidden">{u.email}</p>
+                          <p className="font-semibold text-gray-900">{u.nombre}</p>
+                          <p className="text-xs text-gray-500 sm:hidden">{u.email}</p>
                         </div>
                       </div>
                     </td>
-                    <td className="px-4 py-3 text-muted-foreground hidden sm:table-cell">{u.email}</td>
+                    <td className="px-4 py-3 text-gray-600 hidden sm:table-cell">{u.email}</td>
                     <td className="px-4 py-3">
                       <span className={`text-xs font-semibold px-2 py-0.5 rounded-full border ${cfg.chip}`}>{cfg.label}</span>
                     </td>
                     <td className="px-4 py-3 hidden md:table-cell">
-                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                        <span className="text-emerald-600 font-semibold">{accesos} completo{accesos !== 1 ? "s" : ""}</span>
-                        <span>·</span>
-                        <span className="text-blue-600">{lecturas} solo lectura</span>
+                      <div className="flex items-center gap-2 text-xs">
+                        <span className="text-emerald-700 font-semibold">{accesos} completo{accesos !== 1 ? "s" : ""}</span>
+                        <span className="text-gray-400">·</span>
+                        <span className="text-blue-700 font-semibold">{lecturas} solo lectura</span>
                       </div>
                     </td>
-                    <td className="px-4 py-3 hidden lg:table-cell text-xs text-muted-foreground">
+                    <td className="px-4 py-3 hidden lg:table-cell text-xs text-gray-600 font-medium">
                       {u.sucursal ? (
                         <span>{u.sucursal.nombre}</span>
                       ) : (
-                        <span className="italic">Sin sucursal</span>
+                        <span className="italic text-gray-400">Sin sucursal</span>
                       )}
                     </td>
                     <td className="px-4 py-3">
-                      <span className={`text-xs font-semibold px-2 py-0.5 rounded-full border ${u.activo ? "bg-emerald-500/10 text-emerald-700 border-emerald-500/20" : "bg-muted text-muted-foreground border-border"}`}>
+                      <span className={`text-xs font-semibold px-2 py-0.5 rounded-full border ${u.activo ? "bg-emerald-50 text-emerald-700 border-emerald-200" : "bg-gray-100 text-gray-500 border-gray-300"}`}>
                         {u.activo ? "Activo" : "Inactivo"}
                       </span>
                     </td>
@@ -306,7 +306,7 @@ function UsuariosTab({ usuarios, sucursales, token, backendUrl, onSaved }: {
           </table>
         )}
         {filtered.length > 0 && (
-          <div className="px-4 py-2.5 border-t border-border bg-muted/20 text-xs text-muted-foreground">
+          <div className="px-4 py-2.5 border-t border-gray-200 bg-gray-50 text-xs text-gray-500 font-medium">
             {filtered.length} de {usuarios.length} usuario{usuarios.length !== 1 ? "s" : ""}
           </div>
         )}
@@ -372,27 +372,27 @@ function RolesTab({ usuarios }: { usuarios: UsuarioRow[] }) {
       </div>
 
       {/* Permissions matrix */}
-      <div className="rounded-2xl border border-border bg-card overflow-hidden">
-        <div className="px-5 py-4 border-b border-border flex items-center justify-between flex-wrap gap-2">
+      <div className="rounded-2xl border-2 border-gray-200 bg-white overflow-hidden shadow-sm">
+        <div className="px-5 py-4 border-b border-gray-200 bg-gray-50 flex items-center justify-between flex-wrap gap-2">
           <div>
-            <p className="font-bold text-sm">Matriz de permisos</p>
-            <p className="text-xs text-muted-foreground mt-0.5">Acceso de cada rol a los módulos del sistema</p>
+            <p className="font-bold text-sm text-gray-900">Matriz de permisos</p>
+            <p className="text-xs text-gray-500 font-medium mt-0.5">Acceso de cada rol a los módulos del sistema</p>
           </div>
-          <div className="flex items-center gap-3 text-xs text-muted-foreground">
+          <div className="flex items-center gap-3 text-xs text-gray-600 font-medium">
             <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-emerald-500 inline-block" /> Acceso completo</span>
             <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-blue-500 inline-block" /> Solo lectura</span>
-            <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-muted-foreground/40 inline-block" /> Sin acceso</span>
+            <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-gray-400 inline-block" /> Sin acceso</span>
           </div>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-border bg-muted/30">
-                <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide min-w-[180px]">Módulo</th>
+              <tr className="border-b border-gray-200 bg-gray-50">
+                <th className="text-left px-4 py-3 text-xs font-semibold text-gray-700 uppercase tracking-wide min-w-45">Módulo</th>
                 {ROL_OPTIONS.map((r) => {
                   const cfg = ROL_CONFIG[r];
                   return (
-                    <th key={r} className="text-center px-4 py-3 min-w-[140px]">
+                    <th key={r} className="text-center px-4 py-3 min-w-35">
                       <button onClick={() => setHighlightRol(highlightRol === r ? null : r)}
                         className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-xs font-semibold border transition-all ${highlightRol === r ? "" : "opacity-80 hover:opacity-100"}`}
                         style={{ color: cfg.color, borderColor: `${cfg.color}30`, backgroundColor: highlightRol === r ? `${cfg.color}20` : `${cfg.color}10` }}>
@@ -405,10 +405,10 @@ function RolesTab({ usuarios }: { usuarios: UsuarioRow[] }) {
             </thead>
             <tbody>
               {PERMISOS_MATRIZ.map((m) => (
-                <tr key={m.modulo} className="border-b border-border last:border-0 hover:bg-muted/20 transition-colors">
+                <tr key={m.modulo} className="border-b border-gray-100 last:border-0 hover:bg-gray-50 transition-colors">
                   <td className="px-4 py-3">
-                    <p className="font-semibold text-sm">{m.modulo}</p>
-                    <p className="text-xs text-muted-foreground">{m.descripcion}</p>
+                    <p className="font-semibold text-sm text-gray-900">{m.modulo}</p>
+                    <p className="text-xs text-gray-500 font-medium">{m.descripcion}</p>
                   </td>
                   {ROL_OPTIONS.map((r) => {
                     const cfg = ROL_CONFIG[r];
@@ -426,8 +426,8 @@ function RolesTab({ usuarios }: { usuarios: UsuarioRow[] }) {
             </tbody>
             {/* Summary row */}
             <tfoot>
-              <tr className="border-t-2 border-border bg-muted/30">
-                <td className="px-4 py-3 text-xs font-bold text-muted-foreground uppercase tracking-wide">Total módulos con acceso</td>
+              <tr className="border-t-2 border-gray-200 bg-gray-50">
+                <td className="px-4 py-3 text-xs font-bold text-gray-700 uppercase tracking-wide">Total módulos con acceso</td>
                 {ROL_OPTIONS.map((r) => {
                   const full = PERMISOS_MATRIZ.filter((m) => m.permisos[r] === "full").length;
                   const read = PERMISOS_MATRIZ.filter((m) => m.permisos[r] === "read").length;
@@ -435,7 +435,7 @@ function RolesTab({ usuarios }: { usuarios: UsuarioRow[] }) {
                   return (
                     <td key={r} className="px-4 py-3 text-center">
                       <p className="text-xs font-bold" style={{ color: cfg.color }}>{full + read} / {PERMISOS_MATRIZ.length}</p>
-                      <p className="text-[10px] text-muted-foreground">{full} compl. · {read} lectura</p>
+                      <p className="text-xs text-gray-500 font-medium">{full} compl. · {read} lectura</p>
                     </td>
                   );
                 })}
@@ -451,7 +451,7 @@ function RolesTab({ usuarios }: { usuarios: UsuarioRow[] }) {
           const cfg = ROL_CONFIG[r];
           const members = usuarios.filter((u) => u.rol === r);
           return (
-            <div key={r} className="rounded-2xl border border-border bg-card p-4 space-y-3">
+            <div key={r} className="rounded-2xl border-2 border-gray-200 bg-white p-4 space-y-3 shadow-sm">
               <p className="text-xs font-bold uppercase tracking-wide" style={{ color: cfg.color }}>{cfg.label}</p>
               {members.length === 0 ? (
                 <p className="text-xs text-muted-foreground italic">Sin usuarios asignados</p>

@@ -156,10 +156,10 @@ export default async function DashboardPage() {
     <div className="space-y-5">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold text-foreground" style={{ fontFamily: "var(--font-outfit)" }}>
+        <h1 className="text-3xl font-extrabold text-gray-900" style={{ fontFamily: "var(--font-outfit)" }}>
           {me ? `Hola, ${me.nombre.split(" ")[0]}` : "Dashboard"}
         </h1>
-        <p className="text-sm text-muted-foreground mt-1">
+        <p className="text-sm text-gray-600 font-medium mt-1">
           {me?.rol === "ADMIN" ? "Vista global del sistema" : me?.sucursal ? `Sucursal ${me.sucursal.nombre}` : "Mi resumen"}
           {" · "}
           {new Date().toLocaleDateString("es-BO", {
@@ -222,43 +222,43 @@ export default async function DashboardPage() {
 
       {/* ── Totales históricos + caja hoy ── */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <div className="bg-card rounded-2xl border border-border p-4 flex items-center gap-3">
+        <div className="bg-blue-50 rounded-2xl border-2 border-blue-200 p-4 flex items-center gap-3">
           <div className="w-9 h-9 rounded-xl bg-blue-500/10 flex items-center justify-center text-blue-600 shrink-0">
             <svg className="h-4.5 w-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2z" /></svg>
           </div>
           <div className="min-w-0">
-            <p className="text-[11px] text-muted-foreground">Anticipos cobrados</p>
-            <p className="text-sm font-bold truncate" style={{ fontFamily: "var(--font-outfit)" }}>{bs(stats.totales.anticipo)}</p>
+            <p className="text-xs text-gray-600 font-medium">Anticipos cobrados</p>
+            <p className="text-sm font-bold text-gray-900 truncate" style={{ fontFamily: "var(--font-outfit)" }}>{bs(stats.totales.anticipo)}</p>
           </div>
         </div>
-        <div className="bg-card rounded-2xl border border-border p-4 flex items-center gap-3">
+        <div className="bg-violet-50 rounded-2xl border-2 border-violet-200 p-4 flex items-center gap-3">
           <div className="w-9 h-9 rounded-xl bg-violet-500/10 flex items-center justify-center text-violet-600 shrink-0">
             <svg className="h-4.5 w-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>
           </div>
           <div className="min-w-0">
-            <p className="text-[11px] text-muted-foreground">Garantías efectivo</p>
-            <p className="text-sm font-bold truncate" style={{ fontFamily: "var(--font-outfit)" }}>{bs(stats.totales.garantia)}</p>
+            <p className="text-xs text-gray-600 font-medium">Garantías efectivo</p>
+            <p className="text-sm font-bold text-gray-900 truncate" style={{ fontFamily: "var(--font-outfit)" }}>{bs(stats.totales.garantia)}</p>
           </div>
         </div>
-        <div className="bg-card rounded-2xl border border-border p-4 flex items-center gap-3">
+        <div className="bg-emerald-50 rounded-2xl border-2 border-emerald-200 p-4 flex items-center gap-3">
           <div className="w-9 h-9 rounded-xl bg-emerald-500/10 flex items-center justify-center text-emerald-600 shrink-0">
             <svg className="h-4.5 w-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M5 13l4 4L19 7" /></svg>
           </div>
           <div className="min-w-0">
-            <p className="text-[11px] text-muted-foreground">Saldos cobrados</p>
-            <p className="text-sm font-bold truncate" style={{ fontFamily: "var(--font-outfit)" }}>{bs(stats.totales.saldo)}</p>
+            <p className="text-xs text-gray-600 font-medium">Saldos cobrados</p>
+            <p className="text-sm font-bold text-gray-900 truncate" style={{ fontFamily: "var(--font-outfit)" }}>{bs(stats.totales.saldo)}</p>
           </div>
         </div>
         {/* Forma de pago hoy */}
-        <div className="bg-card rounded-2xl border border-border p-4">
-          <p className="text-[11px] text-muted-foreground mb-2">Cobros de hoy por forma de pago</p>
+        <div className="bg-white rounded-2xl border-2 border-gray-200 p-4">
+          <p className="text-xs text-gray-600 font-medium mb-2">Cobros de hoy por forma de pago</p>
           {Object.keys(pagoHoy).length === 0 ? (
-            <p className="text-xs text-muted-foreground italic">Sin movimientos hoy</p>
+            <p className="text-xs text-gray-500 italic">Sin movimientos hoy</p>
           ) : (
             <div className="space-y-1">
               {Object.entries(pagoHoy).map(([forma, monto]) => (
                 <div key={forma} className="flex items-center justify-between gap-2">
-                  <span className="text-[11px] text-muted-foreground">{forma}</span>
+                  <span className="text-xs text-gray-600 font-medium">{forma}</span>
                   <span className="text-xs font-semibold text-emerald-600">{bs(monto)}</span>
                 </div>
               ))}
@@ -270,16 +270,16 @@ export default async function DashboardPage() {
       {/* ── Chart + Contratos recientes ── */}
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
         {/* Chart flujo de caja */}
-        <div className="lg:col-span-2 bg-card rounded-2xl border border-border p-5 shadow-sm">
-          <h2 className="text-base font-semibold mb-0.5" style={{ fontFamily: "var(--font-outfit)" }}>
+        <div className="lg:col-span-2 bg-white rounded-2xl border-2 border-gray-200 p-5 shadow-sm">
+          <h2 className="text-base font-semibold text-gray-900 mb-0.5" style={{ fontFamily: "var(--font-outfit)" }}>
             Flujo de caja — 7 días
           </h2>
-          <p className="text-xs text-muted-foreground mb-4">Ingresos vs Egresos en Bs.</p>
+          <p className="text-xs text-gray-600 font-medium mb-4">Ingresos vs Egresos en Bs.</p>
           <div className="flex items-center gap-4 mb-3">
-            <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
+            <span className="flex items-center gap-1.5 text-xs text-gray-600 font-medium">
               <span className="w-3 h-3 rounded-sm bg-crimson inline-block" /> Ingresos
             </span>
-            <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
+            <span className="flex items-center gap-1.5 text-xs text-gray-600 font-medium">
               <span className="w-3 h-3 rounded-sm bg-gold inline-block" /> Egresos
             </span>
           </div>
@@ -288,13 +288,13 @@ export default async function DashboardPage() {
         </div>
 
         {/* Contratos recientes */}
-        <div className="lg:col-span-3 bg-card rounded-2xl border border-border shadow-sm overflow-hidden">
-          <div className="px-5 py-4 border-b border-border flex items-center justify-between">
+        <div className="lg:col-span-3 bg-white rounded-2xl border-2 border-gray-200 shadow-sm overflow-hidden">
+          <div className="px-5 py-4 border-b border-gray-200 flex items-center justify-between">
             <div>
-              <h2 className="text-base font-semibold" style={{ fontFamily: "var(--font-outfit)" }}>
+              <h2 className="text-base font-semibold text-gray-900" style={{ fontFamily: "var(--font-outfit)" }}>
                 Contratos Recientes
               </h2>
-              <p className="text-xs text-muted-foreground">Últimos registrados</p>
+              <p className="text-xs text-gray-600 font-medium">Últimos registrados</p>
             </div>
             <Badge variant="outline" className="text-xs border-crimson/30 text-crimson">
               {contratosActivos.length} activos
@@ -302,12 +302,12 @@ export default async function DashboardPage() {
           </div>
           <Table>
             <TableHeader>
-              <TableRow className="hover:bg-transparent border-border">
-                <TableHead className="text-xs font-semibold text-muted-foreground w-28">Código</TableHead>
-                <TableHead className="text-xs font-semibold text-muted-foreground">Cliente</TableHead>
-                <TableHead className="text-xs font-semibold text-muted-foreground hidden lg:table-cell">Dev.</TableHead>
-                <TableHead className="text-xs font-semibold text-muted-foreground text-right">Total</TableHead>
-                <TableHead className="text-xs font-semibold text-muted-foreground">Estado</TableHead>
+              <TableRow className="hover:bg-transparent border-gray-200 bg-gray-50">
+                <TableHead className="text-xs font-semibold text-gray-700 w-28">Código</TableHead>
+                <TableHead className="text-xs font-semibold text-gray-700">Cliente</TableHead>
+                <TableHead className="text-xs font-semibold text-gray-700 hidden lg:table-cell">Dev.</TableHead>
+                <TableHead className="text-xs font-semibold text-gray-700 text-right">Total</TableHead>
+                <TableHead className="text-xs font-semibold text-gray-700">Estado</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -315,15 +315,15 @@ export default async function DashboardPage() {
                 const est = ESTADO_MAP[c.estado] ?? { label: c.estado, cls: "" };
                 const vencido = new Date(c.fecha_devolucion) < new Date() && !["CERRADO", "CANCELADO", "DEVUELTO"].includes(c.estado);
                 return (
-                  <TableRow key={c.id} className="border-border hover:bg-muted/40 transition-colors">
-                    <TableCell className="font-mono text-xs text-muted-foreground">{c.codigo}</TableCell>
+                  <TableRow key={c.id} className="border-gray-200 hover:bg-gray-50 transition-colors">
+                    <TableCell className="font-mono text-xs text-gray-600">{c.codigo}</TableCell>
                     <TableCell>
                       <p className="text-sm font-medium truncate max-w-[140px]">{c.cliente.nombre}</p>
-                      <p className="text-xs text-muted-foreground truncate max-w-[140px]">
+                      <p className="text-xs text-gray-600 truncate max-w-[140px]">
                         {c.evento?.nombre ?? c.nombre_evento_ext ?? c.ciudad.replace("_", " ")}
                       </p>
                     </TableCell>
-                    <TableCell className={`text-xs hidden lg:table-cell ${vencido ? "text-red-600 font-semibold" : "text-muted-foreground"}`}>
+                    <TableCell className={`text-xs hidden lg:table-cell ${vencido ? "text-red-600 font-semibold" : "text-gray-600"}`}>
                       {fechaCorta(c.fecha_devolucion)}{vencido ? " ⚠" : ""}
                     </TableCell>
                     <TableCell className="text-xs font-semibold text-right">{bs(Number(c.total))}</TableCell>
@@ -335,7 +335,7 @@ export default async function DashboardPage() {
               })}
               {contratosRecientes.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={5} className="text-center text-sm text-muted-foreground py-8">
+                  <TableCell colSpan={5} className="text-center text-sm text-gray-500 py-8">
                     Sin contratos registrados
                   </TableCell>
                 </TableRow>
@@ -348,13 +348,13 @@ export default async function DashboardPage() {
       {/* ── Cuentas por cobrar + Inventario ── */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {/* Cuentas por cobrar */}
-        <div className="bg-card rounded-2xl border border-border shadow-sm overflow-hidden">
-          <div className="px-5 py-4 border-b border-border flex items-center justify-between">
+        <div className="bg-white rounded-2xl border-2 border-gray-200 shadow-sm overflow-hidden">
+          <div className="px-5 py-4 border-b border-gray-200 flex items-center justify-between">
             <div>
-              <h2 className="text-base font-semibold" style={{ fontFamily: "var(--font-outfit)" }}>
+              <h2 className="text-base font-semibold text-gray-900" style={{ fontFamily: "var(--font-outfit)" }}>
                 Cuentas por Cobrar
               </h2>
-              <p className="text-xs text-muted-foreground">Contratos con saldo pendiente</p>
+              <p className="text-xs text-gray-600 font-medium">Contratos con saldo pendiente</p>
             </div>
             <Badge variant="outline" className="text-xs border-orange-400/40 text-orange-600 font-semibold">
               {bs(totalDeuda)}
@@ -362,10 +362,10 @@ export default async function DashboardPage() {
           </div>
           <Table>
             <TableHeader>
-              <TableRow className="hover:bg-transparent border-border">
-                <TableHead className="text-xs font-semibold text-muted-foreground">Cliente</TableHead>
-                <TableHead className="text-xs font-semibold text-muted-foreground hidden sm:table-cell">Dev.</TableHead>
-                <TableHead className="text-xs font-semibold text-muted-foreground text-right">Deuda</TableHead>
+              <TableRow className="hover:bg-transparent border-gray-200 bg-gray-50">
+                <TableHead className="text-xs font-semibold text-gray-700">Cliente</TableHead>
+                <TableHead className="text-xs font-semibold text-gray-700 hidden sm:table-cell">Dev.</TableHead>
+                <TableHead className="text-xs font-semibold text-gray-700 text-right">Deuda</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -373,12 +373,12 @@ export default async function DashboardPage() {
                 const deuda   = Number(c.total) - Number(c.total_pagado);
                 const vencido = new Date(c.fecha_devolucion) < new Date();
                 return (
-                  <TableRow key={c.id} className="border-border hover:bg-muted/40 transition-colors">
+                  <TableRow key={c.id} className="border-gray-200 hover:bg-gray-50 transition-colors">
                     <TableCell>
                       <p className="text-sm font-medium truncate max-w-[150px]">{c.cliente.nombre}</p>
-                      <p className="font-mono text-xs text-muted-foreground">{c.codigo}</p>
+                      <p className="font-mono text-xs text-gray-600">{c.codigo}</p>
                     </TableCell>
-                    <TableCell className={`text-xs hidden sm:table-cell ${vencido ? "text-red-600 font-semibold" : "text-muted-foreground"}`}>
+                    <TableCell className={`text-xs hidden sm:table-cell ${vencido ? "text-red-600 font-semibold" : "text-gray-600"}`}>
                       {fechaCorta(c.fecha_devolucion)}{vencido ? " ⚠" : ""}
                     </TableCell>
                     <TableCell className="text-right">
@@ -389,7 +389,7 @@ export default async function DashboardPage() {
               })}
               {cuentasPorCobrar.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={3} className="text-center text-sm text-muted-foreground py-8">
+                  <TableCell colSpan={3} className="text-center text-sm text-gray-500 py-8">
                     Sin deudas pendientes ✓
                   </TableCell>
                 </TableRow>
@@ -399,85 +399,85 @@ export default async function DashboardPage() {
         </div>
 
         {/* Resumen de stock */}
-        <div className="bg-card rounded-2xl border border-border p-5 shadow-sm">
-          <h2 className="text-base font-semibold mb-0.5" style={{ fontFamily: "var(--font-outfit)" }}>
+        <div className="bg-white rounded-2xl border-2 border-gray-200 p-5 shadow-sm">
+          <h2 className="text-base font-semibold text-gray-900 mb-0.5" style={{ fontFamily: "var(--font-outfit)" }}>
             Resumen de Stock
           </h2>
-          <p className="text-xs text-muted-foreground mb-4">Inventario por cantidad de unidades</p>
+          <p className="text-xs text-gray-600 font-medium mb-4">Inventario por cantidad de unidades</p>
           <div className="grid grid-cols-2 gap-4">
-            <div className="rounded-xl bg-muted/40 p-4 text-center">
+            <div className="rounded-xl bg-emerald-50 border border-emerald-200 p-4 text-center">
               <p className="text-2xl font-bold text-emerald-700" style={{ fontFamily: "var(--font-outfit)" }}>
                 {inventarioStats.conjuntos}
               </p>
-              <p className="text-xs text-muted-foreground mt-1">Conjuntos activos</p>
+              <p className="text-xs text-gray-600 font-medium mt-1">Conjuntos activos</p>
             </div>
-            <div className="rounded-xl bg-muted/40 p-4 text-center">
-              <p className="text-2xl font-bold" style={{ fontFamily: "var(--font-outfit)" }}>
+            <div className="rounded-xl bg-blue-50 border border-blue-200 p-4 text-center">
+              <p className="text-2xl font-bold text-blue-700" style={{ fontFamily: "var(--font-outfit)" }}>
                 {inventarioStats.stockTotal}
               </p>
-              <p className="text-xs text-muted-foreground mt-1">Unidades en stock</p>
+              <p className="text-xs text-gray-600 font-medium mt-1">Unidades en stock</p>
             </div>
-            <div className="rounded-xl bg-muted/40 p-4 text-center">
+            <div className="rounded-xl bg-amber-50 border border-amber-200 p-4 text-center">
               <p className="text-2xl font-bold text-amber-600" style={{ fontFamily: "var(--font-outfit)" }}>
                 {inventarioStats.variaciones}
               </p>
-              <p className="text-xs text-muted-foreground mt-1">Variaciones activas</p>
+              <p className="text-xs text-gray-600 font-medium mt-1">Variaciones activas</p>
             </div>
-            <div className="rounded-xl bg-muted/40 p-4 text-center">
+            <div className={`rounded-xl p-4 text-center border ${inventarioStats.sinStock > 0 ? "bg-red-50 border-red-200" : "bg-emerald-50 border-emerald-200"}`}>
               <p className={`text-2xl font-bold ${inventarioStats.sinStock > 0 ? "text-red-600" : "text-emerald-700"}`} style={{ fontFamily: "var(--font-outfit)" }}>
                 {inventarioStats.sinStock}
               </p>
-              <p className="text-xs text-muted-foreground mt-1">Sin stock</p>
+              <p className="text-xs text-gray-600 font-medium mt-1">Sin stock</p>
             </div>
           </div>
         </div>
       </div>
 
       {/* ── Últimos movimientos de caja ── */}
-      <div className="bg-card rounded-2xl border border-border shadow-sm overflow-hidden">
-        <div className="px-5 py-4 border-b border-border flex items-center justify-between">
+      <div className="bg-white rounded-2xl border-2 border-gray-200 shadow-sm overflow-hidden">
+        <div className="px-5 py-4 border-b border-gray-200 flex items-center justify-between">
           <div>
-            <h2 className="text-base font-semibold" style={{ fontFamily: "var(--font-outfit)" }}>
+            <h2 className="text-base font-semibold text-gray-900" style={{ fontFamily: "var(--font-outfit)" }}>
               Últimos Movimientos de Caja
             </h2>
-            <p className="text-xs text-muted-foreground">Ingresos y egresos registrados</p>
+            <p className="text-xs text-gray-600 font-medium">Ingresos y egresos registrados</p>
           </div>
-          <div className="flex items-center gap-3 text-xs text-muted-foreground">
+          <div className="flex items-center gap-3 text-xs text-gray-600 font-medium">
             <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-emerald-500" />Ingreso</span>
             <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-red-500" />Egreso</span>
           </div>
         </div>
         <Table>
           <TableHeader>
-            <TableRow className="hover:bg-transparent border-border">
-              <TableHead className="text-xs font-semibold text-muted-foreground">Concepto</TableHead>
-              <TableHead className="text-xs font-semibold text-muted-foreground hidden sm:table-cell">Contrato</TableHead>
-              <TableHead className="text-xs font-semibold text-muted-foreground hidden md:table-cell">Forma pago</TableHead>
-              <TableHead className="text-xs font-semibold text-muted-foreground hidden lg:table-cell">Fecha</TableHead>
-              <TableHead className="text-xs font-semibold text-muted-foreground text-right">Monto</TableHead>
+            <TableRow className="hover:bg-transparent border-gray-200 bg-gray-50">
+              <TableHead className="text-xs font-semibold text-gray-700">Concepto</TableHead>
+              <TableHead className="text-xs font-semibold text-gray-700 hidden sm:table-cell">Contrato</TableHead>
+              <TableHead className="text-xs font-semibold text-gray-700 hidden md:table-cell">Forma pago</TableHead>
+              <TableHead className="text-xs font-semibold text-gray-700 hidden lg:table-cell">Fecha</TableHead>
+              <TableHead className="text-xs font-semibold text-gray-700 text-right">Monto</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {movRecientes.map((m) => (
-              <TableRow key={m.id} className="border-border hover:bg-muted/40 transition-colors">
+              <TableRow key={m.id} className="border-gray-200 hover:bg-gray-50 transition-colors">
                 <TableCell>
                   <div className="flex items-center gap-2">
                     <span className={`w-2 h-2 rounded-full shrink-0 ${m.tipo === "INGRESO" ? "bg-emerald-500" : "bg-red-500"}`} />
                     <span className="text-sm font-medium">{m.concepto.replace(/_/g, " ")}</span>
                   </div>
                   {m.contrato && (
-                    <p className="text-xs text-muted-foreground ml-4 truncate max-w-[160px]">
+                    <p className="text-xs text-gray-600 ml-4 truncate max-w-[160px]">
                       {m.contrato.cliente.nombre}
                     </p>
                   )}
                 </TableCell>
-                <TableCell className="font-mono text-xs text-muted-foreground hidden sm:table-cell">
+                <TableCell className="font-mono text-xs text-gray-600 hidden sm:table-cell">
                   {m.contrato?.codigo ?? "—"}
                 </TableCell>
-                <TableCell className="text-xs text-muted-foreground hidden md:table-cell">
+                <TableCell className="text-xs text-gray-600 hidden md:table-cell">
                   {m.forma_pago}
                 </TableCell>
-                <TableCell className="text-xs text-muted-foreground hidden lg:table-cell">
+                <TableCell className="text-xs text-gray-600 hidden lg:table-cell">
                   {new Date(m.createdAt).toLocaleDateString("es-BO", {
                     day: "numeric", month: "short", hour: "2-digit", minute: "2-digit",
                   })}
@@ -491,7 +491,7 @@ export default async function DashboardPage() {
             ))}
             {movRecientes.length === 0 && (
               <TableRow>
-                <TableCell colSpan={5} className="text-center text-sm text-muted-foreground py-8">
+                <TableCell colSpan={5} className="text-center text-sm text-gray-500 py-8">
                   Sin movimientos de caja
                 </TableCell>
               </TableRow>
@@ -511,12 +511,12 @@ function KpiCard({
   label: string; value: string; sub: string; positive: boolean; accent: string; icon: ReactNode;
 }) {
   return (
-    <div className="bg-card rounded-2xl border border-border p-4 shadow-sm hover:shadow-md transition-shadow">
+    <div className="bg-white rounded-2xl border-2 border-gray-200 p-4 shadow-sm hover:shadow-md transition-shadow">
       <div className="flex items-start justify-between mb-3">
-        <p className="text-xs font-medium text-muted-foreground leading-tight pr-1">{label}</p>
+        <p className="text-xs font-medium text-gray-600 leading-tight pr-1">{label}</p>
         <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${accent}`}>{icon}</div>
       </div>
-      <p className="text-xl font-bold text-foreground leading-none" style={{ fontFamily: "var(--font-outfit)" }}>
+      <p className="text-2xl font-bold text-gray-900 leading-none" style={{ fontFamily: "var(--font-outfit)" }}>
         {value}
       </p>
       <p className={`text-xs mt-1.5 font-medium ${positive ? "text-coca" : "text-orange-600"}`}>{sub}</p>

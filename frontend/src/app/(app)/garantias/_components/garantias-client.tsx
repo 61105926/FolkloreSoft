@@ -45,7 +45,7 @@ const ESTADO_CONTRATO_CHIP: Record<string, string> = {
   CERRADO:               "bg-gray-500/10 text-gray-500 border-gray-300/40",
   CON_DEUDA:             "bg-red-500/10 text-red-600 border-red-300/40",
   CON_GARANTIA_RETENIDA: "bg-orange-500/10 text-orange-600 border-orange-300/40",
-  CANCELADO:             "bg-muted text-muted-foreground border-border",
+  CANCELADO:             "bg-gray-100 text-gray-600 border-gray-300",
 };
 
 const ESTADO_CONTRATO_LABEL: Record<string, string> = {
@@ -54,7 +54,7 @@ const ESTADO_CONTRATO_LABEL: Record<string, string> = {
   CON_DEUDA: "Con deuda", CON_GARANTIA_RETENIDA: "Garantía retenida", CANCELADO: "Cancelado",
 };
 
-const inp = "rounded-xl border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 transition-all";
+const inp = "rounded-xl border-2 border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 font-medium placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary/40 transition-all";
 
 // ── GarantiasClient ───────────────────────────────────────────────────────────
 
@@ -92,30 +92,30 @@ export function GarantiasClient({ initialGarantias }: Props) {
     <div className="space-y-5">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold" style={{ fontFamily: "var(--font-outfit)" }}>Garantías</h1>
-        <p className="text-sm text-muted-foreground mt-0.5">Depósitos de seguridad vinculados a contratos de alquiler</p>
+        <h1 className="text-3xl font-extrabold text-gray-900" style={{ fontFamily: "var(--font-outfit)" }}>Garantías</h1>
+        <p className="text-sm text-gray-500 font-medium mt-0.5">Depósitos de seguridad vinculados a contratos de alquiler</p>
       </div>
 
       {/* Stats */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <div className="rounded-2xl border border-border bg-card p-4">
-          <p className="text-2xl font-bold" style={{ fontFamily: "var(--font-outfit)" }}>{stats.total}</p>
-          <p className="text-xs text-muted-foreground">Total garantías</p>
+        <div className="rounded-2xl border-2 border-primary/20 bg-primary/5 p-4">
+          <p className="text-3xl font-bold text-gray-900" style={{ fontFamily: "var(--font-outfit)" }}>{stats.total}</p>
+          <p className="text-xs font-medium text-gray-500">Total garantías</p>
         </div>
-        <div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/5 p-4">
-          <p className="text-2xl font-bold text-emerald-700" style={{ fontFamily: "var(--font-outfit)" }}>{stats.efectivo}</p>
-          <p className="text-xs text-emerald-700 opacity-80">En efectivo</p>
+        <div className="rounded-2xl border-2 border-emerald-200 bg-emerald-50 p-4">
+          <p className="text-3xl font-bold text-emerald-700" style={{ fontFamily: "var(--font-outfit)" }}>{stats.efectivo}</p>
+          <p className="text-xs font-medium text-emerald-700">En efectivo</p>
           {stats.totalEfectivo > 0 && (
             <p className="text-xs font-semibold text-emerald-700 mt-1">Bs. {stats.totalEfectivo.toLocaleString("es-BO", { minimumFractionDigits: 2 })}</p>
           )}
         </div>
-        <div className="rounded-2xl border border-blue-500/20 bg-blue-500/5 p-4">
-          <p className="text-2xl font-bold text-blue-700" style={{ fontFamily: "var(--font-outfit)" }}>{stats.documentos}</p>
-          <p className="text-xs text-blue-700 opacity-80">Documentos / otros</p>
+        <div className="rounded-2xl border-2 border-blue-200 bg-blue-50 p-4">
+          <p className="text-3xl font-bold text-blue-700" style={{ fontFamily: "var(--font-outfit)" }}>{stats.documentos}</p>
+          <p className="text-xs font-medium text-blue-700">Documentos / otros</p>
         </div>
-        <div className={`rounded-2xl border p-4 ${stats.retenidas > 0 ? "border-orange-500/20 bg-orange-500/5" : "border-border bg-card"}`}>
-          <p className={`text-2xl font-bold ${stats.retenidas > 0 ? "text-orange-600" : ""}`} style={{ fontFamily: "var(--font-outfit)" }}>{stats.retenidas}</p>
-          <p className={`text-xs ${stats.retenidas > 0 ? "text-orange-600 opacity-80" : "text-muted-foreground"}`}>Retenidas</p>
+        <div className={`rounded-2xl border-2 p-4 ${stats.retenidas > 0 ? "border-orange-200 bg-orange-50" : "border-gray-200 bg-gray-50"}`}>
+          <p className={`text-3xl font-bold ${stats.retenidas > 0 ? "text-orange-600" : "text-gray-900"}`} style={{ fontFamily: "var(--font-outfit)" }}>{stats.retenidas}</p>
+          <p className={`text-xs font-medium ${stats.retenidas > 0 ? "text-orange-600" : "text-gray-500"}`}>Retenidas</p>
         </div>
       </div>
 
@@ -129,10 +129,10 @@ export function GarantiasClient({ initialGarantias }: Props) {
             <option key={t} value={t}>{TIPO_MAP[t].label}</option>
           ))}
         </select>
-        <div className="flex rounded-xl border border-border overflow-hidden text-xs font-semibold">
+        <div className="flex rounded-xl border-2 border-gray-200 overflow-hidden text-xs font-semibold">
           {([["todas", "Todas"], ["activas", "Activas"], ["retenidas", "Retenidas"]] as const).map(([val, lbl]) => (
             <button key={val} onClick={() => setFilterEstado(val)}
-              className={`px-3 py-2 transition-colors ${filterEstado === val ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted"}`}>
+              className={`px-3 py-2 transition-colors ${filterEstado === val ? "bg-primary text-white" : "bg-white text-gray-600 hover:bg-gray-50"}`}>
               {lbl}
             </button>
           ))}
@@ -140,56 +140,56 @@ export function GarantiasClient({ initialGarantias }: Props) {
       </div>
 
       {/* Table */}
-      <div className="rounded-2xl border border-border bg-card overflow-hidden">
+      <div className="rounded-2xl border-2 border-gray-200 bg-white overflow-hidden shadow-sm">
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-border bg-muted/30">
-              <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Tipo</th>
-              <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Descripción</th>
-              <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide hidden sm:table-cell">Valor</th>
-              <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Contrato</th>
-              <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide hidden md:table-cell">Cliente</th>
-              <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide hidden lg:table-cell">Participante</th>
-              <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Estado</th>
-              <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide hidden xl:table-cell">Fecha</th>
+            <tr className="border-b border-gray-200 bg-gray-50">
+              <th className="text-left px-4 py-3 text-xs font-semibold text-gray-700 uppercase tracking-wide">Tipo</th>
+              <th className="text-left px-4 py-3 text-xs font-semibold text-gray-700 uppercase tracking-wide">Descripción</th>
+              <th className="text-left px-4 py-3 text-xs font-semibold text-gray-700 uppercase tracking-wide hidden sm:table-cell">Valor</th>
+              <th className="text-left px-4 py-3 text-xs font-semibold text-gray-700 uppercase tracking-wide">Contrato</th>
+              <th className="text-left px-4 py-3 text-xs font-semibold text-gray-700 uppercase tracking-wide hidden md:table-cell">Cliente</th>
+              <th className="text-left px-4 py-3 text-xs font-semibold text-gray-700 uppercase tracking-wide hidden lg:table-cell">Participante</th>
+              <th className="text-left px-4 py-3 text-xs font-semibold text-gray-700 uppercase tracking-wide">Estado</th>
+              <th className="text-left px-4 py-3 text-xs font-semibold text-gray-700 uppercase tracking-wide hidden xl:table-cell">Fecha</th>
             </tr>
           </thead>
           <tbody>
             {filtered.length === 0 ? (
-              <tr><td colSpan={8} className="text-center py-12 text-muted-foreground text-sm">Sin garantías</td></tr>
+              <tr><td colSpan={8} className="text-center py-12 text-gray-500 text-sm font-medium">Sin garantías</td></tr>
             ) : filtered.map((g) => {
-              const tipoInfo = TIPO_MAP[g.tipo] ?? { label: g.tipo, chip: "bg-muted text-muted-foreground border-border", icon: "?" };
+              const tipoInfo = TIPO_MAP[g.tipo] ?? { label: g.tipo, chip: "bg-gray-100 text-gray-700 border-gray-300", icon: "?" };
               return (
-                <tr key={g.id} className="border-b border-border last:border-0 hover:bg-muted/20 transition-colors">
+                <tr key={g.id} className="border-b border-gray-100 last:border-0 hover:bg-gray-50 transition-colors">
                   <td className="px-4 py-3">
                     <span className={`inline-flex items-center gap-1.5 text-xs font-semibold px-2 py-0.5 rounded-full border ${tipoInfo.chip}`}>
                       <span>{tipoInfo.icon}</span> {tipoInfo.label}
                     </span>
                   </td>
-                  <td className="px-4 py-3 text-muted-foreground max-w-[160px] truncate">
+                  <td className="px-4 py-3 text-gray-500 font-medium max-w-40 truncate">
                     {g.descripcion ?? "—"}
                   </td>
                   <td className="px-4 py-3 hidden sm:table-cell">
                     {g.valor
                       ? <span className="font-semibold text-emerald-700">Bs. {parseFloat(g.valor).toLocaleString("es-BO", { minimumFractionDigits: 2 })}</span>
-                      : <span className="text-muted-foreground">—</span>}
+                      : <span className="text-gray-400 font-medium">—</span>}
                   </td>
                   <td className="px-4 py-3">
-                    <p className="font-mono font-bold text-xs">{g.contrato.codigo}</p>
-                    <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full border ${ESTADO_CONTRATO_CHIP[g.contrato.estado] ?? "bg-muted text-muted-foreground border-border"}`}>
+                    <p className="font-mono font-bold text-xs text-gray-800">{g.contrato.codigo}</p>
+                    <span className={`text-xs font-semibold px-1.5 py-0.5 rounded-full border ${ESTADO_CONTRATO_CHIP[g.contrato.estado] ?? "bg-gray-100 text-gray-600 border-gray-300"}`}>
                       {ESTADO_CONTRATO_LABEL[g.contrato.estado] ?? g.contrato.estado}
                     </span>
                   </td>
                   <td className="px-4 py-3 hidden md:table-cell">
-                    <p className="font-medium">{g.contrato.cliente.nombre}</p>
+                    <p className="font-semibold text-gray-800">{g.contrato.cliente.nombre}</p>
                     {g.contrato.cliente.celular && (
-                      <p className="text-xs text-muted-foreground">{g.contrato.cliente.celular}</p>
+                      <p className="text-xs text-gray-500 font-medium">{g.contrato.cliente.celular}</p>
                     )}
                   </td>
-                  <td className="px-4 py-3 hidden lg:table-cell text-muted-foreground text-xs">
+                  <td className="px-4 py-3 hidden lg:table-cell text-gray-500 text-xs font-medium">
                     {g.participante ? (
                       <div>
-                        <p className="font-medium text-foreground">{g.participante.nombre}</p>
+                        <p className="font-semibold text-gray-800">{g.participante.nombre}</p>
                         {g.participante.ci && <p>{g.participante.ci}</p>}
                       </div>
                     ) : "—"}

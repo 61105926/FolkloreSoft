@@ -65,9 +65,9 @@ const TIPO_LABEL: Record<string, string> = {
 
 function getTipoColor(tipo: string) {
   return TIPO_COLORS[tipo.toUpperCase()] ?? {
-    bg: "bg-muted",
-    text: "text-muted-foreground",
-    chip: "bg-muted text-muted-foreground border-border",
+    bg: "bg-gray-100",
+    text: "text-gray-700",
+    chip: "bg-gray-100 text-gray-700 border-gray-300",
   };
 }
 
@@ -82,16 +82,16 @@ function StatsBar({ componentes }: { componentes: Componente[] }) {
   return (
     <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
       {[
-        { label: "Componentes", value: totalComponentes, color: "text-foreground" },
-        { label: "Tipos distintos", value: tiposUnicos, color: "text-primary" },
-        { label: "Usos en conjuntos", value: totalEnConjuntos, color: "text-coca" },
-        { label: "Instancias físicas", value: totalInstancias, color: "text-gold" },
+        { label: "Componentes",      value: totalComponentes,  num: "text-gray-800",    bg: "bg-white",        border: "border-gray-200" },
+        { label: "Tipos distintos",  value: tiposUnicos,       num: "text-primary",     bg: "bg-primary/5",    border: "border-primary/20" },
+        { label: "Usos en conjuntos",value: totalEnConjuntos,  num: "text-coca",        bg: "bg-emerald-50",   border: "border-emerald-200" },
+        { label: "Instancias físicas",value: totalInstancias,  num: "text-yellow-700",  bg: "bg-amber-50",     border: "border-amber-200" },
       ].map((s) => (
-        <div key={s.label} className="bg-card rounded-2xl border border-border px-4 py-3">
-          <p className={`text-2xl font-bold ${s.color}`} style={{ fontFamily: "var(--font-outfit)" }}>
+        <div key={s.label} className={`${s.bg} rounded-2xl border-2 ${s.border} px-4 py-3 shadow-sm`}>
+          <p className={`text-3xl font-bold ${s.num}`} style={{ fontFamily: "var(--font-outfit)" }}>
             {s.value}
           </p>
-          <p className="text-xs text-muted-foreground mt-0.5">{s.label}</p>
+          <p className="text-xs text-gray-600 font-medium mt-0.5">{s.label}</p>
         </div>
       ))}
     </div>
@@ -115,10 +115,10 @@ function ComponenteCard({
   const colors = getTipoColor(componente.tipo);
 
   return (
-    <div className="group relative rounded-2xl border border-border bg-card overflow-hidden hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200">
+    <div className="group relative rounded-2xl border-2 border-gray-200 bg-white overflow-hidden hover:shadow-xl hover:-translate-y-0.5 transition-all duration-200 shadow-sm">
       {/* Type banner */}
-      <div className={`${colors.bg} px-4 py-2.5 flex items-center justify-between`}>
-        <span className={`text-xs font-bold uppercase tracking-wider ${colors.text}`}>
+      <div className={`${colors.bg} px-4 py-3 flex items-center justify-between border-b border-black/5`}>
+        <span className={`text-sm font-extrabold uppercase tracking-wider ${colors.text}`}>
           {TIPO_LABEL[componente.tipo.toUpperCase()] ?? componente.tipo}
         </span>
         {/* 3-dot menu */}

@@ -152,7 +152,7 @@ export const ESTADO_CONTRATO_MAP: Record<EstadoContrato, { label: string; chip: 
   CERRADO:               { label: "Cerrado",           chip: "bg-gray-500/10 text-gray-500 border-gray-300/40",     dot: "bg-gray-400" },
   CON_DEUDA:             { label: "Con deuda",         chip: "bg-crimson/10 text-crimson border-crimson/20",        dot: "bg-crimson" },
   CON_GARANTIA_RETENIDA: { label: "Garantía retenida", chip: "bg-orange-500/10 text-orange-600 border-orange-300/40", dot: "bg-orange-500" },
-  CANCELADO:             { label: "Cancelado",         chip: "bg-muted text-muted-foreground border-border",        dot: "bg-muted-foreground" },
+  CANCELADO:             { label: "Cancelado",         chip: "bg-gray-100 text-gray-500 border-gray-300",           dot: "bg-gray-400" },
 };
 
 export const TIPO_EVENTO_OPTIONS: { value: TipoEvento; label: string }[] = [
@@ -208,12 +208,12 @@ function ContratosStats({ contratos, activeFilter, onFilter }: {
   const conDeuda   = contratos.filter((c) => c.estado === "CON_DEUDA").length;
   const cobrado    = contratos.reduce((s, c) => s + parseFloat(c.total_pagado), 0);
 
-  const stats: { label: string; value: string | number; color: string; filter: EstadoContrato | "VENCIDO" | ""; sub: string | null; warn: boolean }[] = [
-    { label: "Total",       value: contratos.length, color: "text-foreground", filter: "",          sub: null,                                               warn: false },
-    { label: "Reservados",  value: reservados,        color: "text-blue-600",  filter: "RESERVADO", sub: null,                                               warn: false },
-    { label: "En uso",      value: enUso,             color: "text-gold",      filter: "EN_USO",    sub: vencidos > 0 ? `${vencidos} vencido${vencidos > 1 ? "s" : ""}` : null, warn: vencidos > 0 },
-    { label: "Con deuda",   value: conDeuda,          color: "text-crimson",   filter: "CON_DEUDA", sub: null,                                               warn: conDeuda > 0 },
-    { label: "Cobrado",     value: `Bs. ${cobrado.toLocaleString("es-BO")}`, color: "text-coca", filter: "", sub: null,                                      warn: false },
+  const stats: { label: string; value: string | number; color: string; filter: EstadoContrato | "VENCIDO" | ""; sub: string | null; warn: boolean; card: string }[] = [
+    { label: "Total",       value: contratos.length, color: "text-gray-900",   filter: "",          sub: null,                                               warn: false, card: "bg-primary/5 border-primary/20" },
+    { label: "Reservados",  value: reservados,        color: "text-blue-700",  filter: "RESERVADO", sub: null,                                               warn: false, card: "bg-blue-50 border-blue-200" },
+    { label: "En uso",      value: enUso,             color: "text-amber-700", filter: "EN_USO",    sub: vencidos > 0 ? `${vencidos} vencido${vencidos > 1 ? "s" : ""}` : null, warn: vencidos > 0, card: vencidos > 0 ? "bg-red-50 border-red-200" : "bg-amber-50 border-amber-200" },
+    { label: "Con deuda",   value: conDeuda,          color: "text-red-700",   filter: "CON_DEUDA", sub: null,                                               warn: conDeuda > 0, card: conDeuda > 0 ? "bg-red-50 border-red-200" : "bg-gray-50 border-gray-200" },
+    { label: "Cobrado",     value: `Bs. ${cobrado.toLocaleString("es-BO")}`, color: "text-emerald-700", filter: "", sub: null,                               warn: false, card: "bg-emerald-50 border-emerald-200" },
   ];
 
   return (
@@ -224,17 +224,18 @@ function ContratosStats({ contratos, activeFilter, onFilter }: {
           <button
             key={s.label}
             onClick={() => s.filter !== "" && onFilter(isActive ? "" : s.filter)}
-            className={`text-left rounded-2xl border px-4 py-3 transition-all ${
-              isActive        ? "bg-primary/5 border-primary/40 ring-1 ring-primary/20 shadow-sm" :
-              s.warn          ? "bg-card border-amber-300/50 hover:border-amber-400/70" :
-              s.filter !== "" ? "bg-card border-border hover:border-primary/30 hover:shadow-sm cursor-pointer" :
-                                "bg-card border-border cursor-default"
+            className={`text-left rounded-2xl border-2 px-4 py-3 transition-all ${
+              isActive
+                ? `${s.card} ring-2 ring-primary/30 shadow-sm`
+                : s.filter !== ""
+                  ? `${s.card} hover:shadow-sm cursor-pointer`
+                  : `${s.card} cursor-default`
             }`}
           >
-            <p className={`text-xl font-bold leading-tight ${s.color}`} style={{ fontFamily: "var(--font-outfit)" }}>{s.value}</p>
-            <p className="text-[11px] text-muted-foreground mt-0.5">{s.label}</p>
-            {s.sub && <p className="text-[10px] text-amber-600 font-semibold mt-0.5">{s.sub}</p>}
-            {isActive && <p className="text-[10px] text-primary mt-0.5">Filtrando ×</p>}
+            <p className={`text-3xl font-bold leading-tight ${s.color}`} style={{ fontFamily: "var(--font-outfit)" }}>{s.value}</p>
+            <p className="text-xs font-medium text-gray-500 mt-0.5">{s.label}</p>
+            {s.sub && <p className="text-xs font-semibold text-amber-600 mt-0.5">{s.sub}</p>}
+            {isActive && <p className="text-xs font-medium text-primary mt-0.5">Filtrando ×</p>}
           </button>
         );
       })}
@@ -261,16 +262,16 @@ function ConfirmDeleteContrato({ contrato, token, backendUrl, onClose, onDeleted
 
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-      <div className="bg-background border border-border rounded-2xl w-full max-w-sm shadow-2xl p-6 space-y-4">
-        <div className="w-12 h-12 rounded-2xl bg-crimson/10 flex items-center justify-center mx-auto">
+      <div className="bg-white border-2 border-gray-200 rounded-2xl w-full max-w-sm shadow-2xl p-6 space-y-4">
+        <div className="w-12 h-12 rounded-2xl bg-red-50 flex items-center justify-center mx-auto">
           <svg className="h-6 w-6 text-crimson" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
         </div>
         <div className="text-center">
-          <h2 className="font-bold text-base" style={{ fontFamily: "var(--font-outfit)" }}>Eliminar contrato</h2>
-          <p className="text-sm text-muted-foreground mt-1">
-            ¿Eliminar <span className="font-semibold text-foreground">{contrato.codigo}</span>?
+          <h2 className="font-bold text-base text-gray-900" style={{ fontFamily: "var(--font-outfit)" }}>Eliminar contrato</h2>
+          <p className="text-sm text-gray-600 mt-1">
+            ¿Eliminar <span className="font-semibold text-gray-900">{contrato.codigo}</span>?
           </p>
-          <p className="text-xs text-muted-foreground mt-1">Esta acción no se puede deshacer. Se liberarán todas las instancias asignadas.</p>
+          <p className="text-xs text-gray-500 mt-1">Esta acción no se puede deshacer. Se liberarán todas las instancias asignadas.</p>
         </div>
         {error && <p className="text-xs text-crimson text-center">{error}</p>}
         <div className="flex gap-2">
@@ -327,20 +328,20 @@ function ContratoCard({
 
   return (
     <div
-      className={`bg-card rounded-2xl border flex flex-col transition-all hover:shadow-md ${
-        vencido ? "border-amber-400/50" : activo ? "border-border" : "border-border/50 opacity-75"
+      className={`bg-white rounded-2xl border-2 flex flex-col transition-all hover:shadow-md ${
+        vencido ? "border-amber-400" : activo ? "border-gray-200" : "border-gray-100 opacity-75"
       }`}
     >
       {/* Top: código + estado */}
       <div className="px-4 pt-3.5 pb-0 flex items-start justify-between gap-2">
-        <p className="text-[11px] font-mono text-muted-foreground leading-none mt-0.5">{c.codigo}</p>
+        <p className="text-xs font-mono font-semibold text-gray-500 leading-none mt-0.5">{c.codigo}</p>
         <div className="flex items-center gap-1 flex-wrap justify-end">
           {vencido && (
-            <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-amber-500/20 text-amber-700 border border-amber-400/30 leading-none">
+            <span className="text-xs font-bold px-1.5 py-0.5 rounded-md bg-amber-100 text-amber-700 border border-amber-300 leading-none">
               VENCIDO
             </span>
           )}
-          <span className={`inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full border leading-none ${estilo.chip}`}>
+          <span className={`inline-flex items-center gap-1 text-xs font-bold px-2 py-0.5 rounded-full border leading-none ${estilo.chip}`}>
             <span className={`w-1.5 h-1.5 rounded-full ${estilo.dot}`} />{estilo.label}
           </span>
         </div>
@@ -348,69 +349,69 @@ function ContratoCard({
 
       {/* Client */}
       <div className="px-4 pt-2 pb-3">
-        <p className="text-sm font-bold leading-tight">{c.cliente.nombre}</p>
-        {c.cliente.celular && <p className="text-xs text-muted-foreground mt-0.5">{c.cliente.celular}</p>}
+        <p className="text-sm font-bold leading-tight text-gray-900">{c.cliente.nombre}</p>
+        {c.cliente.celular && <p className="text-xs text-gray-500 font-medium mt-0.5">{c.cliente.celular}</p>}
       </div>
 
       {/* Event + dates */}
-      <div className="px-4 py-2.5 border-t border-border/50 bg-muted/20 space-y-1.5">
+      <div className="px-4 py-2.5 border-t border-gray-200 bg-gray-50 space-y-1.5">
         <div className="flex items-center justify-between gap-2">
-          <p className="text-xs text-muted-foreground truncate flex-1">
+          <p className="text-xs text-gray-600 font-medium truncate flex-1">
             {c.evento?.nombre ?? c.nombre_evento_ext ?? c.institucion ?? <span className="italic">Sin evento</span>}
           </p>
-          <span className="text-[10px] bg-muted text-muted-foreground px-1.5 py-0.5 rounded-md shrink-0">
+          <span className="text-xs font-medium bg-gray-200 text-gray-700 px-1.5 py-0.5 rounded-md shrink-0">
             {c.ciudad.replace("_", " ")}
           </span>
         </div>
         <div className="flex items-center gap-1.5 text-xs">
-          <span className="text-muted-foreground">Ent:</span>
-          <span>{formatFecha(c.fecha_entrega)}</span>
-          <span className="text-muted-foreground mx-0.5">·</span>
-          <span className="text-muted-foreground">Dev:</span>
-          <span className={vencido ? "text-amber-600 font-semibold" : "text-muted-foreground"}>
+          <span className="text-gray-500 font-medium">Ent:</span>
+          <span className="text-gray-700 font-medium">{formatFecha(c.fecha_entrega)}</span>
+          <span className="text-gray-400 mx-0.5">·</span>
+          <span className="text-gray-500 font-medium">Dev:</span>
+          <span className={vencido ? "text-amber-600 font-semibold" : "text-gray-600 font-medium"}>
             {formatFecha(c.fecha_devolucion)}{vencido ? " ⚠" : ""}
           </span>
         </div>
       </div>
 
       {/* Financials */}
-      <div className={`px-4 py-2.5 border-t border-border/50 space-y-2 ${deuda > 0.01 ? "bg-red-500/3" : ""}`}>
+      <div className={`px-4 py-2.5 border-t border-gray-200 space-y-2 ${deuda > 0.01 ? "bg-red-50" : ""}`}>
         <div className="flex items-center gap-4">
           <div className="flex-1">
             <p className="text-base font-bold text-primary leading-none">{formatBs(c.total)}</p>
-            <p className="text-[10px] text-muted-foreground mt-0.5">Total</p>
+            <p className="text-xs font-medium text-gray-500 mt-0.5">Total</p>
           </div>
           {pagadoNum > 0 && (
             <div>
               <p className="text-sm font-semibold text-emerald-600 leading-none">{formatBs(pagadoNum)}</p>
-              <p className="text-[10px] text-muted-foreground mt-0.5">Cobrado</p>
+              <p className="text-xs font-medium text-gray-500 mt-0.5">Cobrado</p>
             </div>
           )}
           {deuda > 0.01 && (
             <div>
               <p className="text-sm font-bold text-red-600 leading-none">{formatBs(deuda)}</p>
-              <p className="text-[10px] text-muted-foreground mt-0.5">Pendiente</p>
+              <p className="text-xs font-medium text-gray-500 mt-0.5">Pendiente</p>
             </div>
           )}
         </div>
         {/* Payment progress bar */}
         {totalNum > 0 && (
           <div className="space-y-0.5">
-            <div className="h-1.5 rounded-full bg-muted overflow-hidden">
+            <div className="h-1.5 rounded-full bg-gray-200 overflow-hidden">
               <div
-                className={`h-full rounded-full transition-all ${pagosPct >= 100 ? "bg-emerald-500" : pagosPct > 0 ? "bg-primary" : "bg-muted-foreground/20"}`}
+                className={`h-full rounded-full transition-all ${pagosPct >= 100 ? "bg-emerald-500" : pagosPct > 0 ? "bg-primary" : "bg-gray-300"}`}
                 style={{ width: `${pagosPct}%` }}
               />
             </div>
-            <p className="text-[10px] text-muted-foreground text-right">{pagosPct}% cobrado</p>
+            <p className="text-xs font-medium text-gray-500 text-right">{pagosPct}% cobrado</p>
           </div>
         )}
       </div>
 
       {/* Footer: counts + actions */}
-      <div className="px-4 pb-3.5 pt-2 border-t border-border/50 flex items-center justify-between gap-2">
+      <div className="px-4 pb-3.5 pt-2 border-t border-gray-200 flex items-center justify-between gap-2">
         <div className="flex flex-col gap-1.5 flex-1 min-w-0">
-          <div className="flex items-center gap-2 text-[11px] text-muted-foreground flex-wrap">
+          <div className="flex items-center gap-2 text-xs font-medium text-gray-600 flex-wrap">
             {c._count.prendas > 0 && (
               <span className="flex items-center gap-0.5">
                 <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" /></svg>
@@ -432,13 +433,13 @@ function ContratoCard({
             return (
               <div className="space-y-0.5">
                 <div className="flex items-center justify-between gap-1">
-                  <span className="flex items-center gap-0.5 text-[11px] text-muted-foreground">
+                  <span className="flex items-center gap-0.5 text-xs font-medium text-gray-600">
                     <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
                     {devueltos}/{total} devolvieron
                   </span>
-                  <span className={`text-[10px] font-semibold ${allBack ? "text-emerald-600" : "text-muted-foreground"}`}>{pct}%</span>
+                  <span className={`text-xs font-semibold ${allBack ? "text-emerald-600" : "text-gray-500"}`}>{pct}%</span>
                 </div>
-                <div className="h-1 rounded-full bg-muted overflow-hidden">
+                <div className="h-1 rounded-full bg-gray-200 overflow-hidden">
                   <div
                     className={`h-full rounded-full transition-all ${allBack ? "bg-emerald-500" : "bg-primary"}`}
                     style={{ width: `${pct}%` }}
@@ -452,7 +453,7 @@ function ContratoCard({
           <button
             onClick={() => void handlePrint()}
             disabled={printing}
-            className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50"
+            className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-gray-100 text-gray-500 hover:text-gray-700 transition-colors disabled:opacity-50"
             title="Imprimir comprobante"
           >
             {printing
@@ -462,7 +463,7 @@ function ContratoCard({
           </button>
           <button
             onClick={onDelete}
-            className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-crimson/10 text-muted-foreground hover:text-crimson transition-colors"
+            className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-red-50 text-gray-400 hover:text-crimson transition-colors"
             title="Eliminar contrato"
           >
             <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
@@ -602,10 +603,10 @@ export function ContratosClient({ initialContratos, initialClientes, initialEven
       {/* Header */}
       <div className="flex items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold" style={{ fontFamily: "var(--font-outfit)" }}>Contratos de Alquiler</h1>
-          <p className="text-sm text-muted-foreground mt-0.5">Gestión de contratos de vestuario folklórico</p>
+          <h1 className="text-3xl font-extrabold text-gray-900" style={{ fontFamily: "var(--font-outfit)" }}>Contratos de Alquiler</h1>
+          <p className="text-sm text-gray-500 font-medium mt-0.5">Gestión de contratos de vestuario folklórico</p>
         </div>
-        <Button className="bg-primary text-primary-foreground shrink-0" onClick={openNuevoContrato}>
+        <Button className="bg-primary text-white font-semibold shadow-sm hover:bg-primary/90 shrink-0" onClick={openNuevoContrato}>
           <svg className="h-4 w-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
           Nuevo contrato
         </Button>
@@ -652,8 +653,8 @@ export function ContratosClient({ initialContratos, initialClientes, initialEven
       <div className="flex flex-wrap gap-2 items-center">
         <button
           onClick={() => setEventoFilter("")}
-          className={`px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all ${
-            eventoFilter === "" ? "bg-primary/10 text-primary border-primary/30" : "border-border bg-muted/30 text-muted-foreground hover:bg-muted"
+          className={`px-3 py-1.5 rounded-xl text-xs font-semibold border-2 transition-all ${
+            eventoFilter === "" ? "bg-primary/10 text-primary border-primary/30" : "border-gray-200 bg-white text-gray-600 hover:border-gray-300 hover:bg-gray-50"
           }`}
         >
           Todos <span className="ml-1 opacity-60">{contratos.length}</span>
@@ -665,8 +666,8 @@ export function ContratosClient({ initialContratos, initialClientes, initialEven
             <button
               key={e.id}
               onClick={() => setEventoFilter(active ? "" : e.id)}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all ${
-                active ? "bg-primary/10 text-primary border-primary/30" : "border-border bg-muted/30 text-muted-foreground hover:bg-muted"
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold border-2 transition-all ${
+                active ? "bg-primary/10 text-primary border-primary/30" : "border-gray-200 bg-white text-gray-600 hover:border-gray-300 hover:bg-gray-50"
               }`}
             >
               <span>{e.nombre}</span>
@@ -676,13 +677,13 @@ export function ContratosClient({ initialContratos, initialClientes, initialEven
         })}
 
         {/* Sort toggle — right side */}
-        <div className="ml-auto flex items-center gap-1 rounded-xl border border-border bg-muted/30 p-0.5">
+        <div className="ml-auto flex items-center gap-1 rounded-xl border-2 border-gray-200 bg-white p-0.5">
           {([["reciente", "Recientes"], ["urgente", "Urgentes"]] as const).map(([val, label]) => (
             <button
               key={val}
               onClick={() => setSortBy(val)}
               className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-all ${
-                sortBy === val ? "bg-background shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground"
+                sortBy === val ? "bg-gray-100 shadow-sm text-gray-900" : "text-gray-500 hover:text-gray-700"
               }`}
             >
               {label}
@@ -694,21 +695,21 @@ export function ContratosClient({ initialContratos, initialClientes, initialEven
       {/* Search + filters */}
       <div className="flex flex-col sm:flex-row gap-2">
         <div className="relative flex-1">
-          <svg className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+          <svg className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
           <input
-            className="w-full pl-9 pr-4 py-2 rounded-xl border border-border bg-card text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
+            className="w-full pl-9 pr-4 py-2 rounded-xl border-2 border-gray-200 bg-white text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary/40"
             placeholder="Código, cliente, evento, institución…"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
           {search && (
-            <button onClick={() => setSearch("")} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
+            <button onClick={() => setSearch("")} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
               <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
             </button>
           )}
         </div>
         <select
-          className="rounded-xl border border-border bg-card px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 cursor-pointer"
+          className="rounded-xl border-2 border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 font-medium focus:outline-none focus:ring-2 focus:ring-primary/40 cursor-pointer"
           value={typeof estadoFilter === "string" && !["VENCIDO"].includes(estadoFilter) ? estadoFilter : ""}
           onChange={(e) => setEstadoFilter(e.target.value as EstadoContrato | "")}
         >
@@ -718,7 +719,7 @@ export function ContratosClient({ initialContratos, initialClientes, initialEven
           ))}
         </select>
         <select
-          className="rounded-xl border border-border bg-card px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 cursor-pointer"
+          className="rounded-xl border-2 border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 font-medium focus:outline-none focus:ring-2 focus:ring-primary/40 cursor-pointer"
           value={ciudadFilter}
           onChange={(e) => setCiudadFilter(e.target.value as CiudadContrato | "")}
         >
@@ -732,21 +733,21 @@ export function ContratosClient({ initialContratos, initialClientes, initialEven
       {/* Results count */}
       {anyFilter && (
         <div className="flex items-center justify-between">
-          <p className="text-xs text-muted-foreground">{filtered.length} resultado{filtered.length !== 1 ? "s" : ""}</p>
-          <button onClick={() => { setSearch(""); setEstadoFilter(""); setCiudadFilter(""); setEventoFilter(""); }} className="text-xs text-primary hover:underline">Limpiar filtros</button>
+          <p className="text-xs font-medium text-gray-500">{filtered.length} resultado{filtered.length !== 1 ? "s" : ""}</p>
+          <button onClick={() => { setSearch(""); setEstadoFilter(""); setCiudadFilter(""); setEventoFilter(""); }} className="text-xs font-semibold text-primary hover:underline">Limpiar filtros</button>
         </div>
       )}
 
       {/* Cards grid */}
       {filtered.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-20 text-center">
-          <div className="w-16 h-16 rounded-2xl bg-muted flex items-center justify-center mb-4">
-            <svg className="h-8 w-8 text-muted-foreground/30" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+          <div className="w-16 h-16 rounded-2xl bg-gray-100 flex items-center justify-center mb-4">
+            <svg className="h-8 w-8 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
           </div>
-          <p className="font-semibold text-muted-foreground">{anyFilter ? "Sin resultados para los filtros actuales" : "No hay contratos aún"}</p>
+          <p className="font-semibold text-gray-600">{anyFilter ? "Sin resultados para los filtros actuales" : "No hay contratos aún"}</p>
           {anyFilter
-            ? <button onClick={() => { setSearch(""); setEstadoFilter(""); setCiudadFilter(""); setEventoFilter(""); }} className="mt-2 text-sm text-primary hover:underline">Limpiar filtros →</button>
-            : <button onClick={openNuevoContrato} className="mt-2 text-sm text-primary hover:underline">Crear el primer contrato →</button>
+            ? <button onClick={() => { setSearch(""); setEstadoFilter(""); setCiudadFilter(""); setEventoFilter(""); }} className="mt-2 text-sm font-semibold text-primary hover:underline">Limpiar filtros →</button>
+            : <button onClick={openNuevoContrato} className="mt-2 text-sm font-semibold text-primary hover:underline">Crear el primer contrato →</button>
           }
         </div>
       ) : (

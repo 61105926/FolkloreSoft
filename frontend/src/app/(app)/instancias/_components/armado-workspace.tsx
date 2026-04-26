@@ -69,7 +69,7 @@ const ESTADO_CHIP: Record<string, string> = {
   DANADO:           "bg-orange-500/10 text-orange-700 border-orange-500/20",
 };
 
-const inp = "rounded-xl border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 transition-all";
+const inp = "rounded-xl border-2 border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/40 transition-all";
 
 // ── GlobalStatsBar ─────────────────────────────────────────────────────────────
 
@@ -82,23 +82,23 @@ function GlobalStatsBar({ stats }: { stats: StatsSucursal[] }) {
 
   return (
     <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
-      <div className="sm:col-span-1 bg-card rounded-2xl border border-border p-4">
-        <p className="text-2xl font-bold" style={{ fontFamily: "var(--font-outfit)" }}>{t.total}</p>
-        <p className="text-xs text-muted-foreground">Conjuntos totales</p>
-        <div className="mt-2 h-1.5 rounded-full bg-muted overflow-hidden">
+      <div className="sm:col-span-1 bg-white rounded-2xl border-2 border-gray-200 p-4 shadow-sm">
+        <p className="text-3xl font-bold text-gray-800" style={{ fontFamily: "var(--font-outfit)" }}>{t.total}</p>
+        <p className="text-xs text-gray-600 font-medium">Conjuntos totales</p>
+        <div className="mt-2 h-2 rounded-full bg-gray-200 overflow-hidden">
           <div className="h-full bg-crimson rounded-full" style={{ width: `${pct}%` }} />
         </div>
-        <p className="text-[10px] text-muted-foreground mt-0.5">{pct}% en uso</p>
+        <p className="text-xs text-gray-500 font-medium mt-0.5">{pct}% en uso</p>
       </div>
       {([
-        ["Disponibles",   t.disp, "bg-emerald-500/10 border-emerald-500/20", "text-emerald-700"],
-        ["Alquilados",    t.alq,  "bg-red-500/10 border-red-500/20",         "text-red-700"],
-        ["En tránsito",   t.tran, "bg-amber-500/10 border-amber-500/20",     "text-amber-700"],
-        ["Dados de baja", t.baja, "bg-gray-500/10 border-gray-500/20",       "text-gray-500"],
+        ["Disponibles",   t.disp, "bg-emerald-50 border-emerald-200", "text-emerald-700"],
+        ["Alquilados",    t.alq,  "bg-red-50 border-red-200",         "text-red-700"],
+        ["En tránsito",   t.tran, "bg-amber-50 border-amber-200",     "text-amber-700"],
+        ["Dados de baja", t.baja, "bg-gray-100 border-gray-300",      "text-gray-600"],
       ] as const).map(([label, value, cls, txtCls]) => (
-        <div key={label} className={`rounded-2xl border p-4 ${cls}`}>
-          <p className={`text-2xl font-bold ${txtCls}`} style={{ fontFamily: "var(--font-outfit)" }}>{value}</p>
-          <p className={`text-xs ${txtCls} opacity-80`}>{label}</p>
+        <div key={label} className={`rounded-2xl border-2 p-4 shadow-sm ${cls}`}>
+          <p className={`text-3xl font-bold ${txtCls}`} style={{ fontFamily: "var(--font-outfit)" }}>{value}</p>
+          <p className={`text-xs font-semibold mt-0.5 ${txtCls}`}>{label}</p>
         </div>
       ))}
     </div>
@@ -114,22 +114,22 @@ function SucursalStatsRow({ stats }: { stats: StatsSucursal[] }) {
       {stats.map((s) => {
         const pct = s.total > 0 ? Math.round((s.alquilado / s.total) * 100) : 0;
         return (
-          <div key={s.sucursalId} className="flex-1 min-w-[200px] rounded-2xl border border-border bg-card p-4 space-y-2">
+          <div key={s.sucursalId} className="flex-1 min-w-[200px] rounded-2xl border-2 border-gray-200 bg-white p-4 space-y-2 shadow-sm">
             <div className="flex items-center justify-between">
               <div>
-                <p className="font-semibold text-sm">{s.nombre}</p>
-                <p className="text-xs text-muted-foreground">{s.ciudad}</p>
+                <p className="font-bold text-sm text-gray-900">{s.nombre}</p>
+                <p className="text-xs text-gray-500 font-medium">{s.ciudad}</p>
               </div>
-              <span className="text-xs font-bold">{s.total} total</span>
+              <span className="text-xs font-bold text-gray-700">{s.total} total</span>
             </div>
-            <div className="h-1.5 rounded-full bg-muted overflow-hidden">
+            <div className="h-2 rounded-full bg-gray-200 overflow-hidden">
               <div className="h-full bg-crimson rounded-full transition-all" style={{ width: `${pct}%` }} />
             </div>
-            <div className="grid grid-cols-2 gap-1 text-[11px]">
-              <span className="text-emerald-600">✓ {s.disponible} disp.</span>
-              <span className="text-red-600">⊗ {s.alquilado} alq.</span>
-              <span className="text-amber-600">⇆ {s.enTransferencia} trán.</span>
-              <span className="text-gray-500">✕ {s.dadoDeBaja} baja</span>
+            <div className="grid grid-cols-2 gap-1 text-xs font-semibold">
+              <span className="text-emerald-700">✓ {s.disponible} disp.</span>
+              <span className="text-red-700">⊗ {s.alquilado} alq.</span>
+              <span className="text-amber-700">⇆ {s.enTransferencia} trán.</span>
+              <span className="text-gray-600">✕ {s.dadoDeBaja} baja</span>
             </div>
           </div>
         );

@@ -130,48 +130,48 @@ export function StockClient({ resumen, movimientos: initMovimientos, token, back
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold" style={{ fontFamily: "var(--font-outfit)" }}>
+        <h1 className="text-3xl font-extrabold text-gray-900" style={{ fontFamily: "var(--font-outfit)" }}>
           Gestión de Stock
         </h1>
-        <p className="text-muted-foreground text-sm mt-1">
+        <p className="text-gray-500 text-sm mt-1">
           Control de inventario por cantidad — sin piezas individuales
         </p>
       </div>
 
       {/* KPIs */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <Card>
+        <Card className="bg-primary/5 border-2 border-primary/20">
           <CardContent className="pt-4">
-            <p className="text-xs text-muted-foreground">Conjuntos activos</p>
-            <p className="text-2xl font-bold">{conjuntos.length}</p>
+            <p className="text-xs font-medium text-gray-600">Conjuntos activos</p>
+            <p className="text-3xl font-bold text-gray-900">{conjuntos.length}</p>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="bg-emerald-50 border-2 border-emerald-200">
           <CardContent className="pt-4">
-            <p className="text-xs text-muted-foreground">Unidades totales</p>
-            <p className="text-2xl font-bold">
+            <p className="text-xs font-medium text-gray-600">Unidades totales</p>
+            <p className="text-3xl font-bold text-emerald-700">
               {conjuntos.reduce((s, c) => s + c.stockTotal, 0)}
             </p>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="bg-red-50 border-2 border-red-200">
           <CardContent className="pt-4">
-            <p className="text-xs text-muted-foreground">Sin stock</p>
-            <p className="text-2xl font-bold text-red-600">
+            <p className="text-xs font-medium text-gray-600">Sin stock</p>
+            <p className="text-3xl font-bold text-red-600">
               {conjuntos.filter((c) => c.stockTotal === 0).length}
             </p>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="bg-amber-50 border-2 border-amber-200">
           <CardContent className="pt-4">
-            <p className="text-xs text-muted-foreground">Movimientos</p>
-            <p className="text-2xl font-bold">{movimientos.length}</p>
+            <p className="text-xs font-medium text-gray-600">Movimientos</p>
+            <p className="text-3xl font-bold text-amber-700">{movimientos.length}</p>
           </CardContent>
         </Card>
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-2 border-b">
+      <div className="flex gap-2 border-b border-gray-200">
         {(["resumen", "movimientos", "nuevo"] as const).map((t) => (
           <button
             key={t}
@@ -179,8 +179,8 @@ export function StockClient({ resumen, movimientos: initMovimientos, token, back
             className={cn(
               "px-4 py-2 text-sm font-medium border-b-2 -mb-px transition-colors",
               tab === t
-                ? "border-[#991B1B] text-[#991B1B]"
-                : "border-transparent text-muted-foreground hover:text-foreground"
+                ? "border-crimson text-crimson"
+                : "border-transparent text-gray-500 hover:text-gray-900"
             )}
           >
             {t === "resumen" ? "Resumen" : t === "movimientos" ? "Historial" : "Registrar movimiento"}
@@ -209,12 +209,12 @@ export function StockClient({ resumen, movimientos: initMovimientos, token, back
                   )
               )
               .map((conjunto) => (
-                <Card key={conjunto.id} className="overflow-hidden">
-                  <CardHeader className="py-3 px-4 bg-muted/40">
+                <Card key={conjunto.id} className="overflow-hidden border-2 border-gray-200 shadow-sm rounded-2xl">
+                  <CardHeader className="py-3 px-4 bg-gray-50">
                     <div className="flex items-center justify-between">
                       <div>
-                        <CardTitle className="text-sm font-semibold">{conjunto.nombre}</CardTitle>
-                        <p className="text-xs text-muted-foreground">{conjunto.danza}</p>
+                        <CardTitle className="text-sm font-semibold text-gray-900">{conjunto.nombre}</CardTitle>
+                        <p className="text-xs font-medium text-gray-500">{conjunto.danza}</p>
                       </div>
                       <Badge
                         className={cn(
@@ -232,18 +232,18 @@ export function StockClient({ resumen, movimientos: initMovimientos, token, back
                   </CardHeader>
                   <CardContent className="p-0">
                     <table className="w-full text-xs">
-                      <thead className="bg-muted/20">
+                      <thead className="bg-gray-50">
                         <tr>
-                          <th className="text-left px-3 py-1.5 font-medium text-muted-foreground">Variación</th>
-                          <th className="text-center px-3 py-1.5 font-medium text-muted-foreground">Talla</th>
-                          <th className="text-right px-3 py-1.5 font-medium text-muted-foreground">Stock</th>
+                          <th className="text-left px-3 py-1.5 font-semibold text-gray-700 uppercase tracking-wide">Variación</th>
+                          <th className="text-center px-3 py-1.5 font-semibold text-gray-700 uppercase tracking-wide">Talla</th>
+                          <th className="text-right px-3 py-1.5 font-semibold text-gray-700 uppercase tracking-wide">Stock</th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y">
+                      <tbody className="divide-y divide-gray-100">
                         {conjunto.variaciones.map((v) => (
-                          <tr key={v.id} className="hover:bg-muted/10">
-                            <td className="px-3 py-1.5">{v.nombre_variacion}</td>
-                            <td className="px-3 py-1.5 text-center text-muted-foreground">
+                          <tr key={v.id} className="hover:bg-gray-50">
+                            <td className="px-3 py-1.5 text-gray-800">{v.nombre_variacion}</td>
+                            <td className="px-3 py-1.5 text-center text-gray-500">
                               {v.talla ?? "—"}
                             </td>
                             <td className="px-3 py-1.5 text-right">
@@ -273,22 +273,22 @@ export function StockClient({ resumen, movimientos: initMovimientos, token, back
       {tab === "movimientos" && (
         <div className="space-y-2">
           {movimientos.length === 0 && (
-            <p className="text-muted-foreground text-sm py-8 text-center">
+            <p className="text-gray-500 text-sm py-8 text-center">
               No hay movimientos registrados aún.
             </p>
           )}
           {movimientos.map((m) => (
-            <Card key={m.id} className="px-4 py-3">
+            <Card key={m.id} className="px-4 py-3 bg-white border-2 border-gray-200 shadow-sm rounded-2xl">
               <div className="flex items-start gap-3">
-                <Badge className={cn("shrink-0 mt-0.5", TIPO_COLORS[m.tipo] ?? "bg-gray-100 text-gray-700")}>
+                <Badge className={cn("shrink-0 mt-0.5 border font-medium", TIPO_COLORS[m.tipo] ?? "bg-gray-100 text-gray-700 border-gray-200")}>
                   {TIPO_LABELS[m.tipo] ?? m.tipo}
                 </Badge>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium truncate">
+                  <p className="text-sm font-semibold text-gray-900 truncate">
                     {m.variacion.conjunto.nombre} — {m.variacion.nombre_variacion}
                     {m.variacion.talla ? ` (${m.variacion.talla})` : ""}
                   </p>
-                  <p className="text-xs text-muted-foreground">{m.motivo ?? "Sin motivo"}</p>
+                  <p className="text-xs font-medium text-gray-500">{m.motivo ?? "Sin motivo"}</p>
                 </div>
                 <div className="text-right shrink-0">
                   <p
@@ -299,7 +299,7 @@ export function StockClient({ resumen, movimientos: initMovimientos, token, back
                   >
                     {m.cantidad > 0 ? `+${m.cantidad}` : m.cantidad}
                   </p>
-                  <p className="text-xs text-muted-foreground">
+                  <p className="text-xs font-medium text-gray-500">
                     {new Date(m.createdAt).toLocaleDateString("es-BO")}
                   </p>
                 </div>
@@ -311,9 +311,9 @@ export function StockClient({ resumen, movimientos: initMovimientos, token, back
 
       {/* Tab: Nuevo movimiento */}
       {tab === "nuevo" && (
-        <Card className="max-w-lg">
+        <Card className="max-w-lg bg-white border-2 border-gray-200 shadow-sm rounded-2xl">
           <CardHeader>
-            <CardTitle className="text-base">Registrar movimiento de stock</CardTitle>
+            <CardTitle className="text-base font-semibold text-gray-900">Registrar movimiento de stock</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             {error && (
@@ -335,14 +335,14 @@ export function StockClient({ resumen, movimientos: initMovimientos, token, back
                           : t === "BAJA"
                           ? "bg-red-600 text-white border-red-600"
                           : "bg-blue-600 text-white border-blue-600"
-                        : "border-border text-muted-foreground hover:bg-muted"
+                        : "border-gray-300 text-gray-700 hover:border-gray-400 hover:bg-gray-50"
                     )}
                   >
                     {TIPO_LABELS[t]}
                   </button>
                 ))}
               </div>
-              <p className="text-xs text-muted-foreground">
+              <p className="text-xs font-medium text-gray-500">
                 {form.tipo === "COMPRA" && "Ingreso de nuevos trajes al inventario."}
                 {form.tipo === "BAJA" && "Traje dañado, perdido o dado de baja. Se resta del stock."}
                 {form.tipo === "AJUSTE" && "Corrección manual. Ingresa un número positivo (suma) o negativo (resta)."}
@@ -357,7 +357,7 @@ export function StockClient({ resumen, movimientos: initMovimientos, token, back
                 onChange={(e) => setBusqueda(e.target.value)}
               />
               <select
-                className="w-full border rounded px-3 py-2 text-sm bg-background"
+                className="w-full border-2 border-gray-200 rounded-xl px-3 py-2 text-sm bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/50 transition-colors"
                 value={form.variacionId}
                 onChange={(e) => setForm((f) => ({ ...f, variacionId: e.target.value }))}
               >
@@ -375,7 +375,7 @@ export function StockClient({ resumen, movimientos: initMovimientos, token, back
               <Label>
                 Cantidad
                 {form.tipo === "AJUSTE" && (
-                  <span className="text-xs text-muted-foreground ml-1">(positivo o negativo)</span>
+                  <span className="text-xs text-gray-500 ml-1">(positivo o negativo)</span>
                 )}
               </Label>
               <Input
@@ -388,7 +388,7 @@ export function StockClient({ resumen, movimientos: initMovimientos, token, back
             </div>
 
             <div className="space-y-1.5">
-              <Label>Motivo <span className="text-muted-foreground">(opcional)</span></Label>
+              <Label>Motivo <span className="text-gray-500">(opcional)</span></Label>
               <Input
                 value={form.motivo}
                 onChange={(e) => setForm((f) => ({ ...f, motivo: e.target.value }))}
@@ -403,7 +403,7 @@ export function StockClient({ resumen, movimientos: initMovimientos, token, back
             </div>
 
             <Button
-              className="w-full bg-[#991B1B] hover:bg-[#7F1D1D] text-white"
+              className="w-full bg-crimson hover:bg-crimson-dark text-white font-semibold shadow-sm"
               disabled={saving || !form.variacionId || !form.cantidad}
               onClick={registrar}
             >

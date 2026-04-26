@@ -241,43 +241,43 @@ function AddToCartModal({
         {/* Qty + days */}
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
+            <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wide mb-2">
               Cantidad
             </label>
-            <div className="flex items-center border border-gray-200 rounded-xl overflow-hidden">
+            <div className="flex items-center border-2 border-gray-200 rounded-xl overflow-hidden">
               <button
                 onClick={() => setCantidad((n) => Math.max(1, n - 1))}
-                className="px-3 py-2.5 text-gray-400 hover:text-crimson hover:bg-gray-50 transition-colors font-bold text-lg leading-none"
+                className="px-3 py-2.5 text-gray-500 hover:text-crimson hover:bg-gray-50 transition-colors font-bold text-lg leading-none"
               >
                 −
               </button>
               <span className="flex-1 text-center font-bold text-graphite text-lg">{cantidad}</span>
               <button
                 onClick={() => setCantidad((n) => (maxCant > 0 ? Math.min(maxCant, n + 1) : n + 1))}
-                className="px-3 py-2.5 text-gray-400 hover:text-crimson hover:bg-gray-50 transition-colors font-bold text-lg leading-none"
+                className="px-3 py-2.5 text-gray-500 hover:text-crimson hover:bg-gray-50 transition-colors font-bold text-lg leading-none"
               >
                 +
               </button>
             </div>
             {maxCant > 0 && (
-              <p className="text-xs text-gray-400 mt-1 text-center">Máx. {maxCant} disponibles</p>
+              <p className="text-xs text-gray-500 mt-1 text-center">Máx. {maxCant} disponibles</p>
             )}
           </div>
           <div>
-            <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
+            <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wide mb-2">
               Días
             </label>
-            <div className="flex items-center border border-gray-200 rounded-xl overflow-hidden">
+            <div className="flex items-center border-2 border-gray-200 rounded-xl overflow-hidden">
               <button
                 onClick={() => setDias((n) => Math.max(1, n - 1))}
-                className="px-3 py-2.5 text-gray-400 hover:text-crimson hover:bg-gray-50 transition-colors font-bold text-lg leading-none"
+                className="px-3 py-2.5 text-gray-500 hover:text-crimson hover:bg-gray-50 transition-colors font-bold text-lg leading-none"
               >
                 −
               </button>
               <span className="flex-1 text-center font-bold text-graphite text-lg">{dias}</span>
               <button
                 onClick={() => setDias((n) => n + 1)}
-                className="px-3 py-2.5 text-gray-400 hover:text-crimson hover:bg-gray-50 transition-colors font-bold text-lg leading-none"
+                className="px-3 py-2.5 text-gray-500 hover:text-crimson hover:bg-gray-50 transition-colors font-bold text-lg leading-none"
               >
                 +
               </button>
@@ -368,7 +368,7 @@ function CartDrawer({
             <h2 className="font-bold text-graphite text-lg" style={{ fontFamily: 'var(--font-outfit)' }}>
               Tu selección
             </h2>
-            <p className="text-xs text-gray-400">
+            <p className="text-xs font-medium text-gray-500">
               {items.length} producto{items.length !== 1 ? 's' : ''}
             </p>
           </div>
@@ -385,12 +385,12 @@ function CartDrawer({
         {/* Items */}
         <div className="flex-1 overflow-y-auto px-5 py-4 space-y-3">
           {items.length === 0 ? (
-            <div className="text-center py-16 text-gray-400">
-              <svg className="w-10 h-10 mx-auto mb-3 opacity-30" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <div className="text-center py-16 text-gray-500">
+              <svg className="w-10 h-10 mx-auto mb-3 opacity-40" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
               </svg>
-              <p className="text-sm">Sin productos aún.</p>
-              <p className="text-xs mt-1">Explora el catálogo y agrega trajes.</p>
+              <p className="text-sm font-medium">Sin productos aún.</p>
+              <p className="text-xs mt-1 text-gray-400">Explora el catálogo y agrega trajes.</p>
             </div>
           ) : (
             items.map((item) => (
@@ -429,41 +429,41 @@ function CartDrawer({
                 <div className="mt-3 flex items-center justify-between gap-2">
                   {/* Qty */}
                   <div className="flex items-center gap-1">
-                    <span className="text-xs text-gray-400 mr-1">Cant.</span>
+                    <span className="text-xs font-medium text-gray-500 mr-1">Cant.</span>
                     <button
                       onClick={() => onUpdateCantidad(item.key, -1)}
-                      className="w-6 h-6 rounded-lg border border-gray-200 flex items-center justify-center text-gray-500 hover:border-crimson hover:text-crimson text-sm font-bold transition-colors"
+                      className="w-6 h-6 rounded-lg border-2 border-gray-200 flex items-center justify-center text-gray-600 hover:border-crimson hover:text-crimson text-sm font-bold transition-colors"
                     >
                       −
                     </button>
                     <span className="w-7 text-center text-sm font-bold text-graphite">{item.cantidad}</span>
                     <button
                       onClick={() => onUpdateCantidad(item.key, 1)}
-                      className="w-6 h-6 rounded-lg border border-gray-200 flex items-center justify-center text-gray-500 hover:border-crimson hover:text-crimson text-sm font-bold transition-colors"
+                      className="w-6 h-6 rounded-lg border-2 border-gray-200 flex items-center justify-center text-gray-600 hover:border-crimson hover:text-crimson text-sm font-bold transition-colors"
                     >
                       +
                     </button>
                   </div>
                   {/* Days */}
                   <div className="flex items-center gap-1">
-                    <span className="text-xs text-gray-400 mr-1">Días</span>
+                    <span className="text-xs font-medium text-gray-500 mr-1">Días</span>
                     <button
                       onClick={() => onUpdateDias(item.key, -1)}
-                      className="w-6 h-6 rounded-lg border border-gray-200 flex items-center justify-center text-gray-500 hover:border-crimson hover:text-crimson text-sm font-bold transition-colors"
+                      className="w-6 h-6 rounded-lg border-2 border-gray-200 flex items-center justify-center text-gray-600 hover:border-crimson hover:text-crimson text-sm font-bold transition-colors"
                     >
                       −
                     </button>
                     <span className="w-7 text-center text-sm font-bold text-graphite">{item.dias}</span>
                     <button
                       onClick={() => onUpdateDias(item.key, 1)}
-                      className="w-6 h-6 rounded-lg border border-gray-200 flex items-center justify-center text-gray-500 hover:border-crimson hover:text-crimson text-sm font-bold transition-colors"
+                      className="w-6 h-6 rounded-lg border-2 border-gray-200 flex items-center justify-center text-gray-600 hover:border-crimson hover:text-crimson text-sm font-bold transition-colors"
                     >
                       +
                     </button>
                   </div>
                   {/* Subtotal */}
                   <div className="text-right">
-                    <p className="text-xs text-gray-400">Subtotal</p>
+                    <p className="text-xs font-medium text-gray-500">Subtotal</p>
                     <p className="font-bold text-crimson text-sm">
                       Bs. {bs(item.precioUnitario * item.cantidad)}
                     </p>
@@ -494,7 +494,7 @@ function CartDrawer({
             >
               Solicitar reserva →
             </button>
-            <p className="text-xs text-gray-400 text-center">
+            <p className="text-xs font-medium text-gray-500 text-center">
               Un asesor confirmará disponibilidad y anticipo.
             </p>
           </div>
@@ -617,11 +617,11 @@ function ReservaModal({
           <h3 className="text-2xl font-bold text-graphite mb-2" style={{ fontFamily: 'var(--font-outfit)' }}>
             ¡Solicitud enviada!
           </h3>
-          <p className="text-gray-500 text-sm mb-1">
+          <p className="text-gray-600 text-sm mb-1">
             Tu solicitud fue registrada. También se abrió WhatsApp para que
             puedas confirmar directamente con un asesor.
           </p>
-          <p className="text-xs text-gray-400 mb-6">⏰ Atención: Lun–Sáb 8:00–20:00</p>
+          <p className="text-xs font-medium text-gray-500 mb-6">Atención: Lun–Sáb 8:00–20:00</p>
           <button
             onClick={onClose}
             className="px-6 py-2.5 rounded-xl bg-crimson text-white font-semibold hover:bg-crimson-dark transition-colors"
@@ -857,7 +857,7 @@ function ConjuntoCard({
 
         <div className="flex items-end justify-between mt-auto gap-2">
           <div>
-            <p className="text-xs text-gray-400 uppercase tracking-wide">Desde</p>
+            <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">Desde</p>
             <p className="text-xl font-bold text-crimson" style={{ fontFamily: 'var(--font-outfit)' }}>
               Bs.&nbsp;{bs(conjunto.precio_base)}
             </p>
@@ -1052,7 +1052,7 @@ export function CatalogoClient({ conjuntos }: { conjuntos: ConjuntoCatalogo[] })
           <h2 className="text-2xl font-bold text-graphite mb-1" style={{ fontFamily: 'var(--font-outfit)' }}>
             Catálogo de trajes
           </h2>
-          <p className="text-gray-500 text-sm">Selecciona variación/talla y agrega al carrito · Puedes elegir varios trajes distintos</p>
+          <p className="text-gray-600 text-sm">Selecciona variación/talla y agrega al carrito · Puedes elegir varios trajes distintos</p>
         </div>
 
         {/* Filters */}
@@ -1066,7 +1066,7 @@ export function CatalogoClient({ conjuntos }: { conjuntos: ConjuntoCatalogo[] })
               placeholder="Buscar traje o danza…"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full pl-9 pr-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-crimson/20 focus:border-crimson bg-white transition-colors"
+              className="w-full pl-9 pr-3 py-2.5 border-2 border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-crimson/20 focus:border-crimson bg-white transition-colors text-gray-900 placeholder:text-gray-400"
             />
           </div>
           <div className="flex gap-2 flex-wrap">
@@ -1087,11 +1087,11 @@ export function CatalogoClient({ conjuntos }: { conjuntos: ConjuntoCatalogo[] })
         </div>
 
         {filtered.length === 0 ? (
-          <div className="text-center py-16 text-gray-400">
-            <svg className="w-10 h-10 mx-auto mb-3 opacity-30" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <div className="text-center py-16 text-gray-500">
+            <svg className="w-10 h-10 mx-auto mb-3 opacity-40" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
-            <p className="text-sm">No se encontraron trajes.</p>
+            <p className="text-sm font-medium">No se encontraron trajes.</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">

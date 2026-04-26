@@ -81,7 +81,7 @@ const ESTADO_CONTRATO_CHIP: Record<string, string> = {
   CERRADO:               "bg-gray-500/10 text-gray-500 border-gray-300/40",
   CON_DEUDA:             "bg-red-500/10 text-red-700 border-red-300/40",
   CON_GARANTIA_RETENIDA: "bg-orange-500/10 text-orange-600 border-orange-300/40",
-  CANCELADO:             "bg-muted text-muted-foreground border-border",
+  CANCELADO:             "bg-gray-100 text-gray-600 border-gray-300",
 };
 
 const ESTADO_LABEL: Record<string, string> = {
@@ -105,20 +105,20 @@ function KpiCard({ label, value, sub, color = "default" }: {
   color?: "default" | "green" | "red" | "amber" | "blue";
 }) {
   const colors: Record<string, string> = {
-    default: "bg-card border-border",
-    green:   "bg-emerald-500/5 border-emerald-500/20",
-    red:     "bg-red-500/5 border-red-500/20",
-    amber:   "bg-amber-500/5 border-amber-500/20",
-    blue:    "bg-blue-500/5 border-blue-500/20",
+    default: "bg-white border-gray-200",
+    green:   "bg-emerald-50 border-emerald-200",
+    red:     "bg-red-50 border-red-200",
+    amber:   "bg-amber-50 border-amber-200",
+    blue:    "bg-blue-50 border-blue-200",
   };
   const textColors: Record<string, string> = {
-    default: "", green: "text-emerald-700", red: "text-red-700", amber: "text-amber-700", blue: "text-blue-700",
+    default: "text-gray-800", green: "text-emerald-700", red: "text-red-700", amber: "text-amber-700", blue: "text-blue-700",
   };
   return (
-    <div className={`rounded-2xl border p-4 ${colors[color]}`}>
-      <p className={`text-xl font-bold ${textColors[color]}`} style={{ fontFamily: "var(--font-outfit)" }}>{value}</p>
-      <p className="text-xs text-muted-foreground mt-0.5">{label}</p>
-      {sub && <p className="text-[11px] text-muted-foreground/70 mt-1">{sub}</p>}
+    <div className={`rounded-2xl border-2 p-4 shadow-sm ${colors[color]}`}>
+      <p className={`text-2xl font-bold ${textColors[color]}`} style={{ fontFamily: "var(--font-outfit)" }}>{value}</p>
+      <p className="text-xs text-gray-600 font-medium mt-0.5">{label}</p>
+      {sub && <p className="text-xs text-gray-500 mt-1">{sub}</p>}
     </div>
   );
 }
@@ -126,7 +126,7 @@ function KpiCard({ label, value, sub, color = "default" }: {
 // ── Section header ─────────────────────────────────────────────────────────────
 
 function SectionTitle({ children }: { children: React.ReactNode }) {
-  return <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-3">{children}</p>;
+  return <p className="text-xs font-bold uppercase tracking-widest text-gray-700 mb-3">{children}</p>;
 }
 
 // ── Chart tooltip ──────────────────────────────────────────────────────────────
@@ -227,7 +227,7 @@ function FinanzasTab({ movimientos, stats, porCobrar, isDark }: {
       </div>
 
       {/* Monthly chart */}
-      <div className="rounded-2xl border border-border bg-card p-5">
+      <div className="rounded-2xl border-2 border-gray-200 bg-white p-5 shadow-sm">
         <SectionTitle>Tendencia mensual (últimos 12 meses)</SectionTitle>
         <ResponsiveContainer width="100%" height={200}>
           <BarChart data={monthlyData} barSize={10} barGap={2}>
@@ -247,7 +247,7 @@ function FinanzasTab({ movimientos, stats, porCobrar, isDark }: {
       {/* Forma de pago + deudores */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
         {/* Pie: forma de pago */}
-        <div className="rounded-2xl border border-border bg-card p-5">
+        <div className="rounded-2xl border-2 border-gray-200 bg-white p-5 shadow-sm">
           <SectionTitle>Ingresos por forma de pago</SectionTitle>
           {formaData.length === 0 ? (
             <p className="text-sm text-muted-foreground text-center py-8">Sin datos</p>
@@ -277,7 +277,7 @@ function FinanzasTab({ movimientos, stats, porCobrar, isDark }: {
         </div>
 
         {/* Deudores */}
-        <div className="rounded-2xl border border-border bg-card p-5">
+        <div className="rounded-2xl border-2 border-gray-200 bg-white p-5 shadow-sm">
           <SectionTitle>Cuentas por cobrar ({porCobrar.length})</SectionTitle>
           {porCobrar.length === 0 ? (
             <p className="text-sm text-muted-foreground text-center py-8">Sin deudas pendientes ✓</p>
@@ -298,7 +298,7 @@ function FinanzasTab({ movimientos, stats, porCobrar, isDark }: {
       </div>
 
       {/* Últimos movimientos */}
-      <div className="rounded-2xl border border-border bg-card overflow-hidden">
+      <div className="rounded-2xl border-2 border-gray-200 bg-white overflow-hidden shadow-sm">
         <div className="px-5 py-4 border-b border-border">
           <SectionTitle>Últimos 20 movimientos de caja</SectionTitle>
         </div>
@@ -405,7 +405,7 @@ function ContratosTab({ contratos, isDark }: { contratos: Contrato[]; isDark: bo
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
         {/* Por estado */}
-        <div className="rounded-2xl border border-border bg-card p-5">
+        <div className="rounded-2xl border-2 border-gray-200 bg-white p-5 shadow-sm">
           <SectionTitle>Contratos por estado</SectionTitle>
           <ResponsiveContainer width="100%" height={160}>
             <BarChart data={estadoCounts} layout="vertical" barSize={14}>
@@ -419,7 +419,7 @@ function ContratosTab({ contratos, isDark }: { contratos: Contrato[]; isDark: bo
         </div>
 
         {/* Por mes */}
-        <div className="rounded-2xl border border-border bg-card p-5">
+        <div className="rounded-2xl border-2 border-gray-200 bg-white p-5 shadow-sm">
           <SectionTitle>Contratos por mes (últimos 12)</SectionTitle>
           <ResponsiveContainer width="100%" height={160}>
             <LineChart data={monthlyContratos}>
@@ -434,7 +434,7 @@ function ContratosTab({ contratos, isDark }: { contratos: Contrato[]; isDark: bo
       </div>
 
       {/* Table */}
-      <div className="rounded-2xl border border-border bg-card overflow-hidden">
+      <div className="rounded-2xl border-2 border-gray-200 bg-white overflow-hidden shadow-sm">
         <div className="px-5 py-4 border-b border-border flex flex-wrap gap-2 items-center">
           <SectionTitle>Listado de contratos</SectionTitle>
           <div className="flex gap-2 ml-auto flex-wrap">
@@ -553,7 +553,7 @@ function ClientesTab({ clientes, contratos, porCobrar, isDark }: {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
         {/* Top por contratos */}
-        <div className="rounded-2xl border border-border bg-card p-5">
+        <div className="rounded-2xl border-2 border-gray-200 bg-white p-5 shadow-sm">
           <SectionTitle>Top 10 clientes por contratos</SectionTitle>
           <ResponsiveContainer width="100%" height={200}>
             <BarChart data={topClientes} layout="vertical" barSize={14}>
@@ -567,7 +567,7 @@ function ClientesTab({ clientes, contratos, porCobrar, isDark }: {
         </div>
 
         {/* Top por monto cobrado */}
-        <div className="rounded-2xl border border-border bg-card p-5">
+        <div className="rounded-2xl border-2 border-gray-200 bg-white p-5 shadow-sm">
           <SectionTitle>Top clientes por monto cobrado</SectionTitle>
           <div className="space-y-2 mt-1 max-h-[200px] overflow-y-auto pr-1">
             {clienteMontos.length === 0 ? (
@@ -595,7 +595,7 @@ function ClientesTab({ clientes, contratos, porCobrar, isDark }: {
 
       {/* Deudores detail */}
       {porCobrar.length > 0 && (
-        <div className="rounded-2xl border border-border bg-card overflow-hidden">
+        <div className="rounded-2xl border-2 border-gray-200 bg-white overflow-hidden shadow-sm">
           <div className="px-5 py-4 border-b border-border">
             <SectionTitle>Detalle de cuentas por cobrar</SectionTitle>
           </div>
@@ -630,7 +630,7 @@ function ClientesTab({ clientes, contratos, porCobrar, isDark }: {
       )}
 
       {/* All clients table */}
-      <div className="rounded-2xl border border-border bg-card overflow-hidden">
+      <div className="rounded-2xl border-2 border-gray-200 bg-white overflow-hidden shadow-sm">
         <div className="px-5 py-4 border-b border-border">
           <SectionTitle>Directorio de clientes ({clientes.length})</SectionTitle>
         </div>
@@ -712,7 +712,7 @@ function InventarioTab({ inventario, garantias, isDark }: {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
         {/* Donut estado */}
-        <div className="rounded-2xl border border-border bg-card p-5">
+        <div className="rounded-2xl border-2 border-gray-200 bg-white p-5 shadow-sm">
           <SectionTitle>Estado del inventario total</SectionTitle>
           {donutData.length === 0 ? (
             <p className="text-sm text-muted-foreground text-center py-8">Sin inventario</p>
@@ -741,7 +741,7 @@ function InventarioTab({ inventario, garantias, isDark }: {
         </div>
 
         {/* Por sucursal */}
-        <div className="rounded-2xl border border-border bg-card p-5">
+        <div className="rounded-2xl border-2 border-gray-200 bg-white p-5 shadow-sm">
           <SectionTitle>Disponible vs alquilado por sucursal</SectionTitle>
           {branchData.length === 0 ? (
             <p className="text-sm text-muted-foreground text-center py-8">Sin sucursales</p>
@@ -762,7 +762,7 @@ function InventarioTab({ inventario, garantias, isDark }: {
       </div>
 
       {/* Branch detail */}
-      <div className="rounded-2xl border border-border bg-card overflow-hidden">
+      <div className="rounded-2xl border-2 border-gray-200 bg-white overflow-hidden shadow-sm">
         <div className="px-5 py-4 border-b border-border">
           <SectionTitle>Detalle por sucursal</SectionTitle>
         </div>
