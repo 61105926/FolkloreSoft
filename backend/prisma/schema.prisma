@@ -91,7 +91,7 @@ model Conjunto {
 
 model VariacionConjunto {
   id               Int               @id @default(autoincrement())
-  codigo_variacion String            @unique
+  codigo_variacion String
   nombre_variacion String
   talla            String?
   color            String?
@@ -105,6 +105,8 @@ model VariacionConjunto {
   conjunto         Conjunto          @relation(fields: [conjuntoId], references: [id], onDelete: Cascade)
   contratoPrendas  ContratoPrenda[]
   movimientosStock MovimientoStock[]
+
+  @@unique([conjuntoId, codigo_variacion])
 }
 
 model Componente {

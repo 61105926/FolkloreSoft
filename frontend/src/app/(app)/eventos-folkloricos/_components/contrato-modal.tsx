@@ -575,9 +575,13 @@ export function ContratoModal({
     [prendas]
   );
   const totalFinal = overrideEnabled && totalOverride ? parseFloat(totalOverride) : totalPrendas;
+  // DIRECTO + forma_pago = auto-paid in full on creation
+  const directoAutoPago = !isEdit && tipo === "DIRECTO" && !!formaPago;
   const deuda = isEdit
     ? totalFinal - parseFloat(totalPagado || "0")
-    : totalFinal - parseFloat(anticipo || "0");
+    : directoAutoPago
+      ? 0
+      : totalFinal - parseFloat(anticipo || "0");
 
   const filteredConjuntos = useMemo(() => {
     const q = catalogSearch.toLowerCase().trim();
@@ -1615,16 +1619,23 @@ export function ContratoModal({
                       <span className="text-sm text-muted-foreground">{formatBs(parseFloat(anticipo || "0"))}</span>
                     </div>
                   )}
-                  <div className="flex items-center justify-between px-4 py-2.5 bg-emerald-500/5">
-                    <span className="text-xs font-semibold text-emerald-700">Cobrado en caja</span>
-                    <span className="text-sm font-bold text-emerald-600">{formatBs(parseFloat(totalPagado || "0"))}</span>
-                  </div>
+                  {directoAutoPago ? (
+                    <div className="flex items-center justify-between px-4 py-2.5 bg-emerald-500/10">
+                      <span className="text-xs font-semibold text-emerald-700">Se registrará en caja</span>
+                      <span className="text-sm font-bold text-emerald-600">{formatBs(totalFinal)}</span>
+                    </div>
+                  ) : (
+                    <div className="flex items-center justify-between px-4 py-2.5 bg-emerald-500/5">
+                      <span className="text-xs font-semibold text-emerald-700">Cobrado en caja</span>
+                      <span className="text-sm font-bold text-emerald-600">{formatBs(parseFloat(totalPagado || "0"))}</span>
+                    </div>
+                  )}
                   {deuda > 0.01 ? (
                     <div className="flex items-center justify-between px-4 py-2.5 bg-crimson/5">
                       <span className="text-xs font-semibold text-crimson">Pendiente</span>
                       <span className="text-base font-bold text-crimson">{formatBs(deuda)}</span>
                     </div>
-                  ) : parseFloat(totalPagado || "0") > 0 ? (
+                  ) : directoAutoPago || parseFloat(totalPagado || "0") > 0 ? (
                     <div className="flex items-center gap-2 px-4 py-2.5 bg-emerald-500/5">
                       <svg className="h-3.5 w-3.5 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                       <span className="text-xs font-semibold text-emerald-600">Pagado completo</span>

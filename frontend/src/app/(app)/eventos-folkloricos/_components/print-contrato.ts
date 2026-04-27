@@ -68,14 +68,10 @@ export function imprimirContrato(c: Contrato) {
 
   <!-- ENCABEZADO -->
   <div class="center" style="margin-bottom:4px">
-    <div style="font-size:16px;font-weight:900;letter-spacing:0.05em">FOLCKLORE Bolivia</div>
-    <div style="font-size:10px;font-weight:900">Alquiler de trajes folkloricos</div>
-    ${c.sucursal ? `
-      <div style="font-size:10px;font-weight:900;margin-top:2px">${c.sucursal.nombre}${c.sucursal.ciudad ? ` · ${c.sucursal.ciudad}` : ""}</div>
-      ${c.sucursal.direccion ? `<div style="font-size:10px;font-weight:900">${c.sucursal.direccion}</div>` : ""}
-      ${c.sucursal.telefono  ? `<div style="font-size:10px;font-weight:900">Tel: ${c.sucursal.telefono}</div>` : ""}
-      ${c.sucursal.email     ? `<div style="font-size:10px;font-weight:900">${c.sucursal.email}</div>` : ""}
-    ` : ""}
+    <div style="font-size:16px;font-weight:900;letter-spacing:0.05em">${c.sucursal?.nombre ?? "DANZA CON ALTURA"}</div>
+    ${c.sucursal?.direccion ? `<div style="font-size:10px;font-weight:900">${c.sucursal.direccion}</div>` : `<div style="font-size:10px;font-weight:900">CALLE LOS ANDES #1090</div>`}
+    ${c.sucursal?.telefono  ? `<div style="font-size:10px;font-weight:900">Tel: ${c.sucursal.telefono}</div>` : `<div style="font-size:10px;font-weight:900">Tel: 75804700</div>`}
+    ${c.sucursal?.email     ? `<div style="font-size:10px;font-weight:900">${c.sucursal.email}</div>` : ""}
   </div>
   <hr class="divider">
   <div class="center" style="font-size:13px;font-weight:900;letter-spacing:0.06em;text-transform:uppercase;margin:5px 0">
@@ -146,7 +142,7 @@ export function imprimirContrato(c: Contrato) {
     ${c.tipo === "RESERVA" ? row("Anticipo pactado", `Bs. ${parseFloat(c.anticipo).toFixed(2)}`) : ""}
     ${row("Total pagado",    `Bs. ${parseFloat(c.total_pagado).toFixed(2)}`)}
     ${c.forma_pago ? row("Forma de pago", c.forma_pago) : ""}
-    ${row("Saldo pendiente", `Bs. ${saldo}`, true, parseFloat(saldo) > 0 ? "#c00" : "#080")}
+    ${row("Saldo pendiente", `Bs. ${saldo}`, true)}
   </tbody></table>
 
   ${c.observaciones || c.condiciones ? `

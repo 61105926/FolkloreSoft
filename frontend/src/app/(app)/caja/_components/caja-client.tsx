@@ -590,11 +590,12 @@ function calcTotalesCaja(movimientos: MovimientoCaja[]) {
 }
 
 function PrintReport({
-  movimientos, fechaDesde, fechaHasta,
+  movimientos, fechaDesde, fechaHasta, sucursal,
 }: {
   movimientos: MovimientoCaja[];
   fechaDesde: string;
   fechaHasta: string;
+  sucursal?: SucursalInfo;
 }) {
   const { ganancia, garantia, egresos } = calcTotalesCaja(movimientos);
   const balanceReal = ganancia - egresos;
@@ -644,8 +645,9 @@ function PrintReport({
     </head><body>
 
     <div class="center">
-      <div style="font-size:14px;font-weight:900;letter-spacing:0.05em">FOLCKLORE Bolivia</div>
-      <div style="font-size:9px">Alquiler de trajes folklóricos</div>
+      <div style="font-size:16px;font-weight:900;letter-spacing:0.05em">${sucursal?.nombre ?? "DANZA CON ALTURA"}</div>
+      ${sucursal?.direccion ? `<div style="font-size:10px;font-weight:900">${sucursal.direccion}</div>` : `<div style="font-size:10px;font-weight:900">CALLE LOS ANDES #1090</div>`}
+      ${sucursal?.telefono  ? `<div style="font-size:10px;font-weight:900">Tel: ${sucursal.telefono}</div>` : `<div style="font-size:10px;font-weight:900">Tel: 75804700</div>`}
     </div>
     <hr class="divider">
     <div class="center" style="font-size:11px;font-weight:900;text-transform:uppercase;letter-spacing:0.06em;margin:4px 0">
@@ -719,6 +721,8 @@ export interface CurrentUser {
   sucursal?: { id: number; nombre: string; ciudad: string } | null;
 }
 
+type SucursalInfo = { nombre: string; ciudad: string; direccion: string | null; telefono: string | null; email: string | null } | null;
+
 interface Props {
   initialMovimientos: MovimientoCaja[];
   initialStats: CajaStats;
@@ -726,9 +730,10 @@ interface Props {
   token: string;
   backendUrl: string;
   currentUser?: CurrentUser | null;
+  sucursal?: SucursalInfo;
 }
 
-export function CajaClient({ initialMovimientos, initialStats, initialCuentas, token, backendUrl, currentUser }: Props) {
+export function CajaClient({ initialMovimientos, initialStats, initialCuentas, token, backendUrl, currentUser, sucursal }: Props) {
   const [movimientos, setMovimientos] = useState<MovimientoCaja[]>(initialMovimientos);
   const [stats,       setStats]       = useState<CajaStats>(initialStats);
   const [cuentas,     setCuentas]     = useState<CuentaPorCobrar[]>(initialCuentas);
@@ -848,7 +853,7 @@ export function CajaClient({ initialMovimientos, initialStats, initialCuentas, t
             </p>
           </div>
           <div className="flex items-center gap-2 flex-wrap">
-            <PrintReport movimientos={filtered} fechaDesde={fechaDesde} fechaHasta={fechaHasta} />
+            <PrintReport movimientos={filtered} fechaDesde={fechaDesde} fechaHasta={fechaHasta} sucursal={sucursal} />
             <button
               onClick={openEgreso}
               className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-red-300/50 bg-red-500/5 text-red-700 text-sm font-semibold hover:bg-red-500/10 transition-colors"

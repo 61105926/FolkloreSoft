@@ -135,7 +135,6 @@ export class ContratosService {
     const codigo = await this.generarCodigo();
     // Never trust total_pagado from frontend — derive it from anticipo
     const { prendas, garantias, ...rest } = data;
-    const anticipoVal = Number(rest.anticipo ?? 0);
 
     const prendaCreate = (prendas ?? []).map((p) => {
       const total =
@@ -158,14 +157,25 @@ export class ContratosService {
     });
 
     const totalAuto = prendaCreate.reduce((s, p) => s + Number(p.subtotal), 0);
+    const totalFinal = data.total ?? totalAuto;
+
+    // For DIRECTO contracts with a payment method, auto-pay the full amount and confirm
+    const isDirecto = (data.tipo ?? 'DIRECTO') === 'DIRECTO';
+    const anticipoVal = isDirecto && data.forma_pago
+      ? totalFinal
+      : Number(rest.anticipo ?? 0);
+    const estadoInicial = isDirecto && data.forma_pago
+      ? 'CONFIRMADO'
+      : 'RESERVADO';
 
     const contrato = await this.prisma.contratoAlquiler.create({
       data: {
         ...rest,
         codigo,
+        estado: estadoInicial as any,
         fecha_entrega: new Date(data.fecha_entrega),
         fecha_devolucion: new Date(data.fecha_devolucion),
-        total: data.total ?? totalAuto,
+        total: totalFinal,
         total_pagado: anticipoVal,
         sucursalId: actor?.sucursalId ?? null,
         prendas: prendaCreate.length > 0 ? { create: prendaCreate } : undefined,
@@ -175,24 +185,29 @@ export class ContratosService {
     });
     const userName = actor?.nombre ?? 'Sistema';
     await this.log(contrato.id, 'CREADO', `Contrato ${contrato.codigo} creado — por ${userName}`);
+    if (isDirecto && data.forma_pago) {
+      await this.log(contrato.id, 'CONFIRMADO', `Contrato directo confirmado automáticamente`);
+    }
 
     const clienteNombre = (contrato.cliente as { nombre: string }).nombre;
 
-    // Auto-register anticipo in caja
+    // Auto-register payment in caja
     if (anticipoVal > 0) {
       await this.prisma.movimientoCaja.create({
         data: {
           tipo: 'INGRESO',
-          concepto: 'ANTICIPO_CONTRATO',
+          concepto: isDirecto ? 'PAGO_SALDO_CONTRATO' : 'ANTICIPO_CONTRATO',
           monto: anticipoVal,
-          descripcion: `Anticipo — ${contrato.codigo} (${clienteNombre})`,
+          descripcion: isDirecto
+            ? `Pago total — ${contrato.codigo} (${clienteNombre})`
+            : `Anticipo — ${contrato.codigo} (${clienteNombre})`,
           forma_pago: data.forma_pago ?? 'EFECTIVO',
           contratoId: contrato.id,
           userId: actor?.id ?? null,
         },
       });
       await this.log(contrato.id, 'PAGO_REGISTRADO',
-        `Anticipo de Bs. ${anticipoVal.toFixed(2)} registrado en caja (${data.forma_pago ?? 'EFECTIVO'}) — cobrado por ${userName}`);
+        `Bs. ${anticipoVal.toFixed(2)} registrado en caja (${data.forma_pago ?? 'EFECTIVO'}) — cobrado por ${userName}`);
     }
 
     // Auto-register cash guarantees in caja
