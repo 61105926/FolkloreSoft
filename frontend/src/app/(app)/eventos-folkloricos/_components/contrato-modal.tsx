@@ -476,7 +476,15 @@ export function ContratoModal({
     () => (contractGarantias.find((g) => g.tipo === "EFECTIVO")?.descripcion as FormaPago | undefined) ?? "EFECTIVO"
   );
   const [gCarnet, setGCarnet] = useState(() => contractGarantias.some((g) => g.tipo === "DOCUMENTO_CARNET"));
+  const [gCarnetMonto, setGCarnetMonto] = useState(() => {
+    const g = contractGarantias.find((g) => g.tipo === "DOCUMENTO_CARNET");
+    return g?.valor ? String(parseFloat(String(g.valor))) : "";
+  });
   const [gCarta, setGCarta] = useState(() => contractGarantias.some((g) => g.tipo === "CARTA_INSTITUCIONAL"));
+  const [gCartaMonto, setGCartaMonto] = useState(() => {
+    const g = contractGarantias.find((g) => g.tipo === "CARTA_INSTITUCIONAL");
+    return g?.valor ? String(parseFloat(String(g.valor))) : "";
+  });
 
   // ── Live participants + contract garantías (edit mode) ─────────────────────
   const [liveParticipantes, setLiveParticipantes] = useState<ContratoParticipante[]>(
@@ -892,8 +900,8 @@ export function ContratoModal({
         const activePrendas = prendas.filter((p) => !p.deleted && p.modelo.trim());
         const garantiasToSubmit = [
           ...(gEfectivo ? [{ tipo: "EFECTIVO" as TipoGarantia, valor: gEfectivoMonto ? parseFloat(gEfectivoMonto) : undefined, descripcion: gEfectivoFormaPago || undefined }] : []),
-          ...(gCarnet ? [{ tipo: "DOCUMENTO_CARNET" as TipoGarantia }] : []),
-          ...(gCarta  ? [{ tipo: "CARTA_INSTITUCIONAL" as TipoGarantia }] : []),
+          ...(gCarnet ? [{ tipo: "DOCUMENTO_CARNET" as TipoGarantia, valor: gCarnetMonto ? parseFloat(gCarnetMonto) : undefined }] : []),
+          ...(gCarta  ? [{ tipo: "CARTA_INSTITUCIONAL" as TipoGarantia, valor: gCartaMonto ? parseFloat(gCartaMonto) : undefined }] : []),
         ];
 
         const res = await fetch(`${backendUrl}/contratos`, {
@@ -1527,41 +1535,127 @@ export function ContratoModal({
 
                   {/* ── Documento / Carnet ──────────────────────────────────── */}
                   {(() => {
-                    const checked = isEdit ? liveGarantias.some((g) => g.tipo === "DOCUMENTO_CARNET") : gCarnet;
+                    const liveCarnet = isEdit ? liveGarantias.find((g) => g.tipo === "DOCUMENTO_CARNET") : undefined;
+                    const checked = isEdit ? (!!liveCarnet || gCarnet) : gCarnet;
                     return (
-                      <label className={`flex items-center gap-3 cursor-pointer select-none rounded-xl border p-3 transition-colors ${checked ? "border-amber-300 bg-amber-50/40 dark:bg-amber-900/10" : "border-border hover:bg-muted/30"}`}>
-                        <input
-                          type="checkbox"
-                          className="w-4 h-4 accent-amber-500 cursor-pointer"
-                          checked={checked}
-                          disabled={savingGarantia}
-                          onChange={async () => {
-                            if (isEdit) await toggleContractGarantia("DOCUMENTO_CARNET");
-                            else setGCarnet((v) => !v);
-                          }}
-                        />
-                        <span className="text-sm font-medium">Documento / Carnet</span>
-                      </label>
+                      <div className={`rounded-xl border p-3 space-y-2.5 transition-colors ${checked ? "border-amber-300 bg-amber-50/40 dark:bg-amber-900/10" : "border-border"}`}>
+                        <label className="flex items-center gap-3 cursor-pointer select-none">
+                          <input
+                            type="checkbox"
+                            className="w-4 h-4 accent-amber-500 cursor-pointer"
+                            checked={checked}
+                            disabled={savingGarantia}
+                            onChange={async (e) => {
+                              if (isEdit) {
+                                if (!e.target.checked && liveCarnet) {
+                                  await toggleContractGarantia("DOCUMENTO_CARNET");
+                                } else if (e.target.checked && !liveCarnet) {
+                                  setGCarnet(true);
+                                } else if (!e.target.checked) {
+                                  setGCarnet(false); setGCarnetMonto("");
+                                }
+                              } else {
+                                setGCarnet(e.target.checked);
+                                if (!e.target.checked) setGCarnetMonto("");
+                              }
+                            }}
+                          />
+                          <span className="text-sm font-medium">Documento / Carnet</span>
+                          {liveCarnet?.valor && (
+                            <span className="ml-auto text-sm font-bold text-coca">{formatBs(liveCarnet.valor)}</span>
+                          )}
+                        </label>
+                        {checked && (
+                          <div className="pl-7 space-y-2">
+                            <div className="space-y-1">
+                              <label className="text-[10px] text-muted-foreground font-medium uppercase tracking-wide">Cantidad (Bs.)</label>
+                              <input
+                                type="number" min="0"
+                                className={`${inp} text-sm w-full`}
+                                placeholder="0"
+                                value={liveCarnet?.valor ? String(parseFloat(String(liveCarnet.valor))) : gCarnetMonto}
+                                readOnly={!!liveCarnet}
+                                onChange={(e) => setGCarnetMonto(e.target.value)}
+                              />
+                            </div>
+                            {isEdit && !liveCarnet && (
+                              <button
+                                onClick={async () => {
+                                  await toggleContractGarantia("DOCUMENTO_CARNET", { valor: gCarnetMonto ? parseFloat(gCarnetMonto) : undefined });
+                                  setGCarnet(false); setGCarnetMonto("");
+                                }}
+                                disabled={savingGarantia}
+                                className="w-full py-1.5 rounded-xl bg-amber-500/20 text-amber-700 text-xs font-bold hover:bg-amber-500/30 transition-colors disabled:opacity-50"
+                              >
+                                {savingGarantia ? "Guardando…" : "Guardar garantía"}
+                              </button>
+                            )}
+                          </div>
+                        )}
+                      </div>
                     );
                   })()}
 
                   {/* ── Carta institucional ─────────────────────────────────── */}
                   {(() => {
-                    const checked = isEdit ? liveGarantias.some((g) => g.tipo === "CARTA_INSTITUCIONAL") : gCarta;
+                    const liveCarta = isEdit ? liveGarantias.find((g) => g.tipo === "CARTA_INSTITUCIONAL") : undefined;
+                    const checked = isEdit ? (!!liveCarta || gCarta) : gCarta;
                     return (
-                      <label className={`flex items-center gap-3 cursor-pointer select-none rounded-xl border p-3 transition-colors ${checked ? "border-amber-300 bg-amber-50/40 dark:bg-amber-900/10" : "border-border hover:bg-muted/30"}`}>
-                        <input
-                          type="checkbox"
-                          className="w-4 h-4 accent-amber-500 cursor-pointer"
-                          checked={checked}
-                          disabled={savingGarantia}
-                          onChange={async () => {
-                            if (isEdit) await toggleContractGarantia("CARTA_INSTITUCIONAL");
-                            else setGCarta((v) => !v);
-                          }}
-                        />
-                        <span className="text-sm font-medium">Carta institucional</span>
-                      </label>
+                      <div className={`rounded-xl border p-3 space-y-2.5 transition-colors ${checked ? "border-amber-300 bg-amber-50/40 dark:bg-amber-900/10" : "border-border"}`}>
+                        <label className="flex items-center gap-3 cursor-pointer select-none">
+                          <input
+                            type="checkbox"
+                            className="w-4 h-4 accent-amber-500 cursor-pointer"
+                            checked={checked}
+                            disabled={savingGarantia}
+                            onChange={async (e) => {
+                              if (isEdit) {
+                                if (!e.target.checked && liveCarta) {
+                                  await toggleContractGarantia("CARTA_INSTITUCIONAL");
+                                } else if (e.target.checked && !liveCarta) {
+                                  setGCarta(true);
+                                } else if (!e.target.checked) {
+                                  setGCarta(false); setGCartaMonto("");
+                                }
+                              } else {
+                                setGCarta(e.target.checked);
+                                if (!e.target.checked) setGCartaMonto("");
+                              }
+                            }}
+                          />
+                          <span className="text-sm font-medium">Carta institucional</span>
+                          {liveCarta?.valor && (
+                            <span className="ml-auto text-sm font-bold text-coca">{formatBs(liveCarta.valor)}</span>
+                          )}
+                        </label>
+                        {checked && (
+                          <div className="pl-7 space-y-2">
+                            <div className="space-y-1">
+                              <label className="text-[10px] text-muted-foreground font-medium uppercase tracking-wide">Cantidad (Bs.)</label>
+                              <input
+                                type="number" min="0"
+                                className={`${inp} text-sm w-full`}
+                                placeholder="0"
+                                value={liveCarta?.valor ? String(parseFloat(String(liveCarta.valor))) : gCartaMonto}
+                                readOnly={!!liveCarta}
+                                onChange={(e) => setGCartaMonto(e.target.value)}
+                              />
+                            </div>
+                            {isEdit && !liveCarta && (
+                              <button
+                                onClick={async () => {
+                                  await toggleContractGarantia("CARTA_INSTITUCIONAL", { valor: gCartaMonto ? parseFloat(gCartaMonto) : undefined });
+                                  setGCarta(false); setGCartaMonto("");
+                                }}
+                                disabled={savingGarantia}
+                                className="w-full py-1.5 rounded-xl bg-amber-500/20 text-amber-700 text-xs font-bold hover:bg-amber-500/30 transition-colors disabled:opacity-50"
+                              >
+                                {savingGarantia ? "Guardando…" : "Guardar garantía"}
+                              </button>
+                            )}
+                          </div>
+                        )}
+                      </div>
                     );
                   })()}
                 </div>

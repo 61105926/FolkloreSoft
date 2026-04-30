@@ -14,7 +14,8 @@ export type EstadoContrato =
 export type ConceptoCaja =
   | "ANTICIPO_CONTRATO" | "PAGO_SALDO_CONTRATO" | "DEUDA_COBRADA"
   | "GARANTIA_EFECTIVO"
-  | "DEVOLUCION_GARANTIA" | "GASTO_OPERATIVO" | "OTRO_INGRESO" | "OTRO_EGRESO";
+  | "DEVOLUCION_GARANTIA" | "GASTO_OPERATIVO" | "OTRO_INGRESO" | "OTRO_EGRESO"
+  | "VENTA_COBRO" | "VENTA_DEVOLUCION";
 
 export interface MovimientoCaja {
   id: number;
@@ -59,6 +60,8 @@ const CONCEPTO_META: Record<ConceptoCaja, { label: string; tipo: TipoMovimiento;
   DEVOLUCION_GARANTIA:  { label: "Dev. garantía",        tipo: "EGRESO",  color: "bg-orange-500/10 text-orange-700 border-orange-300/40" },
   GASTO_OPERATIVO:      { label: "Gasto operativo",      tipo: "EGRESO",  color: "bg-red-500/10 text-red-700 border-red-300/40" },
   OTRO_EGRESO:          { label: "Otro egreso",          tipo: "EGRESO",  color: "bg-red-500/10 text-red-700 border-red-300/40" },
+  VENTA_COBRO:          { label: "Cobro venta",          tipo: "INGRESO", color: "bg-violet-500/10 text-violet-700 border-violet-300/40" },
+  VENTA_DEVOLUCION:     { label: "Dev. venta",           tipo: "EGRESO",  color: "bg-pink-500/10 text-pink-700 border-pink-300/40" },
 };
 
 const FORMA_PAGO_LABEL: Record<FormaPago, string> = {
@@ -362,48 +365,76 @@ function RegistrarMovimientoModal({
 
 // ── Recibo Modal (comprobante individual) ─────────────────────────────────────
 
-function ReciboModal({ m, onClose }: { m: MovimientoCaja; onClose: () => void }) {
+type SucursalInfoLocal = { nombre: string; ciudad?: string; direccion: string | null; telefono: string | null; email?: string | null } | null | undefined;
+
+function row(label: string, value: string, big = false, color = "") {
+  return `<tr>
+    <td style="padding:4px 5px;border-bottom:1px dashed #000;font-size:${big ? "11" : "10"}px;font-weight:900">${label}</td>
+    <td style="padding:4px 5px;border-bottom:1px dashed #000;text-align:right;font-size:${big ? "12" : "11"}px;font-weight:900${color ? `;color:${color}` : ""}">${value}</td>
+  </tr>`;
+}
+
+function ReciboModal({ m, onClose, sucursal }: { m: MovimientoCaja; onClose: () => void; sucursal?: SucursalInfoLocal }) {
   const meta = CONCEPTO_META[m.concepto];
   const isIngreso = m.tipo === "INGRESO";
-  const fecha = new Date(m.createdAt);
 
   const handlePrint = () => {
-    const win = window.open("", "_blank", "width=400,height=600");
+    const win = window.open("", "_blank", "width=420,height=800");
     if (!win) return;
-    win.document.write(`<!DOCTYPE html><html><head>
-      <title>Comprobante #${m.id}</title>
-      <style>
-        body { font-family: Arial, sans-serif; padding: 24px; font-size: 13px; color: #111; }
-        .center { text-align: center; }
-        .row { display: flex; justify-content: space-between; margin: 6px 0; border-bottom: 1px dashed #ddd; padding-bottom: 4px; }
-        .row:last-child { border-bottom: none; }
-        .label { color: #666; }
-        .amount { font-size: 22px; font-weight: bold; text-align: center; margin: 12px 0; }
-        .ingreso { color: #16a34a; } .egreso { color: #dc2626; }
-        h2 { margin: 0 0 4px 0; }
-        .hr { border: none; border-top: 2px dashed #aaa; margin: 12px 0; }
-        .footer { font-size: 10px; color: #999; text-align: center; margin-top: 16px; }
-      </style>
-    </head><body>
-      <div class="center">
-        <h2>FOLCKLORE</h2>
-        <p style="margin:0;color:#666;font-size:11px">Comprobante de ${isIngreso ? "Ingreso" : "Egreso"}</p>
-      </div>
-      <hr class="hr" />
-      <div class="row"><span class="label">N° comprobante</span><span>#${m.id}</span></div>
-      <div class="row"><span class="label">Fecha</span><span>${fecha.toLocaleString("es-BO")}</span></div>
-      <div class="row"><span class="label">Concepto</span><span>${meta.label}</span></div>
-      <div class="row"><span class="label">Forma de pago</span><span>${FORMA_PAGO_LABEL[m.forma_pago]}</span></div>
-      ${m.referencia ? `<div class="row"><span class="label">Referencia</span><span>${m.referencia}</span></div>` : ""}
-      ${m.contrato ? `<div class="row"><span class="label">Contrato</span><span>${m.contrato.codigo} — ${m.contrato.cliente.nombre}</span></div>` : ""}
-      ${m.descripcion ? `<div class="row"><span class="label">Descripción</span><span>${m.descripcion}</span></div>` : ""}
-      <hr class="hr" />
-      <div class="amount ${isIngreso ? "ingreso" : "egreso"}">${isIngreso ? "+" : "−"}${formatBs(Number(m.monto))}</div>
-      <hr class="hr" />
-      <div class="footer">Generado el ${new Date().toLocaleString("es-BO")}</div>
-    </body></html>`);
+    const montoColor = isIngreso ? "#16a34a" : "#dc2626";
+    win.document.write(`<!DOCTYPE html><html lang="es"><head><meta charset="utf-8">
+  <title>Comprobante Caja #${m.id}</title>
+  <style>
+    @page { size: 80mm auto; margin: 4mm; }
+    * { box-sizing: border-box; }
+    body { font-family: Arial, sans-serif; font-size: 11px; font-weight: 900; color: #000; margin: 0; padding: 0; width: 72mm; }
+    h2 { font-size: 12px; font-weight: 900; margin: 9px 0 3px; border-bottom: 2px solid #000; padding-bottom: 3px; text-transform: uppercase; letter-spacing: 0.05em; }
+    table { width: 100%; border-collapse: collapse; }
+    td, th { font-weight: 900; }
+    .center { text-align: center; }
+    .divider { border: none; border-top: 2px dashed #000; margin: 6px 0; }
+    @media screen { body { width: 80mm; padding: 8px; border: 1px dashed #ccc; margin: 16px auto; } }
+  </style>
+  </head><body>
+
+  <div class="center" style="margin-bottom:4px">
+    <div style="font-size:16px;font-weight:900;letter-spacing:0.05em">${sucursal?.nombre ?? "DANZA CON ALTURA"}</div>
+    ${sucursal?.direccion ? `<div style="font-size:10px;font-weight:900">${sucursal.direccion}</div>` : `<div style="font-size:10px;font-weight:900">CALLE LOS ANDES #1090</div>`}
+    ${sucursal?.telefono  ? `<div style="font-size:10px;font-weight:900">Tel: ${sucursal.telefono}</div>` : `<div style="font-size:10px;font-weight:900">Tel: 75804700</div>`}
+  </div>
+  <hr class="divider">
+  <div class="center" style="font-size:13px;font-weight:900;letter-spacing:0.06em;text-transform:uppercase;margin:5px 0">
+    Comprobante de Caja
+  </div>
+  <hr class="divider">
+
+  <h2>Detalle</h2>
+  <table><tbody>
+    ${row("N° Comprobante", `#${m.id}`, true)}
+    ${row("Fecha", new Date(m.createdAt).toLocaleString("es-BO"))}
+    ${row("Tipo", isIngreso ? "Ingreso" : "Egreso")}
+    ${row("Concepto", meta.label)}
+    ${row("Forma de pago", FORMA_PAGO_LABEL[m.forma_pago])}
+    ${m.referencia ? row("Referencia", m.referencia) : ""}
+    ${m.contrato ? row("Contrato", `${m.contrato.codigo}`) : ""}
+    ${m.contrato ? row("Cliente", m.contrato.cliente.nombre) : ""}
+    ${m.descripcion ? row("Descripción", m.descripcion) : ""}
+  </tbody></table>
+
+  <h2>Monto</h2>
+  <table><tbody>
+    ${row(isIngreso ? "Ingreso" : "Egreso", `${isIngreso ? "+" : "−"}${formatBs(Number(m.monto))}`, true, montoColor)}
+  </tbody></table>
+
+  <hr class="divider" style="margin-top:14px">
+  <div class="center" style="margin-top:8px;font-size:9px;font-weight:900">
+    Generado el ${new Date().toLocaleString("es-BO")}
+  </div>
+
+  </body></html>`);
     win.document.close();
-    win.print();
+    win.focus();
+    setTimeout(() => win.print(), 400);
   };
 
   return (
@@ -1013,7 +1044,7 @@ export function CajaClient({ initialMovimientos, initialStats, initialCuentas, t
           onSaved={handleSaved}
         />
       )}
-      {reciboM && <ReciboModal m={reciboM} onClose={() => setReciboM(null)} />}
+      {reciboM && <ReciboModal m={reciboM} onClose={() => setReciboM(null)} sucursal={sucursal} />}
     </>
   );
 }

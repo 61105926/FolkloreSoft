@@ -131,7 +131,11 @@ export function imprimirContrato(c: Contrato) {
   <!-- GARANTIAS -->
   <h2>Garantias</h2>
   <table><tbody>
-    ${garantiasOtras.map((g) => row(g.tipo.replace(/_/g, " "), g.descripcion ?? "-")).join("")}
+    ${garantiasOtras.map((g) => {
+      const label = g.tipo === "DOCUMENTO_CARNET" ? "Documento / Carnet" : g.tipo === "CARTA_INSTITUCIONAL" ? "Carta institucional" : g.tipo.replace(/_/g, " ");
+      const valor = g.valor ? `Bs. ${parseFloat(String(g.valor)).toFixed(2)}` : (g.descripcion ?? "-");
+      return row(label, valor);
+    }).join("")}
     ${garantiaEf > 0 ? row("Efectivo (a devolver)", `Bs. ${garantiaEf.toFixed(2)}`) : ""}
   </tbody></table>` : ""}
 
@@ -145,11 +149,16 @@ export function imprimirContrato(c: Contrato) {
     ${row("Saldo pendiente", `Bs. ${saldo}`, true)}
   </tbody></table>
 
-  ${c.observaciones || c.condiciones ? `
+  ${c.observaciones ? `
   <h2>Observaciones</h2>
   <div style="font-size:10px;font-weight:900;line-height:1.4">
-    ${c.observaciones ? `<p style="margin:2px 0">${c.observaciones}</p>` : ""}
-    ${c.condiciones   ? `<p style="margin:2px 0">${c.condiciones}</p>`   : ""}
+    <p style="margin:2px 0">${c.observaciones}</p>
+  </div>` : ""}
+
+  ${c.condiciones ? `
+  <h2>Condiciones</h2>
+  <div style="font-size:10px;font-weight:900;line-height:1.4">
+    <p style="margin:2px 0">${c.condiciones}</p>
   </div>` : ""}
 
   <hr class="divider" style="margin-top:14px">
