@@ -25,6 +25,10 @@ export class AuthService {
       throw new UnauthorizedException('Invalid credentials');
     }
 
+    if (!user.activo) {
+      throw new UnauthorizedException('Cuenta desactivada');
+    }
+
     const passwordValid = await bcrypt.compare(password, user.password_hash);
     if (!passwordValid) {
       throw new UnauthorizedException('Invalid credentials');
@@ -53,6 +57,11 @@ export class AuthService {
     if (tokenRecord.expiresAt < new Date()) {
       await this.prisma.refreshToken.delete({ where: { id: tokenRecord.id } });
       throw new UnauthorizedException('Refresh token expired');
+    }
+
+    if (!tokenRecord.user.activo) {
+      await this.prisma.refreshToken.delete({ where: { id: tokenRecord.id } });
+      throw new UnauthorizedException('Cuenta desactivada');
     }
 
     const accessToken = this.generateAccessToken(

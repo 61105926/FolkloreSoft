@@ -13,6 +13,7 @@ const INCLUDE_FULL = {
     orderBy: { id: 'asc' as const },
   },
   movimientosCaja: { orderBy: { createdAt: 'desc' as const } },
+  movimientosStock: { select: { id: true, variacionId: true, cantidad: true } },
 } as const;
 
 const INCLUDE_LIST = {
@@ -85,18 +86,29 @@ export class VentasService {
       include: INCLUDE_FULL,
     });
 
-    const movimientos = itemsCalc
-      .filter((it: any) => it.variacionId)
-      .map((it: any) => ({
-        variacionId: it.variacionId,
-        tipo: 'VENTA' as const,
-        cantidad: -Math.abs(it.cantidad),
-        motivo: `Venta ${codigo}`,
-        userId: user.id ?? null,
-        ventaId: venta.id,
-      }));
-    if (movimientos.length) {
-      await this.prisma.movimientoStock.createMany({ data: movimientos });
+    const movimientosData: { variacionId: number; tipo: 'VENTA'; cantidad: number; motivo: string; userId: number | null; ventaId: number }[] = [];
+    for (const it of itemsCalc) {
+      let varId: number | null = it.variacionId ?? null;
+      if (!varId && it.conjuntoId) {
+        const variacion = await this.prisma.variacionConjunto.findFirst({
+          where: { conjuntoId: it.conjuntoId, activa: true },
+          select: { id: true },
+        });
+        varId = variacion?.id ?? null;
+      }
+      if (varId) {
+        movimientosData.push({
+          variacionId: varId,
+          tipo: 'VENTA',
+          cantidad: -Math.abs(it.cantidad),
+          motivo: `Venta ${codigo}`,
+          userId: user.id ?? null,
+          ventaId: venta.id,
+        });
+      }
+    }
+    if (movimientosData.length) {
+      await this.prisma.movimientoStock.createMany({ data: movimientosData });
     }
 
     return venta;
@@ -197,17 +209,17 @@ export class VentasService {
       this.prisma.venta.update({ where: { id }, data: { estado: 'CANCELADO' }, include: INCLUDE_FULL }),
     ];
 
-    // Revertir movimientos de stock de la venta
-    const itemsConVariacion = (venta.items ?? []).filter((it: any) => it.variacionId);
-    for (const it of itemsConVariacion) {
+    // Revertir exactamente los movimientos de stock registrados para esta venta
+    const movimientosVenta = (venta as any).movimientosStock as Array<{ variacionId: number; cantidad: number }> ?? [];
+    for (const mov of movimientosVenta) {
       ops.push(
         this.prisma.movimientoStock.create({
           data: {
-            variacionId: it.variacionId as number,
-            tipo: 'AJUSTE',
-            cantidad: Math.abs(it.cantidad),
+            variacionId: mov.variacionId,
+            tipo: 'AJUSTE' as const,
+            cantidad: -mov.cantidad,
             motivo: `Cancelación venta ${venta.codigo}`,
-            ventaId: id ?? undefined,
+            ventaId: id,
           },
         }),
       );
