@@ -69,7 +69,7 @@ export class VentasService {
     const desc = Number(descuento ?? 0);
     const total = Math.max(0, subtotalItems - desc);
 
-    return this.prisma.venta.create({
+    const venta = await this.prisma.venta.create({
       data: {
         codigo,
         clienteId: Number(clienteId),
@@ -84,6 +84,22 @@ export class VentasService {
       },
       include: INCLUDE_FULL,
     });
+
+    const movimientos = itemsCalc
+      .filter((it: any) => it.variacionId)
+      .map((it: any) => ({
+        variacionId: it.variacionId,
+        tipo: 'VENTA' as const,
+        cantidad: -Math.abs(it.cantidad),
+        motivo: `Venta ${codigo}`,
+        userId: user.id ?? null,
+        ventaId: venta.id,
+      }));
+    if (movimientos.length) {
+      await this.prisma.movimientoStock.createMany({ data: movimientos });
+    }
+
+    return venta;
   }
 
   async update(id: number, body: any) {
@@ -180,6 +196,22 @@ export class VentasService {
     const ops: any[] = [
       this.prisma.venta.update({ where: { id }, data: { estado: 'CANCELADO' }, include: INCLUDE_FULL }),
     ];
+
+    // Revertir movimientos de stock de la venta
+    const itemsConVariacion = (venta.items ?? []).filter((it: any) => it.variacionId);
+    for (const it of itemsConVariacion) {
+      ops.push(
+        this.prisma.movimientoStock.create({
+          data: {
+            variacionId: it.variacionId as number,
+            tipo: 'AJUSTE',
+            cantidad: Math.abs(it.cantidad),
+            motivo: `Cancelación venta ${venta.codigo}`,
+            ventaId: id ?? undefined,
+          },
+        }),
+      );
+    }
 
     // Si tiene pagos, generar egreso de devolución
     if (Number(venta.total_pagado) > 0) {

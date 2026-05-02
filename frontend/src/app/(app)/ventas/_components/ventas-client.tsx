@@ -77,51 +77,104 @@ function ItemRow({ row, conjuntos, onChange, onRemove }: {
   const subtotal = (Number(row.cantidad) || 0) * (Number(row.precio_unit) || 0);
 
   return (
-    <div className="grid grid-cols-12 gap-2 items-center py-2 border-b border-border/50 last:border-0">
-      <div className="col-span-4">
+    <div className="grid gap-2 py-3 border-b border-border/60 last:border-0" style={{ gridTemplateColumns: "1fr auto auto auto auto" }}>
+      {/* Conjunto + Variación apilados */}
+      <div className="space-y-1.5 min-w-0">
         <select
-          className={`${inp} text-xs cursor-pointer`}
+          className={`${inp} text-sm cursor-pointer`}
           value={row.conjuntoId}
           onChange={(e) => {
             const cj = conjuntos.find((c) => String(c.id) === e.target.value);
             onChange({ ...row, conjuntoId: e.target.value, variacionId: "", descripcion: cj?.nombre ?? row.descripcion, precio_unit: cj?.precio_venta ? String(parseFloat(cj.precio_venta)) : row.precio_unit });
           }}
         >
-          <option value="">— Item libre —</option>
+          <option value="">— Ítem libre —</option>
           {conjuntos.filter((c) => c.precio_venta).map((c) => (
-            <option key={c.id} value={String(c.id)}>{c.nombre} ({c.danza})</option>
+            <option key={c.id} value={String(c.id)}>{c.nombre} · {c.danza}</option>
           ))}
         </select>
-      </div>
-      <div className="col-span-1">
         {conjunto && conjunto.variaciones.length > 0 ? (
           <select
-            className={`${inp} text-xs cursor-pointer`}
+            className={`${inp} text-xs cursor-pointer text-muted-foreground`}
             value={row.variacionId}
             onChange={(e) => {
               const v = conjunto.variaciones.find((x) => String(x.id) === e.target.value);
               onChange({ ...row, variacionId: e.target.value, precio_unit: v?.precio_venta ? String(parseFloat(v.precio_venta)) : row.precio_unit });
             }}
           >
-            <option value="">Var.</option>
+            <option value="">Sin variación</option>
             {conjunto.variaciones.map((v) => (
               <option key={v.id} value={String(v.id)}>{v.nombre_variacion}{v.talla ? ` T.${v.talla}` : ""}</option>
             ))}
           </select>
-        ) : <div />}
+        ) : (
+          <input className={`${inp} text-xs`} placeholder="Descripción…" value={row.descripcion} onChange={(e) => onChange({ ...row, descripcion: e.target.value })} />
+        )}
       </div>
-      <div className="col-span-3">
-        <input className={`${inp} text-xs`} placeholder="Descripción" value={row.descripcion} onChange={(e) => onChange({ ...row, descripcion: e.target.value })} />
+      {/* Cantidad */}
+      <div className="w-16">
+        <input type="number" min="1" className={`${inp} text-center text-sm`} value={row.cantidad} onChange={(e) => onChange({ ...row, cantidad: e.target.value })} />
       </div>
-      <div className="col-span-1">
-        <input type="number" min="1" className={`${inp} text-xs text-center`} value={row.cantidad} onChange={(e) => onChange({ ...row, cantidad: e.target.value })} />
+      {/* Precio */}
+      <div className="w-24">
+        <input type="number" min="0" step="0.01" className={`${inp} text-right text-sm`} placeholder="0.00" value={row.precio_unit} onChange={(e) => onChange({ ...row, precio_unit: e.target.value })} />
       </div>
-      <div className="col-span-2">
-        <input type="number" min="0" step="0.01" className={`${inp} text-xs text-right`} placeholder="Precio" value={row.precio_unit} onChange={(e) => onChange({ ...row, precio_unit: e.target.value })} />
+      {/* Subtotal */}
+      <div className="w-24 flex items-center justify-end">
+        <span className={`text-sm font-bold ${subtotal > 0 ? "text-primary" : "text-muted-foreground/40"}`}>
+          {subtotal > 0 ? formatBs(subtotal) : "—"}
+        </span>
       </div>
-      <div className="col-span-1 flex items-center justify-between gap-1">
-        <span className="text-xs font-bold text-primary">{subtotal > 0 ? `${subtotal.toFixed(0)}` : "—"}</span>
-        <button onClick={onRemove} className="text-muted-foreground hover:text-red-500 transition-colors text-lg leading-none">×</button>
+      {/* Eliminar */}
+      <div className="flex items-center justify-center">
+        <button onClick={onRemove} className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-red-100 hover:text-red-500 text-muted-foreground/50 transition-colors">
+          <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ── NuevoClienteInline ────────────────────────────────────────────────────────
+
+function NuevoClienteInline({ token, backendUrl, onCreado, onCancel }: {
+  token: string; backendUrl: string;
+  onCreado: (c: Cliente) => void; onCancel: () => void;
+}) {
+  const [nombre, setNombre] = useState("");
+  const [celular, setCelular] = useState("");
+  const [ci, setCi] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+
+  const handleGuardar = async () => {
+    if (!nombre.trim()) { setError("El nombre es requerido"); return; }
+    setSaving(true); setError("");
+    try {
+      const res = await fetch(`${backendUrl}/ventas/clientes`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ nombre: nombre.trim(), celular: celular.trim() || undefined, ci: ci.trim() || undefined }),
+      });
+      if (!res.ok) { setError("Error al crear cliente"); return; }
+      onCreado(await res.json());
+    } finally { setSaving(false); }
+  };
+
+  return (
+    <div className="mt-2 rounded-xl border border-primary/30 bg-primary/5 p-3 space-y-2">
+      <p className="text-xs font-semibold text-primary uppercase tracking-wide">Nuevo cliente</p>
+      <input className={inp} placeholder="Nombre *" value={nombre} onChange={(e) => setNombre(e.target.value)} />
+      <div className="grid grid-cols-2 gap-2">
+        <input className={inp} placeholder="Celular" value={celular} onChange={(e) => setCelular(e.target.value)} />
+        <input className={inp} placeholder="CI" value={ci} onChange={(e) => setCi(e.target.value)} />
+      </div>
+      {error && <p className="text-xs text-red-500">{error}</p>}
+      <div className="flex gap-2 pt-1">
+        <button onClick={onCancel} className="flex-1 px-3 py-1.5 rounded-lg border border-border text-xs font-medium hover:bg-muted/60 transition-colors">Cancelar</button>
+        <button onClick={handleGuardar} disabled={saving} className="flex-1 px-3 py-1.5 rounded-lg bg-primary text-primary-foreground text-xs font-semibold hover:bg-primary/90 transition-colors disabled:opacity-50">
+          {saving ? "Guardando…" : "Guardar cliente"}
+        </button>
       </div>
     </div>
   );
@@ -129,14 +182,16 @@ function ItemRow({ row, conjuntos, onChange, onRemove }: {
 
 // ── VentaModal ────────────────────────────────────────────────────────────────
 
-function VentaModal({ venta, clientes, conjuntos, token, backendUrl, onClose, onSaved }: {
+function VentaModal({ venta, clientes, conjuntos, token, backendUrl, onClose, onSaved, onClienteCreado }: {
   venta?: Venta | null; clientes: Cliente[]; conjuntos: ConjuntoCatalogo[];
   token: string; backendUrl: string; onClose: () => void; onSaved: (v: Venta) => void;
+  onClienteCreado: (c: Cliente) => void;
 }) {
   const isEdit = !!venta;
   const [clienteId, setClienteId] = useState(venta ? String(venta.cliente.id) : "");
   const [clienteSearch, setClienteSearch] = useState(venta ? venta.cliente.nombre : "");
   const [showClienteDrop, setShowClienteDrop] = useState(false);
+  const [showNuevoCliente, setShowNuevoCliente] = useState(false);
   const [observaciones, setObservaciones] = useState(venta?.observaciones ?? "");
   const [descuento, setDescuento] = useState(venta ? String(parseFloat(venta.descuento)) : "0");
 
@@ -191,84 +246,148 @@ function VentaModal({ venta, clientes, conjuntos, token, backendUrl, onClose, on
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-      <div className="bg-background border border-border rounded-2xl w-full max-w-2xl shadow-2xl flex flex-col max-h-[90vh]">
+      <div className="bg-background border border-border rounded-2xl w-full max-w-4xl shadow-2xl flex flex-col max-h-[92vh]">
+
         {/* Header */}
         <div className="px-6 py-4 border-b border-border flex items-center justify-between shrink-0">
-          <h2 className="font-bold text-base">{isEdit ? `Editar venta ${venta!.codigo}` : "Nueva venta"}</h2>
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center">
+              <svg className="h-4.5 w-4.5 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
+            </div>
+            <div>
+              <h2 className="font-bold text-base leading-tight">{isEdit ? `Editar ${venta!.codigo}` : "Nueva venta"}</h2>
+              <p className="text-xs text-muted-foreground">{isEdit ? "Modifica los datos de la venta" : "Registra una nueva venta de conjuntos"}</p>
+            </div>
+          </div>
           <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-muted transition-colors text-muted-foreground">
             <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
           </button>
         </div>
 
-        <div className="overflow-y-auto flex-1 px-6 py-5 space-y-5">
-          {/* Cliente */}
-          <div className="space-y-1.5 relative">
-            <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Cliente</label>
-            <input
-              className={inp} placeholder="Buscar cliente…"
-              value={clienteSearch}
-              onFocus={() => setShowClienteDrop(true)}
-              onChange={(e) => { setClienteSearch(e.target.value); setClienteId(""); setShowClienteDrop(true); }}
-            />
-            {showClienteDrop && clientesFiltrados.length > 0 && (
-              <div className="absolute top-full left-0 right-0 z-10 bg-background border border-border rounded-xl shadow-lg mt-1 max-h-48 overflow-y-auto">
-                {clientesFiltrados.map((c) => (
-                  <button key={c.id} className="w-full text-left px-3 py-2 text-sm hover:bg-muted/60 transition-colors"
-                    onClick={() => { setClienteId(String(c.id)); setClienteSearch(c.nombre); setShowClienteDrop(false); }}>
-                    <span className="font-medium">{c.nombre}</span>
-                    {c.celular && <span className="text-muted-foreground text-xs ml-2">{c.celular}</span>}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
+        {/* Body — 2 columnas */}
+        <div className="flex flex-1 min-h-0">
 
-          {/* Items */}
-          <div className="rounded-xl border border-border overflow-hidden">
-            <div className="px-4 py-2 bg-muted/40 border-b border-border/50 flex items-center justify-between">
-              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Ítems</p>
-              <div className="grid grid-cols-12 gap-2 text-[10px] text-muted-foreground font-semibold uppercase" style={{ width: "calc(100% - 60px)" }}>
-                <span className="col-span-4">Conjunto</span><span className="col-span-1">Var.</span>
-                <span className="col-span-3">Descripción</span><span className="col-span-1 text-center">Cant</span>
-                <span className="col-span-2 text-right">Precio</span><span className="col-span-1 text-right">Sub</span>
+          {/* ── Panel izquierdo ── */}
+          <div className="w-72 shrink-0 border-r border-border flex flex-col">
+            <div className="flex-1 overflow-y-auto px-5 py-5 space-y-5">
+
+              {/* Cliente */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">Cliente</p>
+                  {!showNuevoCliente && (
+                    <button onClick={() => { setShowNuevoCliente(true); setShowClienteDrop(false); }}
+                      className="text-[11px] font-semibold text-primary hover:text-primary/70 transition-colors">
+                      + Nuevo
+                    </button>
+                  )}
+                </div>
+                {!showNuevoCliente ? (
+                  <div className="relative">
+                    <input className={inp} placeholder="Buscar cliente…" value={clienteSearch}
+                      onFocus={() => setShowClienteDrop(true)}
+                      onChange={(e) => { setClienteSearch(e.target.value); setClienteId(""); setShowClienteDrop(true); }} />
+                    {clienteId && (
+                      <div className="mt-1.5 flex items-center gap-2 px-3 py-2 rounded-lg bg-primary/8 border border-primary/20">
+                        <div className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center text-[10px] font-bold text-primary shrink-0">
+                          {clienteSearch.charAt(0).toUpperCase()}
+                        </div>
+                        <span className="text-xs font-semibold truncate">{clienteSearch}</span>
+                      </div>
+                    )}
+                    {showClienteDrop && !clienteId && clientesFiltrados.length > 0 && (
+                      <div className="absolute top-full left-0 right-0 z-20 bg-background border border-border rounded-xl shadow-xl mt-1 max-h-52 overflow-y-auto">
+                        {clientesFiltrados.map((c) => (
+                          <button key={c.id} className="w-full text-left px-3 py-2.5 hover:bg-muted/60 transition-colors flex items-center gap-2.5"
+                            onClick={() => { setClienteId(String(c.id)); setClienteSearch(c.nombre); setShowClienteDrop(false); }}>
+                            <div className="w-7 h-7 rounded-full bg-muted flex items-center justify-center text-xs font-bold text-muted-foreground shrink-0">
+                              {c.nombre.charAt(0).toUpperCase()}
+                            </div>
+                            <div className="min-w-0">
+                              <p className="text-sm font-medium truncate">{c.nombre}</p>
+                              {c.celular && <p className="text-xs text-muted-foreground">{c.celular}</p>}
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <NuevoClienteInline token={token} backendUrl={backendUrl}
+                    onCancel={() => setShowNuevoCliente(false)}
+                    onCreado={(c) => { onClienteCreado(c); setClienteId(String(c.id)); setClienteSearch(c.nombre); setShowNuevoCliente(false); }} />
+                )}
+              </div>
+
+              {/* Descuento */}
+              <div className="space-y-1.5">
+                <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">Descuento (Bs.)</p>
+                <input type="number" min="0" className={inp} value={descuento} onChange={(e) => setDescuento(e.target.value)} placeholder="0.00" />
+              </div>
+
+              {/* Observaciones */}
+              <div className="space-y-1.5">
+                <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">Observaciones</p>
+                <textarea className={`${inp} resize-none`} rows={3} value={observaciones} onChange={(e) => setObservaciones(e.target.value)} placeholder="Notas adicionales…" />
               </div>
             </div>
-            <div className="px-4">
+
+            {/* Resumen + acciones */}
+            <div className="border-t border-border px-5 py-4 space-y-3 shrink-0">
+              <div className="space-y-1.5">
+                <div className="flex justify-between text-xs text-muted-foreground">
+                  <span>Subtotal</span><span>{formatBs(subtotalItems)}</span>
+                </div>
+                {desc > 0 && (
+                  <div className="flex justify-between text-xs text-red-500">
+                    <span>Descuento</span><span>−{formatBs(desc)}</span>
+                  </div>
+                )}
+                <div className="flex justify-between items-center pt-1.5 border-t border-border">
+                  <span className="text-sm font-semibold">Total</span>
+                  <span className="text-xl font-bold text-primary">{formatBs(total)}</span>
+                </div>
+              </div>
+              <button onClick={handleSave} disabled={saving || !clienteId}
+                className="w-full py-2.5 rounded-xl bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 transition-colors disabled:opacity-50">
+                {saving ? "Guardando…" : isEdit ? "Guardar cambios" : "Crear venta"}
+              </button>
+              <button onClick={onClose} className="w-full py-2 rounded-xl border border-border text-sm font-medium hover:bg-muted/60 transition-colors text-muted-foreground">
+                Cancelar
+              </button>
+            </div>
+          </div>
+
+          {/* ── Panel derecho — Ítems ── */}
+          <div className="flex-1 flex flex-col min-w-0">
+            {/* Cabecera */}
+            <div className="px-5 py-3 border-b border-border flex items-center justify-between shrink-0">
+              <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">
+                Ítems <span className="ml-1 px-1.5 py-0.5 rounded-full bg-muted text-muted-foreground text-[10px]">{items.length}</span>
+              </p>
+              <button onClick={addItem} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary/10 text-primary text-xs font-semibold hover:bg-primary/20 transition-colors">
+                <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
+                Agregar ítem
+              </button>
+            </div>
+
+            {/* Cabecera de columnas */}
+            <div className="px-5 py-2 bg-muted/30 border-b border-border/50 shrink-0"
+              style={{ display: "grid", gridTemplateColumns: "1fr 4rem 6rem 6rem 2rem", gap: "0.5rem" }}>
+              <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">Conjunto / Variación</span>
+              <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide text-center">Cant.</span>
+              <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide text-right">Precio</span>
+              <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide text-right">Subtotal</span>
+              <span />
+            </div>
+
+            {/* Lista de ítems */}
+            <div className="flex-1 overflow-y-auto px-5">
               {items.map((it) => (
                 <ItemRow key={it._key} row={it} conjuntos={conjuntos} onChange={(r) => updItem(it._key, r)} onRemove={() => delItem(it._key)} />
               ))}
             </div>
-            <div className="px-4 py-2 border-t border-border/50">
-              <button onClick={addItem} className="text-xs font-semibold text-primary hover:text-primary/80 transition-colors">+ Agregar ítem</button>
-            </div>
           </div>
-
-          {/* Descuento + totales */}
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Descuento (Bs.)</label>
-              <input type="number" min="0" className={inp} value={descuento} onChange={(e) => setDescuento(e.target.value)} placeholder="0" />
-            </div>
-            <div className="rounded-xl border border-border p-3 space-y-1">
-              <div className="flex justify-between text-xs text-muted-foreground"><span>Subtotal</span><span>{formatBs(subtotalItems)}</span></div>
-              {desc > 0 && <div className="flex justify-between text-xs text-red-500"><span>Descuento</span><span>−{formatBs(desc)}</span></div>}
-              <div className="flex justify-between text-sm font-bold border-t border-border pt-1 mt-1"><span>Total</span><span className="text-primary">{formatBs(total)}</span></div>
-            </div>
-          </div>
-
-          {/* Observaciones */}
-          <div className="space-y-1.5">
-            <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Observaciones</label>
-            <textarea className={`${inp} resize-none`} rows={2} value={observaciones} onChange={(e) => setObservaciones(e.target.value)} placeholder="Notas adicionales…" />
-          </div>
-        </div>
-
-        {/* Footer */}
-        <div className="px-6 py-4 border-t border-border flex gap-2 shrink-0">
-          <button onClick={onClose} className="flex-1 px-4 py-2 rounded-xl border border-border text-sm font-medium hover:bg-muted/60 transition-colors">Cancelar</button>
-          <button onClick={handleSave} disabled={saving || !clienteId} className="flex-1 px-4 py-2 rounded-xl bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 transition-colors disabled:opacity-50">
-            {saving ? "Guardando…" : isEdit ? "Guardar cambios" : "Crear venta"}
-          </button>
         </div>
       </div>
     </div>
@@ -334,9 +453,10 @@ function PagoModal({ venta, token, backendUrl, onClose, onSaved }: {
 
 // ── VentaDetailModal ──────────────────────────────────────────────────────────
 
-function VentaDetailModal({ venta: initialVenta, clientes, conjuntos, token, backendUrl, onClose, onUpdated }: {
+function VentaDetailModal({ venta: initialVenta, clientes, conjuntos, token, backendUrl, onClose, onUpdated, onClienteCreado }: {
   venta: Venta; clientes: Cliente[]; conjuntos: ConjuntoCatalogo[];
   token: string; backendUrl: string; onClose: () => void; onUpdated: (v: Venta) => void;
+  onClienteCreado: (c: Cliente) => void;
 }) {
   const [venta, setVenta] = useState(initialVenta);
   const [showEdit, setShowEdit] = useState(false);
@@ -356,7 +476,8 @@ function VentaDetailModal({ venta: initialVenta, clientes, conjuntos, token, bac
 
   if (showEdit) {
     return <VentaModal venta={venta} clientes={clientes} conjuntos={conjuntos} token={token} backendUrl={backendUrl}
-      onClose={() => setShowEdit(false)} onSaved={(v) => { setVenta(v); setShowEdit(false); onUpdated(v); }} />;
+      onClose={() => setShowEdit(false)} onSaved={(v) => { setVenta(v); setShowEdit(false); onUpdated(v); }}
+      onClienteCreado={onClienteCreado} />;
   }
 
   return (
@@ -491,7 +612,11 @@ function VentaDetailModal({ venta: initialVenta, clientes, conjuntos, token, bac
 
 export function VentasClient({ initialVentas, initialClientes, conjuntos, sucursal, token, backendUrl, userRol }: Props) {
   const [ventas, setVentas] = useState<Venta[]>(initialVentas);
-  const [clientes] = useState<Cliente[]>(initialClientes);
+  const [clientes, setClientes] = useState<Cliente[]>(initialClientes);
+
+  const handleClienteCreado = (c: Cliente) => {
+    setClientes((prev) => [...prev, c].sort((a, b) => a.nombre.localeCompare(b.nombre)));
+  };
   const [showCreate, setShowCreate] = useState(false);
   const [detailVenta, setDetailVenta] = useState<Venta | null>(null);
   const [estadoFilter, setEstadoFilter] = useState<EstadoVenta | "">("");
@@ -601,11 +726,11 @@ export function VentasClient({ initialVentas, initialClientes, conjuntos, sucurs
 
       {showCreate && (
         <VentaModal clientes={clientes} conjuntos={conjuntos} token={token} backendUrl={backendUrl}
-          onClose={() => setShowCreate(false)} onSaved={handleSaved} />
+          onClose={() => setShowCreate(false)} onSaved={handleSaved} onClienteCreado={handleClienteCreado} />
       )}
       {detailVenta && (
         <VentaDetailModal venta={detailVenta} clientes={clientes} conjuntos={conjuntos} token={token} backendUrl={backendUrl}
-          onClose={() => setDetailVenta(null)} onUpdated={handleUpdated} />
+          onClose={() => setDetailVenta(null)} onUpdated={handleUpdated} onClienteCreado={handleClienteCreado} />
       )}
     </>
   );

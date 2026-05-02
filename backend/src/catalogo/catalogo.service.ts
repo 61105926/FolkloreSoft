@@ -1,4 +1,5 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library.js';
 import { EstadoContrato } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { ImagenAutoService } from './imagen-auto.service.js';
@@ -90,18 +91,36 @@ export class CatalogoService {
     }[];
   }) {
     const { componentes, variaciones, ...rest } = data;
+
+    if (variaciones?.length) {
+      const codigos = variaciones.map(v => v.codigo_variacion);
+      const duplicados = codigos.filter((c, i) => codigos.indexOf(c) !== i);
+      if (duplicados.length) {
+        throw new BadRequestException(
+          `Variaciones con código duplicado: ${[...new Set(duplicados)].join(', ')}`,
+        );
+      }
+    }
+
     const imagen_url = await this.imagenAuto.resolverImagen(data.nombre, data.danza, data.imagen_url ?? undefined);
-    return this.prisma.conjunto.create({
-      data: {
-        ...rest,
-        imagen_url: imagen_url ?? undefined,
-        componentes: componentes ? { create: componentes } : undefined,
-        variaciones: variaciones ? { create: variaciones } : undefined,
-      },
-      include: {
-        componentes: { include: { componente: true } },
-      },
-    });
+    try {
+      return await this.prisma.conjunto.create({
+        data: {
+          ...rest,
+          imagen_url: imagen_url ?? undefined,
+          componentes: componentes ? { create: componentes } : undefined,
+          variaciones: variaciones ? { create: variaciones } : undefined,
+        },
+        include: {
+          componentes: { include: { componente: true } },
+        },
+      });
+    } catch (e) {
+      if (e instanceof PrismaClientKnownRequestError && e.code === 'P2002') {
+        throw new BadRequestException('Ya existe una variación con ese código para este conjunto');
+      }
+      throw e;
+    }
   }
 
   updateConjunto(id: number, data: {
@@ -137,7 +156,7 @@ export class CatalogoService {
   }
 
   // ── Variaciones ──
-  createVariacion(conjuntoId: number, data: {
+  async createVariacion(conjuntoId: number, data: {
     codigo_variacion: string;
     nombre_variacion: string;
     talla?: string;
@@ -146,8 +165,18 @@ export class CatalogoService {
     precio_venta?: number;
     precio_alquiler?: number;
   }) {
+    let codigo = data.codigo_variacion;
+    const existentes = await this.prisma.variacionConjunto.findMany({
+      where: { conjuntoId, codigo_variacion: { startsWith: codigo } },
+      select: { codigo_variacion: true },
+    });
+    if (existentes.some((v) => v.codigo_variacion === codigo)) {
+      const numeros = existentes
+        .map((v) => { const m = v.codigo_variacion.match(/^.*-(\d+)$/); return m ? parseInt(m[1]) : 1; });
+      codigo = `${data.codigo_variacion}-${Math.max(...numeros) + 1}`;
+    }
     return this.prisma.variacionConjunto.create({
-      data: { ...data, conjuntoId },
+      data: { ...data, codigo_variacion: codigo, conjuntoId },
     });
   }
 

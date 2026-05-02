@@ -146,6 +146,7 @@ enum TipoMovimientoStock {
   COMPRA  // Entrada de nuevos trajes al inventario
   BAJA    // Traje dañado, perdido o dado de baja
   AJUSTE  // Corrección manual del inventario
+  VENTA   // Salida por venta definitiva
 }
 
 model MovimientoStock {
@@ -155,9 +156,11 @@ model MovimientoStock {
   cantidad    Int                 // positivo = entrada, negativo = salida
   motivo      String?
   userId      Int?
+  ventaId     Int?
   createdAt   DateTime            @default(now())
   variacion   VariacionConjunto   @relation(fields: [variacionId], references: [id], onDelete: Cascade)
   user        User?               @relation(fields: [userId], references: [id], onDelete: SetNull)
+  venta       Venta?              @relation(fields: [ventaId], references: [id], onDelete: SetNull)
 }
 
 // ─────────────────────────────────────────
@@ -447,10 +450,11 @@ model Venta {
   observaciones String?          @db.Text
   createdAt     DateTime         @default(now())
   updatedAt     DateTime         @updatedAt
-  cliente       Cliente          @relation(fields: [clienteId], references: [id])
-  sucursal      Sucursal?        @relation(fields: [sucursalId], references: [id])
-  items         VentaItem[]
-  movimientosCaja MovimientoCaja[]
+  cliente          Cliente           @relation(fields: [clienteId], references: [id])
+  sucursal         Sucursal?         @relation(fields: [sucursalId], references: [id])
+  items            VentaItem[]
+  movimientosCaja  MovimientoCaja[]
+  movimientosStock MovimientoStock[]
 }
 
 model VentaItem {

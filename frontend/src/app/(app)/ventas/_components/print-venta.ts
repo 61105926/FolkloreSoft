@@ -99,7 +99,7 @@ export function imprimirVenta(v: VentaParaImprimir) {
     ${row("Total", `Bs. ${Number(v.total).toFixed(2)}`, true)}
     ${row("Total pagado", `Bs. ${Number(v.total_pagado).toFixed(2)}`)}
     ${v.forma_pago ? row("Forma de pago", FORMA_PAGO_LABEL[v.forma_pago] ?? v.forma_pago) : ""}
-    ${saldo > 0.01 ? row("Saldo pendiente", `Bs. ${saldo.toFixed(2)}`, true, "#dc2626") : row("", "✓ Pagado completo", false, "#16a34a")}
+    ${saldo > 0.01 ? row("Saldo pendiente", `Bs. ${saldo.toFixed(2)}`, true, "#dc2626") : row("", "✓ Pagado completo", false, "#000")}
   </tbody></table>
 
   ${v.observaciones ? `
