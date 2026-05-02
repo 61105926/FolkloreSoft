@@ -45,7 +45,7 @@ type Props = {
 };
 
 const TIPO_LABELS: Record<string, string> = {
-  COMPRA: "Compra", BAJA: "Baja", AJUSTE: "Ajuste",
+  COMPRA: "Compra", BAJA: "Baja", AJUSTE: "Ajuste", VENTA: "Venta",
 };
 
 // ── Component ─────────────────────────────────────────────────────────────────
@@ -242,6 +242,7 @@ export function StockClient({ resumen, movimientos: initMovimientos, token, back
                 "shrink-0 px-3 py-1 rounded-lg text-sm font-extrabold border-2",
                 m.tipo === "COMPRA" ? "bg-emerald-100 border-emerald-300 text-emerald-800" :
                 m.tipo === "BAJA"   ? "bg-red-100 border-red-300 text-red-800" :
+                m.tipo === "VENTA"  ? "bg-orange-100 border-orange-300 text-orange-800" :
                                       "bg-blue-100 border-blue-300 text-blue-800"
               )}>
                 {TIPO_LABELS[m.tipo] ?? m.tipo}
