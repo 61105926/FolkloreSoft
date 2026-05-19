@@ -6,6 +6,7 @@ set -e
 if [ -n "${DATABASE_URL:-}" ] && ! echo "$DATABASE_URL" | grep -qE '(localhost|127\.0\.0\.1)'; then
   echo "==> [init] Base de datos EXTERNA detectada. Omitiendo MariaDB interna."
   export START_MYSQL=false
+  export DB_PASSWORD=""
 else
   # ── Modo interno: MariaDB dentro del contenedor ────────────────────────────
   export DB_PASSWORD="${DB_PASSWORD:-folklosoft_2024}"
