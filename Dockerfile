@@ -61,6 +61,8 @@ COPY --from=backend-builder /app/backend/node_modules/@prisma  ./node_modules/@p
 COPY backend/prisma ./prisma
 # Seed compilado (dist/prisma/seed.js)
 COPY --from=backend-builder /app/backend/dist/prisma/seed.js   ./dist/prisma/seed.js
+COPY backend/start-backend.sh ./start-backend.sh
+RUN chmod +x ./start-backend.sh
 
 # ── Frontend ─────────────────────────────────────────────────────────
 WORKDIR /app/frontend
