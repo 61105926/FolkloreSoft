@@ -1,5 +1,4 @@
 #!/bin/sh
-set -e
 cd /app/backend
 
 # Esperar MySQL interno si aplica
