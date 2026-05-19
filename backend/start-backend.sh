@@ -9,7 +9,6 @@ if echo "${DATABASE_URL:-}" | grep -qE '(localhost|127\.0\.0\.1)'; then
   done
 fi
 
-# Aplicar migraciones — resuelve automáticamente si hay una fallida
 echo "==> [backend] Aplicando migraciones..."
 i=0
 while [ $i -lt 5 ]; do
@@ -22,7 +21,14 @@ while [ $i -lt 5 ]; do
     break
   fi
 
-  # Extraer nombre de migración fallida y marcarla como revertida
+  # P3005: tablas existentes sin historial de migraciones → reset limpio
+  if echo "$OUTPUT" | grep -q "P3005"; then
+    echo "==> [backend] DB sin historial de migraciones. Aplicando reset..."
+    ./node_modules/.bin/prisma migrate reset --force
+    break
+  fi
+
+  # P3009: migración fallida → marcarla como revertida y reintentar
   FAILED=$(echo "$OUTPUT" | grep "The \`" | head -1 | sed "s/.*The \`//;s/\` migration.*//")
   if [ -n "$FAILED" ]; then
     echo "==> [backend] Resolviendo migración fallida: $FAILED"
@@ -30,7 +36,7 @@ while [ $i -lt 5 ]; do
     i=$((i + 1))
   else
     echo "==> [backend] Error inesperado en migraciones"
-    exit $EXIT_CODE
+    exit 1
   fi
 done
 
