@@ -1,7 +1,20 @@
 -- ventas migration
 
--- 1. Drop existing FK from MovimientoCaja -> old Venta (so we can drop Venta)
-ALTER TABLE `MovimientoCaja` DROP FOREIGN KEY `MovimientoCaja_ventaId_fkey`;
+-- 1. Drop existing FK from MovimientoCaja -> old Venta (only if exists)
+SET @fk_exists = (
+  SELECT COUNT(*) FROM information_schema.TABLE_CONSTRAINTS
+  WHERE TABLE_SCHEMA = DATABASE()
+    AND TABLE_NAME = 'MovimientoCaja'
+    AND CONSTRAINT_NAME = 'MovimientoCaja_ventaId_fkey'
+    AND CONSTRAINT_TYPE = 'FOREIGN KEY'
+);
+SET @sql = IF(@fk_exists > 0,
+  'ALTER TABLE `MovimientoCaja` DROP FOREIGN KEY `MovimientoCaja_ventaId_fkey`',
+  'SELECT 1'
+);
+PREPARE stmt FROM @sql;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
 
 -- 2. Drop old Venta table (different schema, no data)
 DROP TABLE IF EXISTS `Venta`;
