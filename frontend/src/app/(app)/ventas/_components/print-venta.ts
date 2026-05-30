@@ -111,7 +111,7 @@ export function imprimirVenta(v: VentaParaImprimir) {
   <hr class="divider" style="margin-top:14px">
   <div style="display:flex;justify-content:space-between;margin-top:22px;gap:8px">
     <div class="firma" style="flex:1">Firma cliente<br><span style="font-weight:900">${v.cliente.nombre}</span></div>
-    <div class="firma" style="flex:1">Firma responsable<br><span style="font-weight:900">FOLCKLORE Bolivia</span></div>
+    <div class="firma" style="flex:1">Firma del responsable</div>
   </div>
   <div class="center" style="margin-top:8px;font-size:9px;font-weight:900">
     Generado el ${new Date().toLocaleString("es-BO")}

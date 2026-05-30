@@ -94,7 +94,7 @@ export function imprimirContrato(c: Contrato) {
   </tbody></table>
 
   <!-- EVENTO -->
-  <h2>Evento</h2>
+  <h2>Tipo de Evento</h2>
   <table><tbody>
     ${row("Nombre",     c.nombre_evento_ext ?? c.evento?.nombre ?? "-")}
     ${c.ubicacion ? row("Lugar", c.ubicacion) : ""}
@@ -103,8 +103,8 @@ export function imprimirContrato(c: Contrato) {
   </tbody></table>
 
   ${prendas_.length > 0 ? `
-  <!-- PRENDAS -->
-  <h2>Prendas</h2>
+  <!-- ITEMS -->
+  <h2>Items</h2>
   <table>
     <thead><tr>
       <th style="text-align:left;font-size:10px;padding:3px 5px;border-bottom:2px solid #000;font-weight:900">Modelo</th>
