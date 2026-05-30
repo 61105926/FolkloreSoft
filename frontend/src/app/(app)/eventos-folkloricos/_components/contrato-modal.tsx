@@ -52,7 +52,7 @@ type TabKey = "info" | "prendas" | "personas" | "finanzas" | "historial";
 const TABS: { key: TabKey; label: string }[] = [
   { key: "info",      label: "Información" },
   { key: "prendas",   label: "Prendas" },
-  { key: "personas",  label: "Personas" },
+  { key: "personas",  label: "Garantía" },
   { key: "finanzas",  label: "Finanzas" },
   { key: "historial", label: "Historial" },
 ];
@@ -1170,6 +1170,9 @@ export function ContratoModal({
                 <div className="space-y-1.5"><label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Fecha entrega <span className="text-crimson">*</span></label><input type="date" className={inp} value={fechaEntrega} onChange={(e) => setFechaEntrega(e.target.value)} /></div>
                 <div className="space-y-1.5"><label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Fecha devolución <span className="text-crimson">*</span></label><input type="date" className={inp} value={fechaDevolucion} onChange={(e) => setFechaDevolucion(e.target.value)} /></div>
               </div>
+
+              {/* Condiciones */}
+              <div className="space-y-1.5"><label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Condiciones</label><textarea className={`${inp} resize-none`} rows={3} value={condiciones} onChange={(e) => setCondiciones(e.target.value)} placeholder="Condiciones del alquiler…" /></div>
             </div>
           )}
 
@@ -1660,6 +1663,9 @@ export function ContratoModal({
                   })()}
                 </div>
               </div>
+
+              {/* Observaciones */}
+              <div className="space-y-1.5"><label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Observaciones</label><textarea className={`${inp} resize-none`} rows={3} value={observaciones} onChange={(e) => setObservaciones(e.target.value)} placeholder="Notas adicionales del contrato…" /></div>
             </div>
           )}
 
@@ -1954,11 +1960,6 @@ export function ContratoModal({
                 </div>
               )}
 
-              {/* Observaciones + Condiciones */}
-              <div className="grid grid-cols-1 gap-4">
-                <div className="space-y-1.5"><label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Observaciones</label><textarea className={`${inp} resize-none`} rows={3} value={observaciones} onChange={(e) => setObservaciones(e.target.value)} placeholder="Notas adicionales del contrato…" /></div>
-                <div className="space-y-1.5"><label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Condiciones</label><textarea className={`${inp} resize-none`} rows={3} value={condiciones} onChange={(e) => setCondiciones(e.target.value)} placeholder="Condiciones del alquiler…" /></div>
-              </div>
             </div>
           )}
 
