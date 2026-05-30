@@ -33,7 +33,7 @@ const PERMISOS_MATRIZ: ModuloPermiso[] = [
   { modulo: "Sucursales",          descripcion: "Configuración y datos de sucursales",       permisos: { ADMIN: "full", VENDEDOR: "read", BODEGUERO: "read", CAJERO: "none" } },
   { modulo: "Transferencias",      descripcion: "Transferencias de prendas entre sucursales",permisos: { ADMIN: "full", VENDEDOR: "none", BODEGUERO: "full", CAJERO: "none" } },
   { modulo: "Contratos",           descripcion: "Creación y seguimiento de contratos",       permisos: { ADMIN: "full", VENDEDOR: "full", BODEGUERO: "read", CAJERO: "read" } },
-  { modulo: "Eventos Folklóricos", descripcion: "Gestión de eventos y sus contratos",        permisos: { ADMIN: "full", VENDEDOR: "full", BODEGUERO: "none", CAJERO: "none" } },
+  { modulo: "Eventos",             descripcion: "Gestión de eventos y sus contratos",        permisos: { ADMIN: "full", VENDEDOR: "full", BODEGUERO: "none", CAJERO: "none" } },
   { modulo: "Caja",                descripcion: "Movimientos, ingresos y egresos",           permisos: { ADMIN: "full", VENDEDOR: "read", BODEGUERO: "none", CAJERO: "full" } },
   { modulo: "Garantías",           descripcion: "Depósitos de seguridad de contratos",       permisos: { ADMIN: "full", VENDEDOR: "read", BODEGUERO: "none", CAJERO: "read" } },
   { modulo: "Clientes",            descripcion: "Base de datos de clientes",                 permisos: { ADMIN: "full", VENDEDOR: "full", BODEGUERO: "none", CAJERO: "read" } },

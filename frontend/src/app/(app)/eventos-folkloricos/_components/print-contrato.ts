@@ -133,7 +133,8 @@ export function imprimirContrato(c: Contrato) {
   <table><tbody>
     ${garantiasOtras.map((g) => {
       const label = g.tipo === "DOCUMENTO_CARNET" ? "Documento / Carnet" : g.tipo === "CARTA_INSTITUCIONAL" ? "Carta institucional" : g.tipo.replace(/_/g, " ");
-      const valor = g.valor ? `Bs. ${parseFloat(String(g.valor)).toFixed(2)}` : (g.descripcion ?? "-");
+      const sinMonto = g.tipo === "DOCUMENTO_CARNET" || g.tipo === "CARTA_INSTITUCIONAL";
+      const valor = sinMonto ? (g.descripcion ?? "—") : (g.valor ? `Bs. ${parseFloat(String(g.valor)).toFixed(2)}` : (g.descripcion ?? "-"));
       return row(label, valor);
     }).join("")}
     ${garantiaEf > 0 ? row("Efectivo (a devolver)", `Bs. ${garantiaEf.toFixed(2)}`) : ""}

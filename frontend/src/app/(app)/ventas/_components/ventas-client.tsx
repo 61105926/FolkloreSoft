@@ -10,7 +10,7 @@ type FormaPago = "EFECTIVO" | "TRANSFERENCIA" | "QR" | "TARJETA";
 interface Cliente { id: number; nombre: string; celular?: string | null; ci?: string | null }
 interface Sucursal { id: number; nombre: string; ciudad: string; direccion?: string | null; telefono?: string | null; email?: string | null }
 interface ConjuntoCatalogo { id: number; nombre: string; danza: string; precio_venta?: string | null; variaciones: VariacionOpt[] }
-interface VariacionOpt { id: number; nombre_variacion: string; talla?: string | null; precio_venta?: string | null }
+interface VariacionOpt { id: number; nombre_variacion: string; talla?: string | null; color?: string | null; precio_venta?: string | null }
 
 interface VentaItem {
   id: number; descripcion: string; cantidad: number;
@@ -99,7 +99,10 @@ function ItemRow({ row, conjuntos, onChange, onRemove }: {
             value={row.variacionId}
             onChange={(e) => {
               const v = conjunto.variaciones.find((x) => String(x.id) === e.target.value);
-              onChange({ ...row, variacionId: e.target.value, precio_unit: v?.precio_venta ? String(parseFloat(v.precio_venta)) : row.precio_unit });
+              const base = conjunto?.nombre ?? row.descripcion;
+              const extras = [v?.talla ? `T.${v.talla}` : null, v?.color ?? null].filter(Boolean).join(" · ");
+              const nuevaDesc = extras ? `${base} — ${extras}` : base;
+              onChange({ ...row, variacionId: e.target.value, descripcion: v ? nuevaDesc : base, precio_unit: v?.precio_venta ? String(parseFloat(v.precio_venta)) : row.precio_unit });
             }}
           >
             <option value="">Sin variación</option>

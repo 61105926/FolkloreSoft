@@ -604,7 +604,7 @@ export function ContratosClient({ initialContratos, initialClientes, initialEven
       <div className="flex items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-extrabold text-gray-900" style={{ fontFamily: "var(--font-outfit)" }}>Contratos de Alquiler</h1>
-          <p className="text-sm text-gray-500 font-medium mt-0.5">Gestión de contratos de vestuario folklórico</p>
+          <p className="text-sm text-gray-500 font-medium mt-0.5">Gestión de contratos de vestuario</p>
         </div>
         <Button className="bg-primary text-white font-semibold shadow-sm hover:bg-primary/90 shrink-0" onClick={openNuevoContrato}>
           <svg className="h-4 w-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
