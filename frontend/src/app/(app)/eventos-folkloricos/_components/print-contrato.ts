@@ -127,7 +127,7 @@ export function imprimirContrato(c: Contrato) {
     <tbody>${filasParticipantes}</tbody>
   </table>` : ""}
 
-  ${garantiasOtras.length > 0 || garantiaEf > 0 ? `
+  ${garantiasOtras.length > 0 || garantiaEf > 0 || c.observaciones ? `
   <!-- GARANTIAS -->
   <h2>Garantias</h2>
   <table><tbody>
@@ -138,7 +138,9 @@ export function imprimirContrato(c: Contrato) {
       return row(label, valor);
     }).join("")}
     ${garantiaEf > 0 ? row("Efectivo (a devolver)", `Bs. ${garantiaEf.toFixed(2)}`) : ""}
-  </tbody></table>` : ""}
+  </tbody></table>
+  ${c.observaciones ? `<div style="font-size:10px;font-weight:900;line-height:1.4;margin-top:4px"><span style="font-weight:900">Obs:</span> ${c.observaciones}</div>` : ""}
+  ` : ""}
 
   <!-- RESUMEN FINANCIERO -->
   <h2>Resumen Financiero</h2>
@@ -150,11 +152,6 @@ export function imprimirContrato(c: Contrato) {
     ${row("Saldo pendiente", `Bs. ${saldo}`, true)}
   </tbody></table>
 
-  ${c.observaciones ? `
-  <h2>Observaciones</h2>
-  <div style="font-size:10px;font-weight:900;line-height:1.4">
-    <p style="margin:2px 0">${c.observaciones}</p>
-  </div>` : ""}
 
   ${c.condiciones ? `
   <h2>Condiciones</h2>
@@ -165,7 +162,7 @@ export function imprimirContrato(c: Contrato) {
   <hr class="divider" style="margin-top:14px">
   <div style="display:flex;justify-content:space-between;margin-top:22px;gap:8px">
     <div class="firma" style="flex:1">Firma cliente<br><span style="font-weight:900">${c.cliente.nombre}</span></div>
-    <div class="firma" style="flex:1">Firma responsable<br><span style="font-weight:900">FOLCKLORE Bolivia</span></div>
+    <div class="firma" style="flex:1">Firma del responsable</div>
   </div>
   <div class="center" style="margin-top:8px;font-size:9px;font-weight:900">
     Generado el ${new Date().toLocaleString("es-BO")}
