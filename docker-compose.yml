@@ -14,8 +14,8 @@ services:
       JWT_ACCESS_EXPIRES_IN: ${JWT_ACCESS_EXPIRES_IN:-15m}
       FRONTEND_URL: ${FRONTEND_URL}
       PORT: 8001
-    ports:
-      - "8001:8001"
+    expose:
+      - "8001"
 
   # ── Frontend (Next.js) ───────────────────────────────────────────────────────
   frontend:
@@ -31,5 +31,5 @@ services:
       PORT: 3001
     depends_on:
       - backend
-    ports:
-      - "3001:3001"
+    expose:
+      - "3001"
