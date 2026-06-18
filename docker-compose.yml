@@ -16,6 +16,9 @@ services:
       PORT: 8001
     expose:
       - "8001"
+    networks:
+      - default
+      - coolify
 
   # ── Frontend (Next.js) ───────────────────────────────────────────────────────
   frontend:
@@ -33,3 +36,14 @@ services:
       - backend
     expose:
       - "3001"
+    networks:
+      - default
+      - coolify
+
+# La red 'coolify' es la red compartida del proxy de Coolify (ya existe en el host).
+# Conectar el backend a ella permite resolver el hostname interno del servicio
+# PostgreSQL gestionado (p. ej. i39ev72uop4se7zwu482wp27).
+networks:
+  default:
+  coolify:
+    external: true
