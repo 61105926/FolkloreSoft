@@ -1,37 +1,19 @@
 services:
 
-  # ── Base de datos ────────────────────────────────────────────────────────────
-  db:
-    image: postgres:16-alpine
-    restart: always
-    environment:
-      POSTGRES_DB: folklosoft
-      POSTGRES_USER: folklosoft
-      POSTGRES_PASSWORD: ${DB_PASSWORD}
-    volumes:
-      - db_data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U folklosoft -d folklosoft"]
-      interval: 10s
-      timeout: 5s
-      retries: 10
-      start_period: 30s
-
   # ── Backend (NestJS) ─────────────────────────────────────────────────────────
+  # La base de datos PostgreSQL es EXTERNA (servicio gestionado en Coolify).
+  # Define DATABASE_URL en el .env con la URL de tu servicio PostgreSQL de Coolify.
   backend:
     build:
       context: ./backend
       dockerfile: Dockerfile
     restart: always
     environment:
-      DATABASE_URL: postgresql://folklosoft:${DB_PASSWORD}@db:5432/folklosoft?schema=public
+      DATABASE_URL: ${DATABASE_URL}
       JWT_SECRET: ${JWT_SECRET}
       JWT_ACCESS_EXPIRES_IN: ${JWT_ACCESS_EXPIRES_IN:-15m}
       FRONTEND_URL: ${FRONTEND_URL}
       PORT: 8001
-    depends_on:
-      db:
-        condition: service_healthy
     ports:
       - "8001:8001"
 
@@ -51,6 +33,3 @@ services:
       - backend
     ports:
       - "3001:3001"
-
-volumes:
-  db_data:
