@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service.js';
-import { EstadoContrato } from '@prisma/client';
+import { EstadoContrato, Prisma } from '@prisma/client';
 
 @Injectable()
 export class BotService {
@@ -211,7 +211,7 @@ export class BotService {
     }));
   }
 
-  // ── Crear solicitud de reserva web (raw SQL para no depender del cliente generado) ──
+  // ── Crear solicitud de reserva web ──
   async crearSolicitudWeb(data: {
     nombre: string;
     ci: string;
@@ -222,22 +222,20 @@ export class BotService {
     totalEstimado: number;
     anticipoMin: number;
   }) {
-    const itemsJson = JSON.stringify(data.items);
-    const fechaEvento = new Date(data.fechaEvento);
-
-    await this.prisma.$executeRaw`
-      INSERT INTO SolicitudReservaWeb
-        (nombre, ci, celular, evento, fecha_evento, items, total_estimado, anticipo_min, estado, createdAt, updatedAt)
-      VALUES
-        (${data.nombre}, ${data.ci}, ${data.celular}, ${data.evento},
-         ${fechaEvento}, ${itemsJson},
-         ${data.totalEstimado}, ${data.anticipoMin},
-         'PENDIENTE', NOW(), NOW())
-    `;
-
-    const rows = await this.prisma.$queryRaw<{ id: bigint }[]>`
-      SELECT LAST_INSERT_ID() AS id
-    `;
-    return { id: Number(rows[0].id), estado: 'PENDIENTE' };
+    const solicitud = await this.prisma.solicitudReservaWeb.create({
+      data: {
+        nombre: data.nombre,
+        ci: data.ci,
+        celular: data.celular,
+        evento: data.evento,
+        fecha_evento: new Date(data.fechaEvento),
+        items: data.items as Prisma.InputJsonValue,
+        total_estimado: data.totalEstimado,
+        anticipo_min: data.anticipoMin,
+        estado: 'PENDIENTE',
+      },
+      select: { id: true, estado: true },
+    });
+    return { id: solicitud.id, estado: solicitud.estado };
   }
 }

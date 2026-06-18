@@ -1,10 +1,10 @@
 #!/bin/sh
 cd /app/backend
 
-# Esperar MySQL interno si aplica
+# Esperar PostgreSQL interno si aplica
 if echo "${DATABASE_URL:-}" | grep -qE '(localhost|127\.0\.0\.1)'; then
-  echo "==> [backend] Esperando MySQL interno..."
-  until mariadb -h 127.0.0.1 -P 3306 -u folklosoft -p"${DB_PASSWORD}" folklosoft -e 'SELECT 1' 2>/dev/null; do
+  echo "==> [backend] Esperando PostgreSQL interno..."
+  until pg_isready -h 127.0.0.1 -p 5432 -U folklosoft -d folklosoft >/dev/null 2>&1; do
     sleep 2
   done
 fi

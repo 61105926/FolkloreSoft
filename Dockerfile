@@ -25,7 +25,7 @@ RUN npm ci
 
 COPY frontend/ .
 
-ENV BACKEND_URL=http://localhost:9001
+ENV BACKEND_URL=http://localhost:8001
 RUN npm run build
 
 
@@ -34,17 +34,13 @@ RUN npm run build
 # ═══════════════════════════════════════════════════════════════════
 FROM node:20-alpine AS runner
 
-# Instalar MariaDB (compatible MySQL) + supervisord + OpenSSL (requerido por Prisma)
-RUN apk add --no-cache supervisor mariadb mariadb-client openssl php83 php83-pdo_mysql php83-session wget
+# Instalar PostgreSQL + supervisord + OpenSSL (requerido por Prisma)
+RUN apk add --no-cache supervisor postgresql postgresql-client openssl php83 php83-pdo_pgsql php83-pgsql php83-session wget
 
-# Alpine trae mariadb-server.cnf con skip-networking — lo eliminamos y ponemos el nuestro
-RUN rm -f /etc/my.cnf.d/mariadb-server.cnf && \
-    printf '[mysqld]\nskip_networking=0\nbind-address=0.0.0.0\nport=3306\nsocket=/run/mysqld/mysqld.sock\n' \
-    > /etc/my.cnf.d/folklosoft.cnf
-
-# Directorios de MySQL
-RUN mkdir -p /var/lib/mysql /run/mysqld && \
-    chown -R mysql:mysql /var/lib/mysql /run/mysqld
+# Directorios de PostgreSQL (datadir y socket)
+RUN mkdir -p /var/lib/postgresql/data /run/postgresql && \
+    chown -R postgres:postgres /var/lib/postgresql /run/postgresql && \
+    chmod 0700 /var/lib/postgresql/data
 
 # Descargar Adminer (gestor web de base de datos)
 RUN mkdir -p /app/adminer && \
@@ -77,7 +73,7 @@ RUN chmod +x /init.sh
 
 WORKDIR /app
 
-# Frontend: 9002 | Backend: 9001 | MySQL: 9003 (acceso externo opcional)
-EXPOSE 9001 9002 9003 9004
+# Frontend: 3001 | Backend: 8001 | PostgreSQL: 9003 (acceso externo opcional) | Adminer: 9004
+EXPOSE 8001 3001 9003 9004
 
 ENTRYPOINT ["/init.sh"]

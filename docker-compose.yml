@@ -2,17 +2,16 @@ services:
 
   # ── Base de datos ────────────────────────────────────────────────────────────
   db:
-    image: mysql:8.0
+    image: postgres:16-alpine
     restart: always
     environment:
-      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
-      MYSQL_DATABASE: folklosoft
-      MYSQL_USER: folklosoft
-      MYSQL_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: folklosoft
+      POSTGRES_USER: folklosoft
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
     volumes:
-      - db_data:/var/lib/mysql
+      - db_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${DB_ROOT_PASSWORD}"]
+      test: ["CMD-SHELL", "pg_isready -U folklosoft -d folklosoft"]
       interval: 10s
       timeout: 5s
       retries: 10
@@ -25,16 +24,16 @@ services:
       dockerfile: Dockerfile
     restart: always
     environment:
-      DATABASE_URL: mysql://folklosoft:${DB_PASSWORD}@db:3306/folklosoft
+      DATABASE_URL: postgresql://folklosoft:${DB_PASSWORD}@db:5432/folklosoft?schema=public
       JWT_SECRET: ${JWT_SECRET}
       JWT_ACCESS_EXPIRES_IN: ${JWT_ACCESS_EXPIRES_IN:-15m}
       FRONTEND_URL: ${FRONTEND_URL}
-      PORT: 9001
+      PORT: 8001
     depends_on:
       db:
         condition: service_healthy
     ports:
-      - "9001:9001"
+      - "8001:8001"
 
   # ── Frontend (Next.js) ───────────────────────────────────────────────────────
   frontend:
@@ -42,15 +41,16 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
       args:
-        BACKEND_URL: http://backend:9001
+        BACKEND_URL: http://backend:8001
     restart: always
     environment:
-      BACKEND_URL: http://backend:9001
+      BACKEND_URL: http://backend:8001
       NODE_ENV: production
+      PORT: 3001
     depends_on:
       - backend
     ports:
-      - "9002:9002"
+      - "3001:3001"
 
 volumes:
   db_data:
