@@ -23,7 +23,7 @@ async function bootstrap() {
       const allowed = [
         process.env.FRONTEND_URL ?? 'http://localhost:3000',
         'http://localhost:3000',
-        'http://localhost:3001',
+        'http://localhost:3002',
       ];
       if (!origin || allowed.includes(origin)) return callback(null, true);
       callback(null, true); // permitir todos por ahora (ajustar en producción)
@@ -31,7 +31,7 @@ async function bootstrap() {
     credentials: true,
   });
 
-  const port = process.env.PORT ?? 3001;
+  const port = process.env.PORT ?? 4002;
   await app.listen(port);
   console.log(`Backend running on http://localhost:${port}`);
 }

@@ -52,7 +52,7 @@ fi
 # ── Exportar variables para supervisord ────────────────────────────────────
 export JWT_SECRET="${JWT_SECRET:-cambia_este_secreto}"
 export JWT_ACCESS_EXPIRES_IN="${JWT_ACCESS_EXPIRES_IN:-15m}"
-export FRONTEND_URL="${FRONTEND_URL:-http://localhost:3001}"
+export FRONTEND_URL="${FRONTEND_URL:-http://localhost:3002}"
 
 echo "==> [init] Iniciando servicios con supervisord... (PostgreSQL interno: ${START_DB})"
 exec /usr/bin/supervisord -c /etc/supervisord.conf

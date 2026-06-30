@@ -13,9 +13,9 @@ services:
       JWT_SECRET: ${JWT_SECRET}
       JWT_ACCESS_EXPIRES_IN: ${JWT_ACCESS_EXPIRES_IN:-15m}
       FRONTEND_URL: ${FRONTEND_URL}
-      PORT: 8001
+      PORT: 4002
     expose:
-      - "8001"
+      - "4002"
     networks:
       - default
       - coolify
@@ -26,16 +26,16 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
       args:
-        BACKEND_URL: http://backend:8001
+        BACKEND_URL: http://backend:4002
     restart: always
     environment:
-      BACKEND_URL: http://backend:8001
+      BACKEND_URL: http://backend:4002
       NODE_ENV: production
-      PORT: 3001
+      PORT: 3002
     depends_on:
       - backend
     expose:
-      - "3001"
+      - "3002"
     networks:
       - default
       - coolify

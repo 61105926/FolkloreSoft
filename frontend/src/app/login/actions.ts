@@ -19,7 +19,7 @@ export async function loginAction(
   }
 
   try {
-    const backendUrl = process.env.BACKEND_URL ?? "http://localhost:3001";
+    const backendUrl = process.env.BACKEND_URL ?? "http://localhost:4002";
 
     const response = await fetch(`${backendUrl}/auth/login`, {
       method: "POST",

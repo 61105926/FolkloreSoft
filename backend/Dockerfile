@@ -35,7 +35,7 @@ COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
 COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
 COPY prisma ./prisma
 
-EXPOSE 8001
+EXPOSE 4002
 
 # Aplicar migraciones, ejecutar seed (no bloqueante) y arrancar el servidor
 CMD ["sh", "-c", "npx prisma migrate deploy && (node dist/prisma/seed.js || true) && node dist/src/main.js"]

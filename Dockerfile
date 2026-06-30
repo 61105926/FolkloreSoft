@@ -25,7 +25,7 @@ RUN npm ci
 
 COPY frontend/ .
 
-ENV BACKEND_URL=http://localhost:8001
+ENV BACKEND_URL=http://localhost:4002
 RUN npm run build
 
 
@@ -73,7 +73,7 @@ RUN chmod +x /init.sh
 
 WORKDIR /app
 
-# Frontend: 3001 | Backend: 8001 | PostgreSQL: 9003 (acceso externo opcional) | Adminer: 9004
-EXPOSE 8001 3001 9003 9004
+# Frontend: 3002 | Backend: 4002 | PostgreSQL: 9003 (acceso externo opcional) | Adminer: 9004
+EXPOSE 4002 3002 9003 9004
 
 ENTRYPOINT ["/init.sh"]

@@ -8,7 +8,7 @@ export async function POST(_req: NextRequest) {
 
   if (refreshToken) {
     try {
-      const backendUrl = process.env.BACKEND_URL ?? "http://localhost:3001";
+      const backendUrl = process.env.BACKEND_URL ?? "http://localhost:4002";
       await fetch(`${backendUrl}/auth/logout`, {
         method: "POST",
         headers: {

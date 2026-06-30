@@ -19,7 +19,7 @@ const PROTECTED_PREFIXES = [
   "/configuracion",
 ];
 
-const BACKEND = process.env.BACKEND_URL ?? "http://localhost:3001";
+const BACKEND = process.env.BACKEND_URL ?? "http://localhost:4002";
 const ACCESS_COOKIE_MAX_AGE = 60 * 60 * 8; // 8 horas en segundos
 
 /** Decodifica el campo `exp` del JWT sin verificar firma (solo lectura). */
