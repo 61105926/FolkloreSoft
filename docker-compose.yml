@@ -20,8 +20,8 @@ services:
       test: ["CMD-SHELL", "wget -qO- http://localhost:4002/health || exit 1"]
       interval: 15s
       timeout: 5s
-      retries: 8
-      start_period: 90s
+      retries: 12
+      start_period: 120s
     networks:
       - default
       - coolify
