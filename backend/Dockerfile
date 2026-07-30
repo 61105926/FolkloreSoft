@@ -38,4 +38,4 @@ COPY prisma ./prisma
 EXPOSE 4002
 
 # Aplicar migraciones, ejecutar seed (no bloqueante) y arrancar el servidor
-CMD ["sh", "-c", "npx prisma migrate deploy && (node dist/prisma/seed.js || true) && node dist/src/main.js"]
+CMD node dist/src/start.js

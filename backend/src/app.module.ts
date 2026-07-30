@@ -13,6 +13,7 @@ import { ClientesModule } from './clientes/clientes.module.js';
 import { CajaModule } from './caja/caja.module.js';
 import { BotModule } from './bot/bot.module.js';
 import { VentasModule } from './ventas/ventas.module.js';
+import { HealthController } from './health.controller.js';
 
 @Module({
   imports: [
@@ -31,5 +32,6 @@ import { VentasModule } from './ventas/ventas.module.js';
     BotModule,
     VentasModule,
   ],
+  controllers: [HealthController],
 })
 export class AppModule {}
