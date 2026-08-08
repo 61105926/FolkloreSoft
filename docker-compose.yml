@@ -51,6 +51,9 @@ services:
       - "3002"
     ports:
       - "3002:3002"
+    labels:
+      - traefik.docker.network=coolify
+      - traefik.http.services.svc-etem0jll35fn184wkzfgwu3k-frontend.loadbalancer.server.port=3002
     networks:
       - default
       - coolify
