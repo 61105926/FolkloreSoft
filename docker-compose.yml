@@ -49,9 +49,6 @@ services:
       start_period: 30s
     expose:
       - "3002"
-    labels:
-      - traefik.docker.network=coolify
-      - traefik.http.services.svc-etem0jll35fn184wkzfgwu3k-frontend.loadbalancer.server.port=3002
     networks:
       - default
       - coolify
