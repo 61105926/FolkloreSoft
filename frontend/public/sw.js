@@ -1,5 +1,5 @@
-const CACHE = "danza-cache-v1";
-const STATIC_CACHE = "danza-static-v1";
+const CACHE = "danza-cache-v2";
+const STATIC_CACHE = "danza-static-v2";
 
 self.addEventListener("install", () => {
   self.skipWaiting();
@@ -47,14 +47,22 @@ self.addEventListener("fetch", (event) => {
       (async () => {
         try {
           const response = await fetch(request);
-          const clone = response.clone();
-          const cache = await caches.open(CACHE);
-          cache.put("/", clone);
+          // Error del servidor (5xx): servir ultima pagina buena si existe
+          if (response.status >= 500) {
+            const cached = await caches.match("/");
+            if (cached) return cached;
+          }
+          // Solo cachear respuestas OK
+          if (response.ok) {
+            const clone = response.clone();
+            const cache = await caches.open(CACHE);
+            cache.put("/", clone);
+          }
           return response;
         } catch {
           const cached = await caches.match("/");
           if (cached) return cached;
-          return new Response("Sin conexion", { status: 503 });
+          return Response.error();
         }
       })(),
     );
