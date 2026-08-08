@@ -51,17 +51,29 @@ services:
       - "3002"
     ports:
       - "3002:3002"
-    labels:
-      - traefik.enable=true
-      - traefik.docker.network=coolify
-      - traefik.http.routers.frontend.rule=Host(`andes-folk.gabnetic.com`)
-      - traefik.http.routers.frontend.entrypoints=https
-      - traefik.http.routers.frontend.tls=true
-      - traefik.http.routers.frontend.tls.certresolver=letsencrypt
-      - traefik.http.services.frontend.loadbalancer.server.port=3002
     networks:
       - default
       - coolify
+
+  # ── Caddy (reverse proxy con HTTPS automatico) ──────────────────────────────
+  caddy:
+    image: caddy:2-alpine
+    restart: always
+    environment:
+      DOMAIN: andes-folk.gabnetic.com
+      UPSTREAM: http://frontend:3002
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - frontend
+    networks:
+      - default
 
 # La red 'coolify' es la red compartida del proxy de Coolify (ya existe en el host).
 # Conectar el backend a ella permite resolver el hostname interno del servicio
@@ -70,3 +82,7 @@ networks:
   default:
   coolify:
     external: true
+
+volumes:
+  caddy_data:
+  caddy_config:
