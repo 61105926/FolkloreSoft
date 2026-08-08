@@ -55,26 +55,6 @@ services:
       - default
       - coolify
 
-  # ── Caddy (reverse proxy con HTTPS automatico) ──────────────────────────────
-  caddy:
-    image: caddy:2-alpine
-    restart: always
-    environment:
-      DOMAIN: andes-folk.gabnetic.com
-      UPSTREAM: http://frontend:3002
-    ports:
-      - "80:80"
-      - "443:443"
-      - "443:443/udp"
-    volumes:
-      - ./Caddyfile:/etc/caddy/Caddyfile:ro
-      - caddy_data:/data
-      - caddy_config:/config
-    depends_on:
-      - frontend
-    networks:
-      - default
-
 # La red 'coolify' es la red compartida del proxy de Coolify (ya existe en el host).
 # Conectar el backend a ella permite resolver el hostname interno del servicio
 # PostgreSQL gestionado (p. ej. i39ev72uop4se7zwu482wp27).
@@ -82,7 +62,3 @@ networks:
   default:
   coolify:
     external: true
-
-volumes:
-  caddy_data:
-  caddy_config:
