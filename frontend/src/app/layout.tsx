@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono, Outfit } from "next/font/google";
 import { Providers } from "./providers";
+import { PWARegister } from "./pwa-register";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -22,6 +23,20 @@ const outfit = Outfit({
 export const metadata: Metadata = {
   title: "FOLCKLORE",
   description: "Sistema de gestión de ropa folklórica boliviana",
+  manifest: "/manifest.webmanifest",
+  themeColor: "#991B1B",
+  appleWebApp: {
+    capable: true,
+    title: "Danza con Altura",
+    statusBarStyle: "default",
+  },
+  icons: {
+    icon: [
+      { url: "/icons/icon-192.png", sizes: "192x192", type: "image/png" },
+      { url: "/icons/icon-512.png", sizes: "512x512", type: "image/png" },
+    ],
+    apple: [{ url: "/icons/apple-touch-icon.png", sizes: "180x180" }],
+  },
 };
 
 export default function RootLayout({
@@ -35,6 +50,7 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} ${outfit.variable} antialiased`}
       >
         <Providers>{children}</Providers>
+        <PWARegister />
       </body>
     </html>
   );

@@ -2,6 +2,7 @@
 installer/dist/
 installer/output/
 installer/node-win.zip
+installer/node-tmp/
 
 # ── Node ─────────────────────────────────────────────────────────────────────
 node_modules/
@@ -10,6 +11,7 @@ node_modules/
 .env
 .env.local
 .env.production
+.env.desktop
 
 # ── Builds ───────────────────────────────────────────────────────────────────
 dist/

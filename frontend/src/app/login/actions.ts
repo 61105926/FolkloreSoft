@@ -25,6 +25,7 @@ export async function loginAction(
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email, password }),
+      signal: AbortSignal.timeout(15000),
     });
 
     if (!response.ok) {

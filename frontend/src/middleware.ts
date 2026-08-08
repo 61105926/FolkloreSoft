@@ -54,6 +54,7 @@ export async function middleware(request: NextRequest) {
       const res = await fetch(`${BACKEND}/auth/refresh`, {
         method: "POST",
         headers: { Cookie: `refreshToken=${refreshToken}` },
+        signal: AbortSignal.timeout(8000),
       });
 
       if (res.ok) {

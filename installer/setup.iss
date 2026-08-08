@@ -1,5 +1,5 @@
 #define MyAppName      "Danza con Altura"
-#define MyAppVersion   "1.0"
+#define MyAppVersion   "1.1"
 #define MyAppPublisher "Danza con Altura"
 #define MyAppExe       "start.bat"
 #define DistDir        "dist"
@@ -9,14 +9,16 @@ AppId={{A1B2C3D4-E5F6-7890-ABCD-EF1234567890}
 AppName={#MyAppName}
 AppVersion={#MyAppVersion}
 AppPublisher={#MyAppPublisher}
-DefaultDirName={autopf}\DanzaConAltura
+DefaultDirName={localappdata}\DanzaConAltura
 DefaultGroupName={#MyAppName}
 OutputDir=output
 OutputBaseFilename=DanzaConAltura-Setup
 Compression=lzma2
 SolidCompression=yes
 WizardStyle=modern
+PrivilegesRequired=lowest
 ArchitecturesInstallIn64BitMode=x64
+ArchitecturesAllowed=x64
 
 [Languages]
 Name: "spanish"; MessagesFile: "compiler:Languages\Spanish.isl"

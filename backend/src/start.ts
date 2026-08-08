@@ -1,7 +1,7 @@
 import { execSync } from 'child_process';
 import { createConnection } from 'net';
-import { setTimeout } from 'timers/promises';
 import { resolve } from 'path';
+import { setTimeout } from 'timers/promises';
 
 const { DATABASE_URL } = process.env;
 const DB_TIMEOUT = 60;
@@ -50,9 +50,13 @@ async function main(): Promise<void> {
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
       console.error(`==> Error migraciones (intento ${i}/${MIGRATE_RETRIES}):`, msg);
-      if (i === MIGRATE_RETRIES) throw new Error(`Migraciones fallaron: ${msg}`);
-      console.log(`Reintentando migraciones en 3s...`);
-      await setTimeout(3000);
+      if (i === MIGRATE_RETRIES) {
+        // No fatal: la BD puede estar ya migrada (p. ej. servidor compartido).
+        console.warn('==> Continuando sin aplicar migraciones (si la BD ya está migrada es correcto).');
+      } else {
+        console.log(`Reintentando migraciones en 3s...`);
+        await setTimeout(3000);
+      }
     }
   }
   try { run('node dist/prisma/seed.js'); } catch { console.log('Seed omitido'); }
