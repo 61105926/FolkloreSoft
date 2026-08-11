@@ -136,7 +136,17 @@ export class ContratosService {
     // Never trust total_pagado from frontend — derive it from anticipo
     const { prendas, garantias, ...rest } = data;
 
-    const prendaCreate = (prendas ?? []).map((p) => {
+    const prendaCreate = await Promise.all((prendas ?? []).map(async (p) => {
+      // Si viene solo el conjunto sin variación, usar la primera variación activa
+      let variacionId = p.variacionId;
+      if (!variacionId && p.conjuntoId) {
+        const primera = await this.prisma.variacionConjunto.findFirst({
+          where: { conjuntoId: p.conjuntoId, activa: true },
+          orderBy: { id: 'asc' },
+          select: { id: true },
+        });
+        variacionId = primera?.id ?? undefined;
+      }
       const total =
         (p.cantidad_hombres ?? 0) +
         (p.cantidad_cholitas ?? 0) +
@@ -145,7 +155,7 @@ export class ContratosService {
       return {
         modelo: p.modelo,
         conjuntoId: p.conjuntoId,
-        variacionId: p.variacionId,
+        variacionId,
         cantidad_hombres: p.cantidad_hombres ?? 0,
         cantidad_cholitas: p.cantidad_cholitas ?? 0,
         cantidad_machas: p.cantidad_machas ?? 0,
@@ -154,7 +164,7 @@ export class ContratosService {
         costo_unitario: p.costo_unitario,
         subtotal: total * p.costo_unitario,
       };
-    });
+    }));
 
     const totalAuto = prendaCreate.reduce((s, p) => s + Number(p.subtotal), 0);
     const totalFinal = data.total ?? totalAuto;

@@ -614,7 +614,9 @@ export function ContratoModal({
 
   // ── Prendas helpers ────────────────────────────────────────────────────────
   const addPrendaFromCatalog = (c: ConjuntoCatalogo) => {
-    setPrendas((p) => [...p, { _key: `new-${Date.now()}`, conjuntoId: c.id, variacionId: undefined, modelo: c.nombre, cantidad: 1, costoUnitario: c.precio_base, deleted: false }]);
+    const primera = c.variaciones[0] ?? null;
+    setPrendas((p) => [...p, { _key: `new-${Date.now()}`, conjuntoId: c.id, variacionId: primera?.id ?? undefined, modelo: c.nombre, cantidad: 1, costoUnitario: primera?.precio_alquiler ?? c.precio_base, deleted: false }]);
+    if (primera?.id) void fetchStock(primera.id);
     setCatalogSearch("");
   };
   const addPrenda = () => setPrendas((p) => [...p, { _key: `new-${Date.now()}`, modelo: "", cantidad: 1, costoUnitario: "0", deleted: false }]);
