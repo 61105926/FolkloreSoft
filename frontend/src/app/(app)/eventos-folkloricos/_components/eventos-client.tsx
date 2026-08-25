@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { ContratoModal } from "./contrato-modal";
 import { imprimirContrato } from "./print-contrato";
@@ -195,13 +195,22 @@ export function isVencido(c: Contrato): boolean {
   return new Date(c.fecha_devolucion) < new Date();
 }
 
+const TIPO_CONTRATO_META: Record<TipoContrato, { label: string; chip: string }> = {
+  DIRECTO: { label: "Directo", chip: "bg-violet-100 text-violet-700 border-violet-300" },
+  RESERVA: { label: "Reserva", chip: "bg-sky-100 text-sky-700 border-sky-300" },
+};
+
 // ── Stats ──────────────────────────────────────────────────────────────────────
 
-function ContratosStats({ contratos, activeFilter, onFilter }: {
+function ContratosStats({ contratos, activeFilter, onFilter, tipoFilter, onTipoFilter }: {
   contratos: Contrato[];
   activeFilter: EstadoContrato | "VENCIDO" | "";
   onFilter: (f: EstadoContrato | "VENCIDO" | "") => void;
+  tipoFilter: TipoContrato | "";
+  onTipoFilter: (t: TipoContrato | "") => void;
 }) {
+  const directos   = contratos.filter((c) => c.tipo === "DIRECTO").length;
+  const reservas   = contratos.filter((c) => c.tipo === "RESERVA").length;
   const reservados = contratos.filter((c) => c.estado === "RESERVADO" || c.estado === "CONFIRMADO").length;
   const enUso      = contratos.filter((c) => c.estado === "EN_USO" || c.estado === "ENTREGADO").length;
   const vencidos   = contratos.filter(isVencido).length;
@@ -216,8 +225,13 @@ function ContratosStats({ contratos, activeFilter, onFilter }: {
     { label: "Cobrado",     value: `Bs. ${cobrado.toLocaleString("es-BO")}`, color: "text-emerald-700", filter: "", sub: null,                               warn: false, card: "bg-emerald-50 border-emerald-200" },
   ];
 
+  const tipoCards: { tipo: TipoContrato; value: number }[] = [
+    { tipo: "DIRECTO", value: directos },
+    { tipo: "RESERVA", value: reservas },
+  ];
+
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-3">
       {stats.map((s) => {
         const isActive = activeFilter === s.filter && s.filter !== "";
         return (
@@ -234,7 +248,32 @@ function ContratosStats({ contratos, activeFilter, onFilter }: {
           >
             <p className={`text-3xl font-bold leading-tight ${s.color}`} style={{ fontFamily: "var(--font-outfit)" }}>{s.value}</p>
             <p className="text-xs font-medium text-gray-500 mt-0.5">{s.label}</p>
-            {s.sub && <p className="text-xs font-semibold text-amber-600 mt-0.5">{s.sub}</p>}
+            {s.sub && (
+              <p className={`text-xs font-semibold mt-0.5 ${s.warn ? "text-amber-600" : "text-gray-500"}`}>{s.sub}</p>
+            )}
+            {isActive && <p className="text-xs font-medium text-primary mt-0.5">Filtrando ×</p>}
+          </button>
+        );
+      })}
+
+      {/* Por tipo de contrato */}
+      {tipoCards.map(({ tipo, value }) => {
+        const meta = TIPO_CONTRATO_META[tipo];
+        const isActive = tipoFilter === tipo;
+        const card = tipo === "DIRECTO"
+          ? "bg-violet-50 border-violet-200"
+          : "bg-sky-50 border-sky-200";
+        const color = tipo === "DIRECTO" ? "text-violet-700" : "text-sky-700";
+        return (
+          <button
+            key={tipo}
+            onClick={() => onTipoFilter(isActive ? "" : tipo)}
+            className={`text-left rounded-2xl border-2 px-4 py-3 transition-all cursor-pointer ${
+              isActive ? `${card} ring-2 ring-primary/30 shadow-sm` : `${card} hover:shadow-sm`
+            }`}
+          >
+            <p className={`text-3xl font-bold leading-tight ${color}`} style={{ fontFamily: "var(--font-outfit)" }}>{value}</p>
+            <p className="text-xs font-medium text-gray-500 mt-0.5">{meta.label}s</p>
             {isActive && <p className="text-xs font-medium text-primary mt-0.5">Filtrando ×</p>}
           </button>
         );
@@ -245,38 +284,203 @@ function ContratosStats({ contratos, activeFilter, onFilter }: {
 
 // ── Confirm Delete Contrato ────────────────────────────────────────────────────
 
-function ConfirmDeleteContrato({ contrato, token, backendUrl, onClose, onDeleted }: {
-  contrato: Contrato; token: string; backendUrl: string; onClose: () => void; onDeleted: (id: number) => void;
+interface ResumenCajaContrato {
+  contratoId: number;
+  codigo: string;
+  cliente: string;
+  movimientos: MovimientoCajaContrato[];
+  ingresos: number;
+  egresos: number;
+  en_poder: number;
+}
+
+const CONCEPTO_CAJA_LABEL: Record<string, string> = {
+  ANTICIPO_CONTRATO: "Anticipo",
+  PAGO_SALDO_CONTRATO: "Pago de saldo",
+  DEUDA_COBRADA: "Deuda cobrada",
+  GARANTIA_EFECTIVO: "Garantía efectivo",
+  DEVOLUCION_GARANTIA: "Dev. garantía",
+  GASTO_OPERATIVO: "Gasto operativo",
+  OTRO_INGRESO: "Otro ingreso",
+  OTRO_EGRESO: "Otro egreso",
+};
+
+const bs = (n: number) =>
+  `Bs. ${n.toLocaleString("es-BO", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+
+function ConfirmDeleteContrato({ contrato, token, backendUrl, onClose, onDeleted, onAnulado }: {
+  contrato: Contrato; token: string; backendUrl: string;
+  onClose: () => void;
+  onDeleted: (id: number) => void;
+  onAnulado: (c: Contrato) => void;
 }) {
   const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [resumen, setResumen] = useState<ResumenCajaContrato | null>(null);
+  const [cargando, setCargando] = useState(true);
+  const [devolver, setDevolver] = useState("");
+  const [motivo, setMotivo] = useState("");
+
+  // Traer el flujo de caja del contrato antes de decidir
+  useEffect(() => {
+    let vivo = true;
+    (async () => {
+      try {
+        const res = await fetch(`${backendUrl}/contratos/${contrato.id}/caja`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (!vivo) return;
+        if (res.ok) {
+          const data = (await res.json()) as ResumenCajaContrato;
+          setResumen(data);
+          if (data.en_poder > 0) setDevolver(String(data.en_poder));
+        }
+      } catch { /* si falla, se sigue con el flujo simple */ }
+      finally { if (vivo) setCargando(false); }
+    })();
+    return () => { vivo = false; };
+  }, [contrato.id, backendUrl, token]);
+
+  const tieneCaja = (resumen?.movimientos.length ?? 0) > 0;
+  const montoDevolver = Math.min(Math.max(parseFloat(devolver) || 0, 0), resumen?.en_poder ?? 0);
+  const retenido = (resumen?.en_poder ?? 0) - montoDevolver;
 
   const handleDelete = async () => {
     setDeleting(true); setError(null);
     try {
-      const res = await fetch(`${backendUrl}/contratos/${contrato.id}`, { method: "DELETE", headers: { Authorization: `Bearer ${token}` } });
-      if (res.ok) { onDeleted(contrato.id); onClose(); }
-      else { const err = await res.json().catch(() => ({})); setError(err?.message ?? "Error al eliminar"); setDeleting(false); }
+      const res = await fetch(`${backendUrl}/contratos/${contrato.id}`, {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify(tieneCaja
+          ? { devolver: montoDevolver, motivo: motivo.trim() || undefined }
+          : {}),
+      });
+      if (res.ok) {
+        const data = await res.json().catch(() => ({}));
+        if (data?.accion === "ANULADO" && data.contrato) onAnulado(data.contrato as Contrato);
+        else onDeleted(contrato.id);
+        onClose();
+      } else {
+        const err = await res.json().catch(() => ({}));
+        setError(err?.message ?? "Error al eliminar"); setDeleting(false);
+      }
     } catch { setError("Error de red"); setDeleting(false); }
   };
 
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-      <div className="bg-white border-2 border-gray-200 rounded-2xl w-full max-w-sm shadow-2xl p-6 space-y-4">
+      <div className={`bg-white border-2 border-gray-200 rounded-2xl w-full shadow-2xl p-6 space-y-4 max-h-[92vh] overflow-y-auto ${tieneCaja ? "max-w-md" : "max-w-sm"}`}>
         <div className="w-12 h-12 rounded-2xl bg-red-50 flex items-center justify-center mx-auto">
           <svg className="h-6 w-6 text-crimson" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
         </div>
+
         <div className="text-center">
-          <h2 className="font-bold text-base text-gray-900" style={{ fontFamily: "var(--font-outfit)" }}>Eliminar contrato</h2>
+          <h2 className="font-bold text-base text-gray-900" style={{ fontFamily: "var(--font-outfit)" }}>
+            {tieneCaja ? "Anular contrato" : "Eliminar contrato"}
+          </h2>
           <p className="text-sm text-gray-600 mt-1">
-            ¿Eliminar <span className="font-semibold text-gray-900">{contrato.codigo}</span>?
+            <span className="font-semibold text-gray-900">{contrato.codigo}</span> — {contrato.cliente.nombre}
           </p>
-          <p className="text-xs text-gray-500 mt-1">Esta acción no se puede deshacer. Se liberarán todas las instancias asignadas.</p>
+          <p className="text-xs text-gray-500 mt-1">
+            {cargando
+              ? "Revisando movimientos en caja…"
+              : tieneCaja
+                ? "Este contrato tiene plata registrada en caja, así que se anula en vez de borrarse. Los movimientos quedan en caja para que el flujo siga siendo auditable."
+                : "No tiene movimientos en caja. Se elimina definitivamente y se liberan las instancias asignadas."}
+          </p>
         </div>
+
+        {/* Flujo de caja del contrato */}
+        {tieneCaja && resumen && (
+          <div className="rounded-xl border-2 border-gray-200 overflow-hidden">
+            <p className="text-[11px] font-bold uppercase tracking-wide text-gray-500 px-3 pt-2.5 pb-1.5">
+              Flujo en caja
+            </p>
+            <div className="max-h-44 overflow-y-auto divide-y divide-gray-100">
+              {resumen.movimientos.map((m) => {
+                const esIngreso = m.tipo === "INGRESO";
+                return (
+                  <div key={m.id} className="flex items-start justify-between gap-2 px-3 py-2">
+                    <div className="min-w-0">
+                      <p className="text-xs font-semibold text-gray-800">
+                        {CONCEPTO_CAJA_LABEL[m.concepto] ?? m.concepto}
+                        <span className="font-normal text-gray-500"> · {m.forma_pago}</span>
+                      </p>
+                      <p className="text-[11px] text-gray-500">
+                        {new Date(m.createdAt).toLocaleDateString("es-BO", { day: "2-digit", month: "short", year: "numeric" })}
+                      </p>
+                    </div>
+                    <span className={`text-xs font-bold tabular-nums shrink-0 ${esIngreso ? "text-emerald-600" : "text-red-600"}`}>
+                      {esIngreso ? "+" : "−"}{bs(Number(m.monto))}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+            <div className="bg-gray-50 border-t-2 border-gray-200 px-3 py-2 space-y-0.5">
+              <div className="flex justify-between text-xs">
+                <span className="text-gray-600">Cobrado</span>
+                <span className="font-bold text-emerald-600 tabular-nums">{bs(resumen.ingresos)}</span>
+              </div>
+              {resumen.egresos > 0 && (
+                <div className="flex justify-between text-xs">
+                  <span className="text-gray-600">Ya devuelto</span>
+                  <span className="font-bold text-red-600 tabular-nums">−{bs(resumen.egresos)}</span>
+                </div>
+              )}
+              <div className="flex justify-between text-xs pt-1 border-t border-gray-200">
+                <span className="font-semibold text-gray-700">En poder de la casa</span>
+                <span className="font-bold text-gray-900 tabular-nums">{bs(resumen.en_poder)}</span>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Cuánto se le devuelve al cliente */}
+        {tieneCaja && resumen && resumen.en_poder > 0 && (
+          <div className="space-y-2">
+            <label className="text-xs font-semibold text-gray-700">¿Cuánto se le devuelve al cliente?</label>
+            <div className="flex gap-2">
+              <input
+                type="number" min={0} max={resumen.en_poder} step="0.01"
+                value={devolver}
+                onChange={(e) => setDevolver(e.target.value)}
+                className="flex-1 rounded-xl border-2 border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+              />
+              <button
+                type="button"
+                onClick={() => setDevolver(String(resumen.en_poder))}
+                className="text-xs font-semibold text-primary px-2 rounded-lg hover:bg-primary/10"
+              >
+                Todo
+              </button>
+              <button
+                type="button"
+                onClick={() => setDevolver("0")}
+                className="text-xs font-semibold text-gray-600 px-2 rounded-lg hover:bg-gray-100"
+              >
+                Nada
+              </button>
+            </div>
+            <input
+              value={motivo}
+              onChange={(e) => setMotivo(e.target.value)}
+              placeholder="Motivo de la anulación (opcional)"
+              className="w-full rounded-xl border-2 border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+            />
+            <p className="text-[11px] text-gray-500">
+              Se registra un egreso de <b>{bs(montoDevolver)}</b> en caja
+              {retenido > 0.001 && <> y quedan <b>{bs(retenido)}</b> como ingreso retenido</>}.
+            </p>
+          </div>
+        )}
+
         {error && <p className="text-xs text-crimson text-center">{error}</p>}
         <div className="flex gap-2">
           <Button variant="outline" className="flex-1" onClick={onClose} disabled={deleting}>Cancelar</Button>
-          <Button className="flex-1 bg-crimson text-white hover:bg-crimson/90" onClick={handleDelete} disabled={deleting}>{deleting ? "Eliminando…" : "Eliminar"}</Button>
+          <Button className="flex-1 bg-crimson text-white hover:bg-crimson/90" onClick={handleDelete} disabled={deleting || cargando}>
+            {deleting ? (tieneCaja ? "Anulando…" : "Eliminando…") : (tieneCaja ? "Anular" : "Eliminar")}
+          </Button>
         </div>
       </div>
     </div>
@@ -322,6 +526,7 @@ function ContratoCard({
     } finally { setActioning(false); }
   };
 
+  const tipoMeta  = TIPO_CONTRATO_META[c.tipo] ?? TIPO_CONTRATO_META.DIRECTO;
   const totalNum  = parseFloat(c.total) || 0;
   const pagadoNum = parseFloat(c.total_pagado) || 0;
   const pagosPct  = totalNum > 0 ? Math.min(100, Math.round((pagadoNum / totalNum) * 100)) : 0;
@@ -332,9 +537,14 @@ function ContratoCard({
         vencido ? "border-amber-400" : activo ? "border-gray-200" : "border-gray-100 opacity-75"
       }`}
     >
-      {/* Top: código + estado */}
+      {/* Top: código + tipo + estado */}
       <div className="px-4 pt-3.5 pb-0 flex items-start justify-between gap-2">
-        <p className="text-xs font-mono font-semibold text-gray-500 leading-none mt-0.5">{c.codigo}</p>
+        <div className="flex items-center gap-1.5 flex-wrap min-w-0">
+          <p className="text-xs font-mono font-semibold text-gray-500 leading-none">{c.codigo}</p>
+          <span className={`text-xs font-bold px-1.5 py-0.5 rounded-md border leading-none ${tipoMeta.chip}`}>
+            {tipoMeta.label}
+          </span>
+        </div>
         <div className="flex items-center gap-1 flex-wrap justify-end">
           {vencido && (
             <span className="text-xs font-bold px-1.5 py-0.5 rounded-md bg-amber-100 text-amber-700 border border-amber-300 leading-none">
@@ -523,6 +733,7 @@ export function ContratosClient({ initialContratos, initialClientes, initialEven
   const [search, setSearch] = useState("");
   const [estadoFilter, setEstadoFilter] = useState<EstadoContrato | "VENCIDO" | "">("");
   const [ciudadFilter, setCiudadFilter] = useState<CiudadContrato | "">("");
+  const [tipoFilter, setTipoFilter] = useState<TipoContrato | "">("");
   const [sortBy, setSortBy] = useState<"reciente" | "urgente">("reciente");
 
   // Modals
@@ -545,6 +756,7 @@ export function ContratosClient({ initialContratos, initialClientes, initialEven
       (eventoFilter === "" || c.eventoId === eventoFilter) &&
       (estadoFilter === "" || estadoFilter === "VENCIDO" ? estadoFilter === "" || isVencido(c) : c.estado === estadoFilter) &&
       (!ciudadFilter || c.ciudad === ciudadFilter) &&
+      (!tipoFilter || c.tipo === tipoFilter) &&
       (!q ||
         c.codigo.toLowerCase().includes(q) ||
         c.cliente.nombre.toLowerCase().includes(q) ||
@@ -563,7 +775,7 @@ export function ContratosClient({ initialContratos, initialClientes, initialEven
       });
     }
     return list; // default: already sorted by createdAt desc from API
-  }, [contratos, eventoFilter, estadoFilter, ciudadFilter, search, sortBy]);
+  }, [contratos, eventoFilter, estadoFilter, ciudadFilter, tipoFilter, search, sortBy]);
 
   const handleEventoSaved = (saved: Evento) => setEventos((prev) => {
     const idx = prev.findIndex((e) => e.id === saved.id);
@@ -595,7 +807,7 @@ export function ContratosClient({ initialContratos, initialClientes, initialEven
     setShowContratoModal(true);
   };
 
-  const anyFilter = search || estadoFilter || ciudadFilter || eventoFilter !== "";
+  const anyFilter = search || estadoFilter || ciudadFilter || tipoFilter || eventoFilter !== "";
   const vencidosList = contratos.filter(isVencido);
 
   return (
@@ -613,7 +825,11 @@ export function ContratosClient({ initialContratos, initialClientes, initialEven
       </div>
 
       {/* Stats — clickable */}
-      <ContratosStats contratos={contratos} activeFilter={estadoFilter} onFilter={setEstadoFilter} />
+      <ContratosStats
+        contratos={contratos}
+        activeFilter={estadoFilter} onFilter={setEstadoFilter}
+        tipoFilter={tipoFilter} onTipoFilter={setTipoFilter}
+      />
 
       {/* Vencidos alert banner */}
       {vencidosList.length > 0 && (
@@ -734,7 +950,7 @@ export function ContratosClient({ initialContratos, initialClientes, initialEven
       {anyFilter && (
         <div className="flex items-center justify-between">
           <p className="text-xs font-medium text-gray-500">{filtered.length} resultado{filtered.length !== 1 ? "s" : ""}</p>
-          <button onClick={() => { setSearch(""); setEstadoFilter(""); setCiudadFilter(""); setEventoFilter(""); }} className="text-xs font-semibold text-primary hover:underline">Limpiar filtros</button>
+          <button onClick={() => { setSearch(""); setEstadoFilter(""); setCiudadFilter(""); setTipoFilter(""); setEventoFilter(""); }} className="text-xs font-semibold text-primary hover:underline">Limpiar filtros</button>
         </div>
       )}
 
@@ -746,7 +962,7 @@ export function ContratosClient({ initialContratos, initialClientes, initialEven
           </div>
           <p className="font-semibold text-gray-600">{anyFilter ? "Sin resultados para los filtros actuales" : "No hay contratos aún"}</p>
           {anyFilter
-            ? <button onClick={() => { setSearch(""); setEstadoFilter(""); setCiudadFilter(""); setEventoFilter(""); }} className="mt-2 text-sm font-semibold text-primary hover:underline">Limpiar filtros →</button>
+            ? <button onClick={() => { setSearch(""); setEstadoFilter(""); setCiudadFilter(""); setTipoFilter(""); setEventoFilter(""); }} className="mt-2 text-sm font-semibold text-primary hover:underline">Limpiar filtros →</button>
             : <button onClick={openNuevoContrato} className="mt-2 text-sm font-semibold text-primary hover:underline">Crear el primer contrato →</button>
           }
         </div>
@@ -787,6 +1003,7 @@ export function ContratosClient({ initialContratos, initialClientes, initialEven
           contrato={eliminandoContrato} token={token} backendUrl={backendUrl}
           onClose={() => setEliminandoContrato(null)}
           onDeleted={(id) => { handleContratoDeleted(id); setEliminandoContrato(null); }}
+          onAnulado={(c) => { handleContratoSaved(c); setEliminandoContrato(null); }}
         />
       )}
     </div>

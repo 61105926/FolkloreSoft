@@ -3,7 +3,7 @@ import { PrismaService } from '../prisma/prisma.service.js';
 import { TipoMovimiento, ConceptoCaja, FormaPago } from '@prisma/client';
 
 const MOV_INCLUDE = {
-  contrato: { select: { id: true, codigo: true, cliente: { select: { nombre: true } } } },
+  contrato: { select: { id: true, codigo: true, estado: true, cliente: { select: { nombre: true } } } },
   user:     { select: { id: true, nombre: true, rol: true } },
   sucursal: { select: { id: true, nombre: true } },
 } as const;

@@ -400,10 +400,118 @@ export class ContratosService {
     return result;
   }
 
-  async remove(id: number) {
-    await this.findOne(id);
-    await this.prisma.movimientoCaja.deleteMany({ where: { contratoId: id } });
-    return this.prisma.contratoAlquiler.delete({ where: { id } });
+  /** Resumen del dinero que pasó por caja para un contrato. */
+  async resumenCaja(id: number) {
+    const contrato = await this.prisma.contratoAlquiler.findUnique({
+      where: { id },
+      select: {
+        id: true, codigo: true, estado: true, total: true, total_pagado: true,
+        cliente: { select: { nombre: true } },
+        movimientosCaja: {
+          orderBy: { createdAt: 'asc' },
+          select: {
+            id: true, tipo: true, concepto: true, monto: true,
+            descripcion: true, forma_pago: true, createdAt: true,
+          },
+        },
+      },
+    });
+    if (!contrato) throw new NotFoundException(`Contrato #${id} no encontrado`);
+    const ingresos = contrato.movimientosCaja
+      .filter((m) => m.tipo === 'INGRESO').reduce((s, m) => s + Number(m.monto), 0);
+    const egresos = contrato.movimientosCaja
+      .filter((m) => m.tipo === 'EGRESO').reduce((s, m) => s + Number(m.monto), 0);
+    return {
+      contratoId: contrato.id,
+      codigo: contrato.codigo,
+      estado: contrato.estado,
+      cliente: contrato.cliente.nombre,
+      movimientos: contrato.movimientosCaja,
+      ingresos,
+      egresos,
+      /** Lo que la casa todavía tiene del cliente y habría que devolver al anular. */
+      en_poder: ingresos - egresos,
+    };
+  }
+
+  /**
+   * Elimina o anula un contrato.
+   *
+   * - Sin movimientos de caja (contrato cargado por error, sin cobro): se elimina de verdad.
+   * - Con movimientos de caja: NO se elimina. Se anula (estado CANCELADO) para que todo el
+   *   flujo de dinero siga visible en caja y ligado a su contrato. Borrar los movimientos
+   *   haría que los arqueos ya cerrados cambien retroactivamente.
+   *
+   * Si se pasa `devolver`, registra además el EGRESO de la plata que se le devuelve al cliente.
+   */
+  async remove(
+    id: number,
+    opts?: { devolver?: number; forma_pago?: FormaPago; motivo?: string },
+    actor?: { id?: number; nombre?: string },
+  ) {
+    const contrato = await this.prisma.contratoAlquiler.findUnique({
+      where: { id },
+      select: {
+        id: true, codigo: true,
+        cliente: { select: { nombre: true } },
+        movimientosCaja: { select: { id: true, tipo: true, monto: true } },
+      },
+    });
+    if (!contrato) throw new NotFoundException(`Contrato #${id} no encontrado`);
+
+    const movimientos = contrato.movimientosCaja;
+    const userName = actor?.nombre ?? 'Sistema';
+
+    // Sin plata de por medio → borrado real, no hay rastro que preservar
+    if (movimientos.length === 0) {
+      await this.prisma.contratoAlquiler.delete({ where: { id } });
+      return { accion: 'ELIMINADO' as const, contratoId: id, movimientos: 0, devuelto: 0, retenido: 0 };
+    }
+
+    const ingresos = movimientos.filter((m) => m.tipo === 'INGRESO').reduce((s, m) => s + Number(m.monto), 0);
+    const egresos  = movimientos.filter((m) => m.tipo === 'EGRESO').reduce((s, m) => s + Number(m.monto), 0);
+    const enPoder  = ingresos - egresos;
+
+    const devolver = Math.min(Math.max(opts?.devolver ?? 0, 0), Math.max(enPoder, 0));
+    if (devolver > 0) {
+      await this.prisma.movimientoCaja.create({
+        data: {
+          tipo: 'EGRESO',
+          concepto: 'OTRO_EGRESO',
+          monto: devolver,
+          descripcion:
+            `Anulación ${contrato.codigo} — devolución a ${contrato.cliente.nombre}` +
+            (opts?.motivo ? ` (${opts.motivo})` : ''),
+          forma_pago: opts?.forma_pago ?? FormaPago.EFECTIVO,
+          referencia: contrato.codigo,
+          contratoId: id,
+          userId: actor?.id ?? null,
+        },
+      });
+    }
+
+    const anulado = await this.prisma.contratoAlquiler.update({
+      where: { id },
+      data: { estado: EstadoContrato.CANCELADO },
+      include: INCLUDE_FULL,
+    });
+
+    const retenido = enPoder - devolver;
+    const partes = [`cobrado Bs. ${ingresos.toFixed(2)}`];
+    if (egresos > 0)  partes.push(`ya devuelto Bs. ${egresos.toFixed(2)}`);
+    if (devolver > 0) partes.push(`devuelto ahora Bs. ${devolver.toFixed(2)}`);
+    if (retenido > 0) partes.push(`retenido Bs. ${retenido.toFixed(2)}`);
+    await this.log(id, 'ANULADO',
+      `Contrato anulado por ${userName}${opts?.motivo ? ` — ${opts.motivo}` : ''}. ` +
+      `${partes.join(', ')}. Los ${movimientos.length} movimiento(s) quedan en caja.`);
+
+    return {
+      accion: 'ANULADO' as const,
+      contrato: anulado,
+      movimientos: movimientos.length,
+      devuelto: devolver,
+      retenido,
+    };
   }
 
   // ── Prendas ───────────────────────────────────────────────────────────────

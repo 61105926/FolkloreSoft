@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 
 // ── Types ──────────────────────────────────────────────────────────────────────
@@ -29,6 +29,7 @@ export interface MovimientoCaja {
   createdAt: string;
   contrato?: {
     id: number; codigo: string;
+    estado?: EstadoContrato;
     cliente: { nombre: string };
   } | null;
 }
@@ -488,12 +489,137 @@ function ReciboModal({ m, onClose, sucursal }: { m: MovimientoCaja; onClose: () 
 
 // ── Movimiento Row ────────────────────────────────────────────────────────────
 
+// ── Flujo de caja de un contrato ──────────────────────────────────────────────
+
+function FlujoContratoModal({
+  contratoId, codigo, token, backendUrl, onClose,
+}: {
+  contratoId: number; codigo: string; token: string; backendUrl: string; onClose: () => void;
+}) {
+  const [movs, setMovs] = useState<MovimientoCaja[] | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let vivo = true;
+    (async () => {
+      try {
+        const res = await fetch(`${backendUrl}/caja?contratoId=${contratoId}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (!vivo) return;
+        if (res.ok) {
+          const data = (await res.json()) as MovimientoCaja[];
+          // El backend los devuelve del más nuevo al más viejo; el flujo se lee al revés
+          setMovs([...data].reverse());
+        } else setError("No se pudo cargar el flujo");
+      } catch { if (vivo) setError("Error de red"); }
+    })();
+    return () => { vivo = false; };
+  }, [contratoId, backendUrl, token]);
+
+  const ingresos = (movs ?? []).filter((m) => m.tipo === "INGRESO").reduce((s, m) => s + Number(m.monto), 0);
+  const egresos  = (movs ?? []).filter((m) => m.tipo === "EGRESO").reduce((s, m) => s + Number(m.monto), 0);
+  const contrato = movs?.find((m) => m.contrato)?.contrato ?? null;
+
+  let saldo = 0;
+
+  return (
+    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 no-print" onClick={onClose}>
+      <div className="bg-white border-2 border-gray-200 rounded-2xl w-full max-w-lg shadow-2xl flex flex-col max-h-[90vh]"
+           onClick={(e) => e.stopPropagation()}>
+        <div className="px-5 py-4 border-b-2 border-gray-200 flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <h2 className="font-bold text-base text-gray-900" style={{ fontFamily: "var(--font-outfit)" }}>
+              Flujo de caja
+            </h2>
+            <p className="text-xs text-gray-600 mt-0.5 flex items-center gap-1.5 flex-wrap">
+              <span className="font-mono font-semibold">{codigo}</span>
+              {contrato && <>· {contrato.cliente.nombre}</>}
+              {contrato?.estado && (
+                <span className={`inline-flex text-[10px] font-bold px-1.5 py-0.5 rounded-md border ${
+                  contrato.estado === "CANCELADO"
+                    ? "bg-red-500/10 text-red-700 border-red-300/40"
+                    : "bg-gray-100 text-gray-700 border-gray-300"
+                }`}>
+                  {ESTADO_CONTRATO_LABEL[contrato.estado]}
+                </span>
+              )}
+            </p>
+          </div>
+          <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-xl hover:bg-gray-100 shrink-0">
+            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+          </button>
+        </div>
+
+        <div className="flex-1 overflow-y-auto">
+          {error && <p className="text-sm text-red-600 text-center py-8">{error}</p>}
+          {!movs && !error && <p className="text-sm text-gray-500 text-center py-8">Cargando…</p>}
+          {movs?.length === 0 && <p className="text-sm text-gray-500 text-center py-8">Este contrato no tiene movimientos en caja.</p>}
+          {movs?.map((m) => {
+            const monto = Number(m.monto);
+            const esIngreso = m.tipo === "INGRESO";
+            saldo += esIngreso ? monto : -monto;
+            const meta = CONCEPTO_META[m.concepto];
+            return (
+              <div key={m.id} className="flex items-start gap-3 px-5 py-3 border-b border-gray-100 last:border-0">
+                <div className={`w-7 h-7 rounded-full flex items-center justify-center shrink-0 text-xs font-bold ${
+                  esIngreso ? "bg-emerald-500/10 text-emerald-600" : "bg-red-500/10 text-red-600"
+                }`}>
+                  {esIngreso ? "↑" : "↓"}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    <span className={`inline-flex text-xs font-bold px-1.5 py-0.5 rounded-md border ${meta.color}`}>
+                      {meta.label}
+                    </span>
+                    <span className="text-xs text-gray-600 font-medium">{FORMA_PAGO_LABEL[m.forma_pago]}</span>
+                  </div>
+                  {m.descripcion && <p className="text-xs text-gray-600 mt-0.5">{m.descripcion}</p>}
+                  <p className="text-xs text-gray-500 mt-0.5">{formatFechaHora(m.createdAt)}</p>
+                </div>
+                <div className="text-right shrink-0">
+                  <p className={`text-sm font-bold tabular-nums ${esIngreso ? "text-emerald-600" : "text-red-600"}`}>
+                    {esIngreso ? "+" : "−"}{formatBs(monto)}
+                  </p>
+                  <p className="text-[11px] text-gray-500 tabular-nums mt-0.5">saldo {formatBs(saldo)}</p>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        {movs && movs.length > 0 && (
+          <div className="border-t-2 border-gray-200 bg-gray-50 px-5 py-3 space-y-1">
+            <div className="flex justify-between text-xs">
+              <span className="text-gray-600">Cobrado al cliente</span>
+              <span className="font-bold text-emerald-600 tabular-nums">{formatBs(ingresos)}</span>
+            </div>
+            {egresos > 0 && (
+              <div className="flex justify-between text-xs">
+                <span className="text-gray-600">Devuelto al cliente</span>
+                <span className="font-bold text-red-600 tabular-nums">−{formatBs(egresos)}</span>
+              </div>
+            )}
+            <div className="flex justify-between text-sm pt-1.5 border-t border-gray-300">
+              <span className="font-bold text-gray-800">Queda en caja</span>
+              <span className={`font-bold tabular-nums ${ingresos - egresos >= 0 ? "text-gray-900" : "text-red-600"}`}>
+                {formatBs(ingresos - egresos)}
+              </span>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 function MovimientoRow({
-  m, onDelete, onRecibo,
+  m, onDelete, onRecibo, onFlujo,
 }: {
   m: MovimientoCaja;
   onDelete: () => void;
   onRecibo: () => void;
+  onFlujo: () => void;
 }) {
   const meta = CONCEPTO_META[m.concepto];
   const monto = Number(m.monto);
@@ -526,9 +652,20 @@ function MovimientoRow({
         </div>
         {m.descripcion && <p className="text-xs text-gray-600 mt-0.5 truncate">{m.descripcion}</p>}
         {m.contrato && (
-          <p className="text-xs text-gray-600 font-medium mt-0.5">
+          <p className="text-xs text-gray-600 font-medium mt-0.5 flex items-center gap-1.5 flex-wrap">
             <span className="font-mono">{m.contrato.codigo}</span>
             {" — "}{m.contrato.cliente.nombre}
+            {m.contrato.estado === "CANCELADO" && (
+              <span className="inline-flex text-[10px] font-bold px-1.5 py-0.5 rounded-md border bg-red-500/10 text-red-700 border-red-300/40">
+                Anulado
+              </span>
+            )}
+            <button
+              onClick={(e) => { e.stopPropagation(); onFlujo(); }}
+              className="text-[11px] font-semibold text-primary hover:underline"
+            >
+              Ver flujo →
+            </button>
           </p>
         )}
         <p className="text-xs text-gray-500 mt-0.5">{formatFechaHora(m.createdAt)}</p>
@@ -773,6 +910,7 @@ export function CajaClient({ initialMovimientos, initialStats, initialCuentas, t
   const [modalTipo,   setModalTipo]   = useState<TipoMovimiento | undefined>(undefined);
   const [pagoPreset,  setPagoPreset]  = useState<CuentaPorCobrar | null>(null);
   const [reciboM,     setReciboM]     = useState<MovimientoCaja | null>(null);
+  const [flujoC,      setFlujoC]      = useState<{ id: number; codigo: string } | null>(null);
 
   // Filters
   const [tipoFilter,      setTipoFilter]      = useState<TipoMovimiento | "">("");
@@ -1014,6 +1152,7 @@ export function CajaClient({ initialMovimientos, initialStats, initialCuentas, t
                             key={m.id} m={m}
                             onDelete={() => handleDelete(m.id)}
                             onRecibo={() => setReciboM(m)}
+                            onFlujo={() => m.contrato && setFlujoC({ id: m.contrato.id, codigo: m.contrato.codigo })}
                           />
                         ))}
                       </div>
@@ -1045,6 +1184,13 @@ export function CajaClient({ initialMovimientos, initialStats, initialCuentas, t
         />
       )}
       {reciboM && <ReciboModal m={reciboM} onClose={() => setReciboM(null)} sucursal={sucursal} />}
+      {flujoC && (
+        <FlujoContratoModal
+          contratoId={flujoC.id} codigo={flujoC.codigo}
+          token={token} backendUrl={backendUrl}
+          onClose={() => setFlujoC(null)}
+        />
+      )}
     </>
   );
 }

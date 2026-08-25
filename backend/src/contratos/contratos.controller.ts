@@ -11,9 +11,10 @@ export class ContratosController {
   @Get()              findAll(@Req() req: any) { return this.svc.findAll({ isAdmin: req.user.rol === 'ADMIN' || req.user.rol === 'SUPERADMIN', sucursalId: req.user.sucursalId ?? undefined }); }
   @Get('garantias')   findAllGarantias() { return this.svc.findAllGarantias(); }
   @Get(':id')         findOne(@Param('id', ParseIntPipe) id: number) { return this.svc.findOne(id); }
+  @Get(':id/caja')    resumenCaja(@Param('id', ParseIntPipe) id: number) { return this.svc.resumenCaja(id); }
   @Post()     create(@Body() body: any, @Req() req: any) { return this.svc.create(body, req.user); }
   @Patch(':id') update(@Param('id', ParseIntPipe) id: number, @Body() body: any) { return this.svc.update(id, body); }
-  @Delete(':id') remove(@Param('id', ParseIntPipe) id: number) { return this.svc.remove(id); }
+  @Delete(':id') remove(@Param('id', ParseIntPipe) id: number, @Body() body: any, @Req() req: any) { return this.svc.remove(id, body ?? {}, req.user); }
 
   // ── Lifecycle ──────────────────────────────────────────────────────────────
   @Patch(':id/confirmar') confirmar(@Param('id', ParseIntPipe) id: number) { return this.svc.confirmar(id); }

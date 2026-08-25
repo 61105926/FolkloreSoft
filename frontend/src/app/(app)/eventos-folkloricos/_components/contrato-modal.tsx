@@ -799,9 +799,16 @@ export function ContratoModal({
     setDeleting(true); setError(null);
     try {
       const res = await fetch(`${backendUrl}/contratos/${cid}`, {
-        method: "DELETE", headers: { Authorization: `Bearer ${token}` },
+        method: "DELETE",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({}),
       });
-      if (res.ok) { onDeleted?.(cid); }
+      if (res.ok) {
+        // Si el contrato tenía movimientos en caja no se borra: se anula y sigue existiendo
+        const data = await res.json().catch(() => ({}));
+        if (data?.accion === "ANULADO" && data.contrato) onSaved(data.contrato as Contrato);
+        else onDeleted?.(cid);
+      }
       else { const e = await res.json().catch(() => ({})); setError(e?.message ?? "Error al eliminar"); setDeleting(false); setShowConfirmDelete(false); }
     } catch { setError("Error de red"); setDeleting(false); setShowConfirmDelete(false); }
   };
@@ -2042,7 +2049,10 @@ export function ContratoModal({
                   <svg className="h-6 w-6 text-crimson" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
                 </div>
                 <h3 className="font-bold text-base" style={{ fontFamily: "var(--font-outfit)" }}>¿Eliminar contrato?</h3>
-                <p className="text-xs text-muted-foreground mt-1">Esta acción no se puede deshacer. Se liberarán todas las instancias asignadas.</p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Se liberarán todas las instancias asignadas. Si el contrato ya tiene plata registrada
+                  en caja no se borra: se anula y los movimientos quedan visibles en caja.
+                </p>
               </div>
               <div className="flex gap-2">
                 <button onClick={() => setShowConfirmDelete(false)} disabled={deleting} className="flex-1 py-2 rounded-xl border border-border text-sm hover:bg-muted transition-colors">Cancelar</button>
