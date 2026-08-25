@@ -90,13 +90,13 @@ export function imprimirContrato(c: Contrato) {
     ${row("Nombre", c.cliente.nombre, true)}
     ${c.cliente.ci      ? row("CI",         c.cliente.ci) : ""}
     ${c.cliente.celular ? row("Celular",     c.cliente.celular) : ""}
-    ${c.institucion     ? row("Institucion", c.institucion) : ""}
   </tbody></table>
 
   <!-- EVENTO -->
   <h2>Tipo de Evento</h2>
   <table><tbody>
     ${row("Nombre",     c.nombre_evento_ext ?? c.evento?.nombre ?? "-")}
+    ${c.institucion ? row("Institucion", c.institucion) : ""}
     ${c.ubicacion ? row("Lugar", c.ubicacion) : ""}
     ${row("Entrega",    new Date(c.fecha_entrega).toLocaleDateString("es-BO"))}
     ${row("Devolucion", new Date(c.fecha_devolucion).toLocaleDateString("es-BO"))}
