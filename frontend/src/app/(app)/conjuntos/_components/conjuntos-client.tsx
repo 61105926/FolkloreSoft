@@ -20,6 +20,15 @@ interface ConjuntoComponente {
   componente: Componente;
 }
 
+type EstadoContrato =
+  | "RESERVADO" | "CONFIRMADO" | "ENTREGADO" | "EN_USO"
+  | "DEVUELTO" | "CERRADO" | "CON_DEUDA" | "CON_GARANTIA_RETENIDA" | "CANCELADO";
+
+interface ContratoPrendaStock {
+  total: number;
+  contrato?: { estado: EstadoContrato } | null;
+}
+
 interface Variacion {
   id: number;
   codigo_variacion: string;
@@ -31,7 +40,7 @@ interface Variacion {
   precio_alquiler: string | null;
   activa: boolean;
   movimientosStock: { cantidad: number }[];
-  contratoPrendas: { total: number }[];
+  contratoPrendas: ContratoPrendaStock[];
 }
 
 interface Conjunto {
@@ -124,15 +133,39 @@ function stockVariacion(v: Variacion): number {
   return v.movimientosStock.reduce((s, m) => s + m.cantidad, 0);
 }
 
+// Contratos que aún no sacaron la prenda del depósito: la prenda sigue en stock
+const ESTADOS_RESERVA: EstadoContrato[] = ["RESERVADO", "CONFIRMADO"];
+// Contratos con la prenda fuera del depósito: descuentan del stock disponible
+const ESTADOS_EN_USO: EstadoContrato[] = ["ENTREGADO", "EN_USO"];
+
+function sumaPrendas(v: Variacion, estados: EstadoContrato[]): number {
+  return v.contratoPrendas.reduce(
+    (s, p) => (p.contrato && estados.includes(p.contrato.estado) ? s + p.total : s),
+    0,
+  );
+}
+
+/** Reservas futuras: no descuentan disponibilidad, son informativas. */
 function reservadosVariacion(v: Variacion): number {
-  return v.contratoPrendas.reduce((s, p) => s + p.total, 0);
+  return sumaPrendas(v, ESTADOS_RESERVA);
+}
+
+/** Prendas entregadas / en uso: sí descuentan de disponibles. */
+function enUsoVariacion(v: Variacion): number {
+  return sumaPrendas(v, ESTADOS_EN_USO);
+}
+
+/** Disponibles = stock total − en uso (los reservados siguen físicamente en depósito). */
+function disponiblesVariacion(v: Variacion): number {
+  return Math.max(0, stockVariacion(v) - enUsoVariacion(v));
 }
 
 function getStats(c: Conjunto) {
-  const total      = c.variaciones.reduce((s, v) => s + stockVariacion(v), 0);
-  const reservados = c.variaciones.reduce((s, v) => s + reservadosVariacion(v), 0);
-  const disponibles = Math.max(0, total - reservados);
-  return { total, disponibles, reservados };
+  const total       = c.variaciones.reduce((s, v) => s + stockVariacion(v), 0);
+  const reservados  = c.variaciones.reduce((s, v) => s + reservadosVariacion(v), 0);
+  const enUso       = c.variaciones.reduce((s, v) => s + enUsoVariacion(v), 0);
+  const disponibles = Math.max(0, total - enUso);
+  return { total, disponibles, reservados, enUso };
 }
 
 // ── Stats Bar ─────────────────────────────────────────────────────────────────
@@ -178,8 +211,11 @@ function ConjuntoCard({
   onDetalle: (c: Conjunto) => void;
 }) {
   const [menuOpen, setMenuOpen] = useState(false);
+  const [verTodas, setVerTodas] = useState(false);
   const colors = getDanzaColor(conjunto.danza);
-  const { total, disponibles, reservados } = getStats(conjunto);
+  const { total, disponibles, reservados, enUso } = getStats(conjunto);
+  const variacionesVisibles = verTodas ? conjunto.variaciones : conjunto.variaciones.slice(0, 3);
+  const ocultas = conjunto.variaciones.length - variacionesVisibles.length;
 
   return (
     <div className="group relative rounded-2xl border-2 border-border bg-white overflow-hidden hover:shadow-xl hover:-translate-y-0.5 transition-all duration-200 shadow-sm">
@@ -284,50 +320,70 @@ function ConjuntoCard({
           </span>
         </div>
 
-        {/* Stacked bar */}
+        {/* Stacked bar: disponibles vs en uso (los reservados no descuentan) */}
         <div className="h-2.5 bg-gray-200 rounded-full overflow-hidden flex">
           {total > 0 && (
             <>
               <div className="h-full bg-coca transition-all" style={{ width: `${(disponibles / total) * 100}%` }} />
-              <div className="h-full bg-primary/70 transition-all" style={{ width: `${(reservados / total) * 100}%` }} />
+              <div className="h-full bg-primary/70 transition-all" style={{ width: `${(enUso / total) * 100}%` }} />
             </>
           )}
         </div>
 
-        {/* 2-col breakdown */}
-        <div className="grid grid-cols-2 gap-2 text-center">
+        {/* 3-col breakdown */}
+        <div className="grid grid-cols-3 gap-2 text-center">
           {[
-            { label: "Disponibles", value: disponibles, color: "text-coca",    bg: "bg-emerald-50 border-emerald-200" },
-            { label: "Reservados",  value: reservados,  color: "text-primary", bg: "bg-red-50 border-red-200" },
+            { label: "Disponibles", value: disponibles, color: "text-coca",       bg: "bg-emerald-50 border-emerald-200" },
+            { label: "Reservados",  value: reservados,  color: "text-blue-700",   bg: "bg-blue-50 border-blue-200" },
+            { label: "En uso",      value: enUso,       color: "text-primary",    bg: "bg-red-50 border-red-200" },
           ].map((s) => (
             <div key={s.label} className={`rounded-xl border-2 ${s.bg} py-2`}>
               <p className={`text-xl font-bold leading-none ${s.color}`} style={{ fontFamily: "var(--font-outfit)" }}>
                 {s.value}
               </p>
-              <p className="text-xs text-gray-500 font-medium mt-1">{s.label}</p>
+              <p className="text-[11px] text-gray-500 font-medium mt-1 leading-tight">{s.label}</p>
             </div>
           ))}
         </div>
 
         {/* Per-variacion breakdown */}
-        <div className="space-y-1.5">
-          {conjunto.variaciones.slice(0, 3).map((v) => {
+        <div className={`space-y-1.5 ${verTodas ? "max-h-52 overflow-y-auto pr-0.5" : ""}`}>
+          {variacionesVisibles.map((v) => {
             const vStock = stockVariacion(v);
             const vReservados = reservadosVariacion(v);
-            const vDisp = Math.max(0, vStock - vReservados);
+            const vEnUso = enUsoVariacion(v);
+            const vDisp = disponiblesVariacion(v);
             return (
-              <div key={v.id} className="flex items-center justify-between text-xs bg-gray-50 rounded-lg px-2.5 py-1.5">
-                <span className="text-gray-700 font-medium truncate max-w-[120px]">
+              <div key={v.id} className="flex items-center justify-between gap-2 text-xs bg-gray-50 rounded-lg px-2.5 py-1.5">
+                <span className="text-gray-700 font-medium truncate">
                   {v.nombre_variacion}{v.talla ? ` (${v.talla})` : ""}
                 </span>
-                <span className={`font-bold ${vDisp === 0 ? "text-crimson" : vDisp < 3 ? "text-yellow-700" : "text-coca"}`}>
-                  {vDisp}/{vStock}
+                <span className="flex items-center gap-1.5 shrink-0">
+                  {vReservados > 0 && (
+                    <span className="text-[10px] font-semibold text-blue-700 bg-blue-50 rounded px-1 py-0.5" title={`${vReservados} reservados`}>
+                      R{vReservados}
+                    </span>
+                  )}
+                  {vEnUso > 0 && (
+                    <span className="text-[10px] font-semibold text-primary bg-red-50 rounded px-1 py-0.5" title={`${vEnUso} en uso`}>
+                      U{vEnUso}
+                    </span>
+                  )}
+                  <span className={`font-bold tabular-nums ${vDisp === 0 ? "text-crimson" : vDisp < 3 ? "text-yellow-700" : "text-coca"}`}>
+                    {vDisp}/{vStock}
+                  </span>
                 </span>
               </div>
             );
           })}
           {conjunto.variaciones.length > 3 && (
-            <p className="text-xs text-gray-400 font-medium pl-1">+{conjunto.variaciones.length - 3} variaciones más…</p>
+            <button
+              type="button"
+              onClick={() => setVerTodas((v) => !v)}
+              className="w-full text-xs text-primary font-semibold hover:underline text-left pl-1 pt-0.5"
+            >
+              {verTodas ? "Ver menos ▲" : `+${ocultas} variaciones más… ▼`}
+            </button>
           )}
         </div>
 
@@ -1401,7 +1457,7 @@ function DetalleConjuntoModal({
   onInstancias: () => void;
 }) {
   const colors = getDanzaColor(conjunto.danza);
-  const { total, disponibles, reservados } = getStats(conjunto);
+  const { total, disponibles, reservados, enUso } = getStats(conjunto);
   const [selectedVarId, setSelectedVarId] = useState<number | null>(
     conjunto.variaciones[0]?.id ?? null
   );
@@ -1443,12 +1499,13 @@ function DetalleConjuntoModal({
         </div>
 
         {/* ── Stats strip ── */}
-        <div className="grid grid-cols-5 divide-x divide-border border-b border-border shrink-0">
+        <div className="grid grid-cols-6 divide-x divide-border border-b border-border shrink-0">
           {[
             { label: "Variaciones", value: conjunto.variaciones.length, color: "text-foreground",  warn: false },
             { label: "Stock total",  value: total,        color: "text-foreground",  warn: false },
             { label: "Disponibles", value: disponibles,   color: "text-coca",        warn: false },
-            { label: "Reservados",  value: reservados,    color: "text-primary",     warn: reservados > 0 },
+            { label: "Reservados",  value: reservados,    color: "text-blue-700",    warn: false },
+            { label: "En uso",      value: enUso,         color: "text-primary",     warn: enUso > 0 },
             { label: "Sin stock",   value: conjunto.variaciones.filter(v => stockVariacion(v) === 0).length, color: "text-crimson", warn: conjunto.variaciones.filter(v => stockVariacion(v) === 0).length > 0 },
           ].map((s) => (
             <div key={s.label} className={`flex flex-col items-center py-3 text-center ${s.warn ? "bg-crimson/5" : ""}`}>
@@ -1484,8 +1541,7 @@ function DetalleConjuntoModal({
               </p>
               {conjunto.variaciones.map((v) => {
                 const vStock = stockVariacion(v);
-                const vReservados = reservadosVariacion(v);
-                const vDisp = Math.max(0, vStock - vReservados);
+                const vDisp = disponiblesVariacion(v);
                 const isSelected = v.id === selectedVarId;
                 return (
                   <button
@@ -1561,12 +1617,15 @@ function DetalleConjuntoModal({
                         </div>
                       </div>
                       <div className="text-right shrink-0">
-                        <p className={`text-2xl font-bold leading-none ${Math.max(0, stockVariacion(selectedVar) - reservadosVariacion(selectedVar)) > 0 ? "text-coca" : "text-crimson"}`} style={{ fontFamily: "var(--font-outfit)" }}>
-                          {Math.max(0, stockVariacion(selectedVar) - reservadosVariacion(selectedVar))}
+                        <p className={`text-2xl font-bold leading-none ${disponiblesVariacion(selectedVar) > 0 ? "text-coca" : "text-crimson"}`} style={{ fontFamily: "var(--font-outfit)" }}>
+                          {disponiblesVariacion(selectedVar)}
                         </p>
                         <p className="text-[10px] text-muted-foreground mt-0.5">disponibles</p>
                         {reservadosVariacion(selectedVar) > 0 && (
-                          <p className="text-[10px] text-primary font-medium mt-0.5">{reservadosVariacion(selectedVar)} reserv.</p>
+                          <p className="text-[10px] text-blue-700 font-medium mt-0.5">{reservadosVariacion(selectedVar)} reserv.</p>
+                        )}
+                        {enUsoVariacion(selectedVar) > 0 && (
+                          <p className="text-[10px] text-primary font-medium mt-0.5">{enUsoVariacion(selectedVar)} en uso</p>
                         )}
                       </div>
                     </div>
@@ -1574,11 +1633,12 @@ function DetalleConjuntoModal({
 
                   {/* Info stock */}
                   <div className="flex-1 overflow-y-auto p-5">
-                    <div className="grid grid-cols-3 gap-3 mb-4">
+                    <div className="grid grid-cols-4 gap-3 mb-4">
                       {[
-                        { label: "Stock total",  value: stockVariacion(selectedVar),                                              color: "text-foreground" },
-                        { label: "Disponibles",  value: Math.max(0, stockVariacion(selectedVar) - reservadosVariacion(selectedVar)), color: "text-coca" },
-                        { label: "Reservados",   value: reservadosVariacion(selectedVar),                                          color: "text-primary" },
+                        { label: "Stock total",  value: stockVariacion(selectedVar),       color: "text-foreground" },
+                        { label: "Disponibles",  value: disponiblesVariacion(selectedVar), color: "text-coca" },
+                        { label: "Reservados",   value: reservadosVariacion(selectedVar),  color: "text-blue-700" },
+                        { label: "En uso",       value: enUsoVariacion(selectedVar),       color: "text-primary" },
                       ].map((s) => (
                         <div key={s.label} className="bg-muted/30 rounded-xl p-3 text-center">
                           <p className={`text-2xl font-bold leading-none ${s.color}`} style={{ fontFamily: "var(--font-outfit)" }}>{s.value}</p>
@@ -1586,6 +1646,9 @@ function DetalleConjuntoModal({
                         </div>
                       ))}
                     </div>
+                    <p className="text-xs text-muted-foreground text-center mb-2">
+                      <strong>Disponibles</strong> = stock total − en uso. Los <strong>reservados</strong> siguen en depósito, no descuentan disponibilidad.
+                    </p>
                     <p className="text-xs text-muted-foreground text-center">
                       Para agregar o ajustar stock, usá la sección <strong>Stock</strong> del menú.
                     </p>

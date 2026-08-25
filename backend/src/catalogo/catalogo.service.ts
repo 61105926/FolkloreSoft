@@ -28,7 +28,10 @@ export class CatalogoService {
             is: { estado: { in: this.ESTADOS_ACTIVOS } },
           },
         },
-        select: { total: true },
+        select: {
+          total: true,
+          contrato: { select: { estado: true } },
+        },
       },
     };
   }
