@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service.js';
-import { EstadoVenta, FormaPago } from '@prisma/client';
+import { Prisma, EstadoVenta, FormaPago } from '@prisma/client';
 
 const INCLUDE_FULL = {
   cliente: true,
@@ -25,10 +25,25 @@ const INCLUDE_LIST = {
 export class VentasService {
   constructor(private readonly prisma: PrismaService) {}
 
+  // Se deriva del último código del año, no de un count(): con ventas
+  // borradas el count queda por detrás y vuelve a generar un código ya usado.
   private async generarCodigo(): Promise<string> {
-    const year = new Date().getFullYear();
-    const count = await this.prisma.venta.count();
-    return `VENTA-${year}-${String(count + 1).padStart(4, '0')}`;
+    const prefijo = `VENTA-${new Date().getFullYear()}-`;
+    const ultima = await this.prisma.venta.findFirst({
+      where: { codigo: { startsWith: prefijo } },
+      orderBy: { codigo: 'desc' },
+      select: { codigo: true },
+    });
+    const n = ultima ? parseInt(ultima.codigo.slice(prefijo.length), 10) : 0;
+    return `${prefijo}${String((Number.isNaN(n) ? 0 : n) + 1).padStart(4, '0')}`;
+  }
+
+  private esCodigoDuplicado(e: unknown): boolean {
+    return (
+      e instanceof Prisma.PrismaClientKnownRequestError &&
+      e.code === 'P2002' &&
+      ((e.meta?.target as string[] | undefined) ?? []).includes('codigo')
+    );
   }
 
   findAll(filter?: { isAdmin?: boolean; sucursalId?: number }) {
@@ -55,8 +70,6 @@ export class VentasService {
     if (!clienteId) throw new BadRequestException('clienteId es requerido');
     if (!items.length) throw new BadRequestException('Se requiere al menos un ítem');
 
-    const codigo = await this.generarCodigo();
-
     const itemsCalc = items.map((it: any) => ({
       descripcion: it.descripcion ?? '',
       conjuntoId: it.conjuntoId ?? null,
@@ -70,21 +83,31 @@ export class VentasService {
     const desc = Number(descuento ?? 0);
     const total = Math.max(0, subtotalItems - desc);
 
-    const venta = await this.prisma.venta.create({
-      data: {
-        codigo,
-        clienteId: Number(clienteId),
-        sucursalId: sucursalId ? Number(sucursalId) : (user.sucursalId ?? null),
-        userId: user.id ?? null,
-        forma_pago: forma_pago ?? null,
-        observaciones: observaciones?.trim() || null,
-        descuento: desc,
-        total,
-        total_pagado: 0,
-        items: { create: itemsCalc },
-      },
-      include: INCLUDE_FULL,
-    });
+    const datosVenta = {
+      clienteId: Number(clienteId),
+      sucursalId: sucursalId ? Number(sucursalId) : (user.sucursalId ?? null),
+      userId: user.id ?? null,
+      forma_pago: forma_pago ?? null,
+      observaciones: observaciones?.trim() || null,
+      descuento: desc,
+      total,
+      total_pagado: 0,
+      items: { create: itemsCalc },
+    };
+
+    // Reintenta si otra venta tomó el mismo código entre generar y grabar
+    let venta!: Awaited<ReturnType<typeof this.findOne>>;
+    for (let intento = 0; ; intento++) {
+      try {
+        venta = await this.prisma.venta.create({
+          data: { ...datosVenta, codigo: await this.generarCodigo() },
+          include: INCLUDE_FULL,
+        });
+        break;
+      } catch (e) {
+        if (intento >= 5 || !this.esCodigoDuplicado(e)) throw e;
+      }
+    }
 
     const movimientosData: { variacionId: number; tipo: 'VENTA'; cantidad: number; motivo: string; userId: number | null; ventaId: number }[] = [];
     for (const it of itemsCalc) {
@@ -101,7 +124,7 @@ export class VentasService {
           variacionId: varId,
           tipo: 'VENTA',
           cantidad: -Math.abs(it.cantidad),
-          motivo: `Venta ${codigo}`,
+          motivo: `Venta ${venta.codigo}`,
           userId: user.id ?? null,
           ventaId: venta.id,
         });

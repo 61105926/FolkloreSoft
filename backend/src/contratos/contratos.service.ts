@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { BotNotifyService } from './bot-notify.service.js';
-import { EstadoContrato, TipoContrato, CiudadContrato, TipoGarantia, FormaPago, TipoParticipante } from '@prisma/client';
+import { Prisma, EstadoContrato, TipoContrato, CiudadContrato, TipoGarantia, FormaPago, TipoParticipante } from '@prisma/client';
 
 const INCLUDE_FULL = {
   cliente: true,
@@ -56,10 +56,25 @@ export class ContratosService {
 
   // ── Código auto-generado ──────────────────────────────────────────────────
 
+  // Se deriva del último código del año, no de un count(): con contratos
+  // borrados el count queda por detrás y vuelve a generar un código ya usado.
   private async generarCodigo(): Promise<string> {
-    const year = new Date().getFullYear();
-    const count = await this.prisma.contratoAlquiler.count();
-    return `CONT-${year}-${String(count + 1).padStart(4, '0')}`;
+    const prefijo = `CONT-${new Date().getFullYear()}-`;
+    const ultimo = await this.prisma.contratoAlquiler.findFirst({
+      where: { codigo: { startsWith: prefijo } },
+      orderBy: { codigo: 'desc' },
+      select: { codigo: true },
+    });
+    const n = ultimo ? parseInt(ultimo.codigo.slice(prefijo.length), 10) : 0;
+    return `${prefijo}${String((Number.isNaN(n) ? 0 : n) + 1).padStart(4, '0')}`;
+  }
+
+  private esCodigoDuplicado(e: unknown): boolean {
+    return (
+      e instanceof Prisma.PrismaClientKnownRequestError &&
+      e.code === 'P2002' &&
+      ((e.meta?.target as string[] | undefined) ?? []).includes('codigo')
+    );
   }
 
   // ── Contratos ─────────────────────────────────────────────────────────────
@@ -142,7 +157,6 @@ export class ContratosService {
       participanteId?: number;
     }[];
   }, actor?: { id?: number; nombre?: string; sucursalId?: number | null }) {
-    const codigo = await this.generarCodigo();
     // Never trust total_pagado from frontend — derive it from anticipo
     const { prendas, garantias, ...rest } = data;
 
@@ -188,21 +202,31 @@ export class ContratosService {
       ? 'CONFIRMADO'
       : 'RESERVADO';
 
-    const contrato = await this.prisma.contratoAlquiler.create({
-      data: {
-        ...rest,
-        codigo,
-        estado: estadoInicial as any,
-        fecha_entrega: new Date(data.fecha_entrega),
-        fecha_devolucion: new Date(data.fecha_devolucion),
-        total: totalFinal,
-        total_pagado: anticipoVal,
-        sucursalId: actor?.sucursalId ?? null,
-        prendas: prendaCreate.length > 0 ? { create: prendaCreate } : undefined,
-        garantias: garantias ? { create: garantias } : undefined,
-      },
-      include: INCLUDE_FULL,
-    });
+    const datosContrato = {
+      ...rest,
+      estado: estadoInicial as any,
+      fecha_entrega: new Date(data.fecha_entrega),
+      fecha_devolucion: new Date(data.fecha_devolucion),
+      total: totalFinal,
+      total_pagado: anticipoVal,
+      sucursalId: actor?.sucursalId ?? null,
+      prendas: prendaCreate.length > 0 ? { create: prendaCreate } : undefined,
+      garantias: garantias ? { create: garantias } : undefined,
+    };
+
+    // Reintenta si otro contrato tomó el mismo código entre generar y grabar
+    let contrato!: Awaited<ReturnType<typeof this.findOne>>;
+    for (let intento = 0; ; intento++) {
+      try {
+        contrato = await this.prisma.contratoAlquiler.create({
+          data: { ...datosContrato, codigo: await this.generarCodigo() },
+          include: INCLUDE_FULL,
+        });
+        break;
+      } catch (e) {
+        if (intento >= 5 || !this.esCodigoDuplicado(e)) throw e;
+      }
+    }
     const userName = actor?.nombre ?? 'Sistema';
     await this.log(contrato.id, 'CREADO', `Contrato ${contrato.codigo} creado — por ${userName}`);
     if (isDirecto && data.forma_pago) {
