@@ -219,17 +219,10 @@ function ContratosStats({ contratos, activeFilter, onFilter, tipoFilter, onTipoF
 }) {
   const directos   = contratos.filter((c) => c.tipo === "DIRECTO").length;
   const reservas   = contratos.filter((c) => c.tipo === "RESERVA").length;
-  const reservados = contratos.filter((c) => c.estado === "RESERVADO" || c.estado === "CONFIRMADO").length;
-  const enUso      = contratos.filter((c) => c.estado === "EN_USO" || c.estado === "ENTREGADO").length;
-  const vencidos   = contratos.filter(isVencido).length;
-  const conDeuda   = contratos.filter((c) => c.estado === "CON_DEUDA").length;
   const cobrado    = contratos.reduce((s, c) => s + parseFloat(c.total_pagado), 0);
 
   const stats: { label: string; value: string | number; color: string; filter: EstadoContrato | "VENCIDO" | ""; sub: string | null; warn: boolean; card: string }[] = [
     { label: "Total",       value: contratos.length, color: "text-gray-900",   filter: "",          sub: null,                                               warn: false, card: "bg-primary/5 border-primary/20" },
-    { label: "Reservados",  value: reservados,        color: "text-blue-700",  filter: "RESERVADO", sub: null,                                               warn: false, card: "bg-blue-50 border-blue-200" },
-    { label: "En uso",      value: enUso,             color: "text-amber-700", filter: "EN_USO",    sub: vencidos > 0 ? `${vencidos} vencido${vencidos > 1 ? "s" : ""}` : null, warn: vencidos > 0, card: vencidos > 0 ? "bg-red-50 border-red-200" : "bg-amber-50 border-amber-200" },
-    { label: "Con deuda",   value: conDeuda,          color: "text-red-700",   filter: "CON_DEUDA", sub: null,                                               warn: conDeuda > 0, card: conDeuda > 0 ? "bg-red-50 border-red-200" : "bg-gray-50 border-gray-200" },
     { label: "Cobrado",     value: `Bs. ${cobrado.toLocaleString("es-BO")}`, color: "text-emerald-700", filter: "", sub: null,                               warn: false, card: "bg-emerald-50 border-emerald-200" },
   ];
 
@@ -239,7 +232,7 @@ function ContratosStats({ contratos, activeFilter, onFilter, tipoFilter, onTipoF
   ];
 
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-3">
+    <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
       {stats.map((s) => {
         const isActive = activeFilter === s.filter && s.filter !== "";
         return (
