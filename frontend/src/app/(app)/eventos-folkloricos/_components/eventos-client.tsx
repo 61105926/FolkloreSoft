@@ -102,6 +102,14 @@ export interface Contrato {
   historial?: ContratoHistorial[];
   movimientosCaja?: MovimientoCajaContrato[];
   _count: { prendas: number; garantias: number; participantes: number };
+  /** Unidades de prenda del contrato (suma de cantidades), no líneas */
+  total_prendas?: number;
+}
+
+/** _count.prendas cuenta líneas; lo que se muestra son unidades */
+export function unidadesPrendas(c: Contrato): number {
+  if (c.prendas) return c.prendas.reduce((s, p) => s + p.total, 0);
+  return c.total_prendas ?? c._count.prendas;
 }
 
 export interface ContratoHistorial {
@@ -527,6 +535,7 @@ function ContratoCard({
   };
 
   const tipoMeta  = TIPO_CONTRATO_META[c.tipo] ?? TIPO_CONTRATO_META.DIRECTO;
+  const prendasTotal = unidadesPrendas(c);
   const totalNum  = parseFloat(c.total) || 0;
   const pagadoNum = parseFloat(c.total_pagado) || 0;
   const pagosPct  = totalNum > 0 ? Math.min(100, Math.round((pagadoNum / totalNum) * 100)) : 0;
@@ -621,16 +630,16 @@ function ContratoCard({
       {/* Footer: counts + actions */}
       <div className="px-4 pb-3.5 pt-2 border-t border-gray-200 flex items-center justify-between gap-2">
         <div className="flex flex-col gap-1.5 flex-1 min-w-0">
-          <div className="flex items-center gap-2 text-xs font-medium text-gray-600 flex-wrap">
-            {c._count.prendas > 0 && (
-              <span className="flex items-center gap-0.5">
-                <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" /></svg>
-                {c._count.prendas} prendas
+          <div className="flex items-center gap-2.5 text-sm font-semibold text-gray-700 flex-wrap">
+            {prendasTotal > 0 && (
+              <span className="flex items-center gap-1">
+                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" /></svg>
+                {prendasTotal} {prendasTotal === 1 ? "prenda" : "prendas"}
               </span>
             )}
             {c._count.garantias > 0 && (
-              <span className="flex items-center gap-0.5">
-                <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>
+              <span className="flex items-center gap-1">
+                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>
                 {c._count.garantias} garantías
               </span>
             )}

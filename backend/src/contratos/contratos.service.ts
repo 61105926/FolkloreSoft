@@ -79,16 +79,26 @@ export class ContratosService {
     });
   }
 
-  findAll(filter?: { isAdmin?: boolean; sucursalId?: number }) {
+  async findAll(filter?: { isAdmin?: boolean; sucursalId?: number }) {
     const where: Record<string, unknown> = {};
     if (!filter?.isAdmin && filter?.sucursalId) {
       where['sucursalId'] = filter.sucursalId;
     }
-    return this.prisma.contratoAlquiler.findMany({
+    const contratos = await this.prisma.contratoAlquiler.findMany({
       where,
       include: INCLUDE_LIST,
       orderBy: { createdAt: 'desc' },
     });
+    if (contratos.length === 0) return [];
+
+    // _count.prendas cuenta líneas del contrato; el listado muestra unidades
+    const sumas = await this.prisma.contratoPrenda.groupBy({
+      by: ['contratoId'],
+      where: { contratoId: { in: contratos.map((c) => c.id) } },
+      _sum: { total: true },
+    });
+    const unidades = new Map(sumas.map((s) => [s.contratoId, s._sum.total ?? 0]));
+    return contratos.map((c) => ({ ...c, total_prendas: unidades.get(c.id) ?? 0 }));
   }
 
   async findOne(id: number) {
