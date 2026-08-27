@@ -11,7 +11,73 @@ function row(label: string, value: string, big = false, color = "") {
   </tr>`;
 }
 
-export function imprimirContrato(c: Contrato) {
+/** Encabezado con los datos de la sucursal, común a comprobante y comanda. */
+function encabezado(c: Contrato, titulo: string) {
+  return `
+  <div class="center" style="margin-bottom:4px">
+    <div style="font-size:16px;font-weight:900;letter-spacing:0.05em">${c.sucursal?.nombre ?? "DANZA CON ALTURA"}</div>
+    ${c.sucursal?.direccion ? `<div style="font-size:10px;font-weight:900">${c.sucursal.direccion}</div>` : `<div style="font-size:10px;font-weight:900">CALLE LOS ANDES #1090</div>`}
+    ${c.sucursal?.telefono  ? `<div style="font-size:10px;font-weight:900">Tel: ${c.sucursal.telefono}</div>` : `<div style="font-size:10px;font-weight:900">Tel: 75804700</div>`}
+    ${c.sucursal?.email     ? `<div style="font-size:10px;font-weight:900">${c.sucursal.email}</div>` : ""}
+  </div>
+  <hr class="divider">
+  <div class="center" style="font-size:13px;font-weight:900;letter-spacing:0.06em;text-transform:uppercase;margin:5px 0">
+    ${titulo}
+  </div>
+  <hr class="divider">`;
+}
+
+/**
+ * Comanda de bodega: qué hay que preparar, sin precios ni datos de cobro.
+ * Va como segunda página para que la térmica corte entre los dos tickets.
+ */
+function comandaHtml(c: Contrato) {
+  const prendas_ = c.prendas ?? [];
+  const totalUnidades = prendas_.reduce((s, p) => s + p.total, 0);
+
+  const filas = prendas_.map((p) => {
+    const varInfo = p.variacion
+      ? [p.variacion.nombre_variacion, p.variacion.talla ? `T.${p.variacion.talla}` : "", p.variacion.color]
+          .filter(Boolean).join(" · ")
+      : "";
+    return `<tr>
+      <td style="padding:5px 4px;border-bottom:1px dashed #000;font-size:14px;font-weight:900;text-align:center;width:22px">[ ]</td>
+      <td style="padding:5px 4px;border-bottom:1px dashed #000;font-size:12px;font-weight:900">
+        ${p.modelo}${varInfo ? `<br><span style="font-size:10px;font-weight:900">${varInfo}</span>` : ""}
+      </td>
+      <td style="padding:5px 4px;border-bottom:1px dashed #000;text-align:right;font-size:18px;font-weight:900;width:34px">${p.total}</td>
+    </tr>`;
+  }).join("");
+
+  return `
+  <div class="ticket">
+    ${encabezado(c, "Comanda · Preparacion")}
+    <table><tbody>
+      ${row("N° Contrato", c.codigo, true)}
+      ${row("Cliente", c.cliente.nombre)}
+      ${row("Entrega", new Date(c.fecha_entrega).toLocaleDateString("es-BO"), true)}
+      ${row("Devolucion", new Date(c.fecha_devolucion).toLocaleDateString("es-BO"))}
+      ${c.ubicacion ? row("Lugar", c.ubicacion) : ""}
+    </tbody></table>
+
+    <h2>Preparar</h2>
+    <table><tbody>${filas || `<tr><td style="font-size:11px;font-weight:900;padding:6px 0">Sin prendas cargadas</td></tr>`}</tbody></table>
+    <table style="margin-top:4px"><tbody>
+      ${row("Total unidades", String(totalUnidades), true)}
+    </tbody></table>
+
+    ${c.observaciones ? `<div style="font-size:11px;font-weight:900;line-height:1.4;margin-top:6px;border:2px solid #000;padding:4px"><span style="font-weight:900">OBS:</span> ${c.observaciones}</div>` : ""}
+
+    <div class="firma" style="margin-top:24px">Preparado por</div>
+    <div class="center" style="margin-top:6px;font-size:9px;font-weight:900">
+      ${new Date().toLocaleString("es-BO")}
+    </div>
+    <div class="feed"></div>
+  </div>`;
+}
+
+export function imprimirContrato(c: Contrato, opciones?: { comanda?: boolean }) {
+  const conComanda     = opciones?.comanda ?? true;
   const prendas_       = c.prendas ?? [];
   const participantes_ = c.participantes ?? [];
   const garantias_     = c.garantias ?? [];
@@ -62,22 +128,21 @@ export function imprimirContrato(c: Contrato) {
     .center { text-align: center; }
     .divider { border: none; border-top: 2px dashed #000; margin: 6px 0; }
     .firma { border-top: 2px solid #000; padding-top: 4px; text-align: center; font-size: 10px; font-weight: 900; }
-    @media screen { body { width: 80mm; padding: 8px; border: 1px dashed #ccc; margin: 16px auto; } }
+    /* Cada ticket es una página: la térmica corta al terminar cada una */
+    .ticket { page-break-after: always; break-after: page; }
+    .ticket:last-child { page-break-after: auto; break-after: auto; }
+    /* Papel en blanco para que el corte no se coma la última línea */
+    .feed { height: 14mm; }
+    @media screen {
+      body { width: 80mm; padding: 8px; margin: 16px auto; }
+      .ticket { border: 1px dashed #ccc; padding: 8px; margin-bottom: 16px; }
+      .feed { height: 0; }
+    }
   </style>
   </head><body>
 
-  <!-- ENCABEZADO -->
-  <div class="center" style="margin-bottom:4px">
-    <div style="font-size:16px;font-weight:900;letter-spacing:0.05em">${c.sucursal?.nombre ?? "DANZA CON ALTURA"}</div>
-    ${c.sucursal?.direccion ? `<div style="font-size:10px;font-weight:900">${c.sucursal.direccion}</div>` : `<div style="font-size:10px;font-weight:900">CALLE LOS ANDES #1090</div>`}
-    ${c.sucursal?.telefono  ? `<div style="font-size:10px;font-weight:900">Tel: ${c.sucursal.telefono}</div>` : `<div style="font-size:10px;font-weight:900">Tel: 75804700</div>`}
-    ${c.sucursal?.email     ? `<div style="font-size:10px;font-weight:900">${c.sucursal.email}</div>` : ""}
-  </div>
-  <hr class="divider">
-  <div class="center" style="font-size:13px;font-weight:900;letter-spacing:0.06em;text-transform:uppercase;margin:5px 0">
-    Contrato ${c.tipo === "RESERVA" ? "de Reserva" : "Directo"}
-  </div>
-  <hr class="divider">
+  <div class="ticket">
+  ${encabezado(c, `Contrato ${c.tipo === "RESERVA" ? "de Reserva" : "Directo"}`)}
   <table><tbody>
     ${row("N° Contrato", c.codigo, true)}
     ${row("Fecha", new Date(c.fecha_contrato).toLocaleDateString("es-BO"))}
@@ -167,6 +232,10 @@ export function imprimirContrato(c: Contrato) {
   <div class="center" style="margin-top:8px;font-size:9px;font-weight:900">
     Generado el ${new Date().toLocaleString("es-BO")}
   </div>
+  <div class="feed"></div>
+  </div>
+
+  ${conComanda ? comandaHtml(c) : ""}
 
   </body></html>`;
 
