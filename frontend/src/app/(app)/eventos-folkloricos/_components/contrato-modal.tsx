@@ -1046,7 +1046,13 @@ export function ContratoModal({
   const imprimirComprobante = () => {
     const c = fullContrato ?? contrato;
     if (!c) return;
-    imprimirContrato(c);
+    // fullContrato quedó como se cargó al abrir el modal: las garantías y
+    // personas que se tocaron después viven en liveGarantias / liveParticipantes
+    imprimirContrato(isEdit ? {
+      ...c,
+      garantias: [...liveGarantias, ...(c.garantias ?? []).filter((g) => g.participanteId)],
+      participantes: liveParticipantes,
+    } : c);
   };
 
   // ── Render ─────────────────────────────────────────────────────────────────
