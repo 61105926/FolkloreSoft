@@ -79,8 +79,19 @@ export interface ContratoPrenda {
   cantidad_hombres: number; cantidad_cholitas: number;
   cantidad_machas: number; cantidad_ninos: number;
   total: number; costo_unitario: string; subtotal: string;
+  /** Destino de cada unidad al devolver — suman `total` */
+  cantidad_devuelta: number; cantidad_danada: number; cantidad_perdida: number;
   conjunto?: { id: number; nombre: string; danza: string } | null;
   participantes?: ContratoParticipante[];
+}
+
+export type TipoSancion = "DANO" | "PERDIDA" | "RETRASO" | "OTRO";
+
+export interface SancionContrato {
+  id: number; contratoId: number;
+  prendaId: number | null; participanteId: number | null;
+  tipo: TipoSancion; descripcion: string | null;
+  monto: string; cantidad: number; createdAt: string;
 }
 
 export interface Contrato {
@@ -101,6 +112,7 @@ export interface Contrato {
   participantes?: ContratoParticipante[];
   historial?: ContratoHistorial[];
   movimientosCaja?: MovimientoCajaContrato[];
+  sanciones?: SancionContrato[];
   _count: { prendas: number; garantias: number; participantes: number };
   /** Unidades de prenda del contrato (suma de cantidades), no líneas */
   total_prendas?: number;
@@ -491,10 +503,11 @@ function ConfirmDeleteContrato({ contrato, token, backendUrl, onClose, onDeleted
 // ── ContratoCard ───────────────────────────────────────────────────────────────
 
 function ContratoCard({
-  c, onOpen, onDelete, onUpdated, token, backendUrl,
+  c, onOpen, onOpenDevolucion, onDelete, onUpdated, token, backendUrl,
 }: {
   c: Contrato;
   onOpen: () => void;
+  onOpenDevolucion: () => void;
   onDelete: () => void;
   onUpdated: (c: Contrato) => void;
   token: string;
@@ -703,10 +716,10 @@ function ContratoCard({
           )}
           {(c.estado === "ENTREGADO" || c.estado === "EN_USO") && (
             <button
-              onClick={() => void quickAction("devolver")}
+              onClick={onOpenDevolucion}
               disabled={actioning}
               className="px-2.5 py-1.5 rounded-xl bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 text-xs font-semibold hover:bg-emerald-500/20 transition-colors disabled:opacity-50"
-              title="Marcar como devuelto"
+              title="Registrar la devolución prenda por prenda"
             >
               {actioning ? "…" : "Devolver"}
             </button>
@@ -741,6 +754,7 @@ export function ContratosClient({ initialContratos, initialClientes, initialEven
   // Modals
   const [showContratoModal, setShowContratoModal] = useState(false);
   const [editandoContrato, setEditandoContrato] = useState<Contrato | null>(null);
+  const [contratoTabInicial, setContratoTabInicial] = useState<"devolucion" | undefined>(undefined);
   const [eliminandoContrato, setEliminandoContrato] = useState<Contrato | null>(null);
   const [contratoEventoPreset, setContratoEventoPreset] = useState<Evento | null>(null);
 
@@ -803,9 +817,10 @@ export function ContratosClient({ initialContratos, initialClientes, initialEven
     setShowContratoModal(true);
   };
 
-  const openEditContrato = (c: Contrato) => {
+  const openEditContrato = (c: Contrato, tab?: "devolucion") => {
     setEditandoContrato(c);
     setContratoEventoPreset(null);
+    setContratoTabInicial(tab);
     setShowContratoModal(true);
   };
 
@@ -975,6 +990,7 @@ export function ContratosClient({ initialContratos, initialClientes, initialEven
               key={c.id}
               c={c}
               onOpen={() => openEditContrato(c)}
+              onOpenDevolucion={() => openEditContrato(c, "devolucion")}
               onDelete={() => setEliminandoContrato(c)}
               onUpdated={handleContratoSaved}
               token={token}
@@ -994,6 +1010,7 @@ export function ContratosClient({ initialContratos, initialClientes, initialEven
           token={token}
           backendUrl={backendUrl}
           userRol={userRol}
+          initialTab={contratoTabInicial}
           onClose={() => { setShowContratoModal(false); setEditandoContrato(null); setContratoEventoPreset(null); }}
           onSaved={(c) => { handleContratoSaved(c); setShowContratoModal(false); setEditandoContrato(null); setContratoEventoPreset(null); }}
           onDeleted={(id) => { handleContratoDeleted(id); setShowContratoModal(false); setEditandoContrato(null); }}

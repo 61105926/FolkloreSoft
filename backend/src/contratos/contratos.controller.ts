@@ -21,6 +21,7 @@ export class ContratosController {
   @Patch(':id/entregar') entregar(@Param('id', ParseIntPipe) id: number) { return this.svc.entregar(id); }
   @Patch(':id/iniciar')  iniciarUso(@Param('id', ParseIntPipe) id: number) { return this.svc.iniciarUso(id); }
   @Patch(':id/devolver') devolver(@Param('id', ParseIntPipe) id: number, @Body() body: any) { return this.svc.devolver(id, body); }
+  @Post(':id/devolucion') registrarDevolucion(@Param('id', ParseIntPipe) id: number, @Body() body: any, @Req() req: any) { return this.svc.registrarDevolucion(id, body ?? {}, req.user); }
   @Patch(':id/cerrar')   cerrar(@Param('id', ParseIntPipe) id: number) { return this.svc.cerrar(id); }
   @Patch(':id/cancelar') cancelar(@Param('id', ParseIntPipe) id: number) { return this.svc.cancelar(id); }
   @Patch(':id/retener')  retenerGarantia(@Param('id', ParseIntPipe) id: number, @Body() body: { motivo: string }) {

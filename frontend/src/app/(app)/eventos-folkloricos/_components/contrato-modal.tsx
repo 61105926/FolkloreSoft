@@ -33,6 +33,12 @@ interface GarantiaRow {
   deleted: boolean;
 }
 
+/** Una fila del formulario de devolución: en qué estado vuelve cada unidad */
+interface DevLineaForm {
+  devueltas: string; danadas: string; perdidas: string;
+  motivo: string; monto: string;
+}
+
 // ── Props ─────────────────────────────────────────────────────────────────────
 
 interface Props {
@@ -42,22 +48,30 @@ interface Props {
   conjuntos: ConjuntoCatalogo[];
   token: string; backendUrl: string;
   userRol?: string;
+  /** Pestaña en la que abre el modal (por defecto, Información) */
+  initialTab?: TabKey;
   onClose: () => void;
   onSaved: (c: Contrato) => void;
   onDeleted?: (id: number) => void;
   onClienteCreado: (cl: Cliente) => void;
 }
 
-type TabKey = "info" | "prendas" | "personas" | "finanzas" | "historial";
+type TabKey = "info" | "prendas" | "personas" | "devolucion" | "finanzas" | "historial";
 const TABS: { key: TabKey; label: string }[] = [
-  { key: "info",      label: "Información" },
-  { key: "prendas",   label: "Prendas" },
-  { key: "personas",  label: "Garantía" },
-  { key: "finanzas",  label: "Finanzas" },
-  { key: "historial", label: "Historial" },
+  { key: "info",       label: "Información" },
+  { key: "prendas",    label: "Prendas" },
+  { key: "personas",   label: "Garantía" },
+  { key: "devolucion", label: "Devolución" },
+  { key: "finanzas",   label: "Finanzas" },
+  { key: "historial",  label: "Historial" },
 ];
 
 const inp = "w-full rounded-xl border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 transition-all";
+
+const num = (v?: string): number => {
+  const n = parseFloat(v ?? "");
+  return Number.isFinite(n) ? n : 0;
+};
 
 // ── Historial styling ─────────────────────────────────────────────────────────
 
@@ -411,12 +425,12 @@ function ParticipanteCard({ p, prendas, contratoId, token, backendUrl, onUpdated
 
 export function ContratoModal({
   contrato, eventoPreset, clientes: initialClientes,
-  conjuntos, token, backendUrl, userRol,
+  conjuntos, token, backendUrl, userRol, initialTab,
   onClose, onSaved, onDeleted, onClienteCreado,
 }: Props) {
   const isAdmin = userRol === "ADMIN" || userRol === "SUPERADMIN";
   const isEdit = !!contrato;
-  const [activeTab, setActiveTab] = useState<TabKey>("info");
+  const [activeTab, setActiveTab] = useState<TabKey>(initialTab ?? "info");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [clientes, setClientes] = useState<Cliente[]>(initialClientes);
@@ -542,6 +556,11 @@ export function ContratoModal({
   const [egresoConcepto, setEgresoConcepto] = useState<"DEVOLUCION_GARANTIA" | "OTRO_EGRESO">("DEVOLUCION_GARANTIA");
   const [savingEgreso, setSavingEgreso] = useState(false);
 
+  // ── Devolución por línea de prenda ─────────────────────────────────────────
+  const [devLineas, setDevLineas] = useState<Record<number, DevLineaForm>>({});
+  const [devObservaciones, setDevObservaciones] = useState("");
+  const [savingDevolucion, setSavingDevolucion] = useState(false);
+
   // Populate all state once full contrato loads
   useEffect(() => {
     if (!fullContrato || !isEdit) return;
@@ -573,6 +592,11 @@ export function ContratoModal({
     setLiveGarantias((fullContrato.garantias ?? []).filter((g) => !g.participanteId));
     setLiveHistorial(fullContrato.historial ?? []);
     setLiveMovimientos(fullContrato.movimientosCaja ?? []);
+    // Arranca con todo devuelto OK: lo normal es que no falte nada
+    setDevLineas(Object.fromEntries((fullContrato.prendas ?? []).map((p) => [p.id, {
+      devueltas: String(p.total), danadas: "0", perdidas: "0", motivo: "", monto: "",
+    }])));
+    setDevObservaciones("");
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [fullContrato?.id]);
 
@@ -792,6 +816,45 @@ export function ContratoModal({
     } catch { setError("Error de red"); setSaving(false); }
   };
 
+  // ── Devolución ─────────────────────────────────────────────────────────────
+  const handleRegistrarDevolucion = async () => {
+    const cid = fullContrato?.id ?? contrato?.id;
+    if (!cid) return;
+    setSavingDevolucion(true); setError(null);
+    try {
+      const res = await fetch(`${backendUrl}/contratos/${cid}/devolucion`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({
+          observaciones: devObservaciones.trim() || undefined,
+          lineas: (fullContrato?.prendas ?? []).map((p) => {
+            const l = devLineas[p.id];
+            return {
+              prendaId: p.id,
+              devueltas: num(l?.devueltas),
+              danadas:   num(l?.danadas),
+              perdidas:  num(l?.perdidas),
+              sancion_monto:  num(l?.monto) || undefined,
+              sancion_motivo: l?.motivo.trim() || undefined,
+            };
+          }),
+        }),
+      });
+      if (res.ok) {
+        const fresh: Contrato = await res.json();
+        setFullContrato(fresh);
+        setLiveHistorial(fresh.historial ?? []);
+        setLiveMovimientos(fresh.movimientosCaja ?? []);
+        setTotalOverride(parseFloat(fresh.total).toString());
+        onSaved(fresh);
+      } else {
+        const e = await res.json().catch(() => ({}));
+        setError(e?.message ?? "Error al registrar la devolución");
+      }
+    } catch { setError("Error de red"); }
+    setSavingDevolucion(false);
+  };
+
   // ── Delete ─────────────────────────────────────────────────────────────────
   const handleDelete = async () => {
     const cid = fullContrato?.id ?? contrato?.id;
@@ -956,7 +1019,20 @@ export function ContratoModal({
 
   const activePrendas = prendas.filter((p) => !p.deleted);
   const activeGarantiasCount = (gEfectivo ? 1 : 0) + (gCarnet ? 1 : 0) + (gCarta ? 1 : 0);
-  const visibleTabs = TABS.filter((t) => t.key !== "historial" || isAdmin);
+  // La devolución solo aplica a un contrato que ya existe
+  const tabVisible = (t: { key: TabKey }) =>
+    (t.key !== "historial" || isAdmin) && (t.key !== "devolucion" || isEdit);
+  const visibleTabs = TABS.filter(tabVisible);
+
+  // ── Devolución: estado del formulario ──────────────────────────────────────
+  const prendasDev = fullContrato?.prendas ?? [];
+  const devRegistrada = prendasDev.some((p) => p.cantidad_devuelta + p.cantidad_danada + p.cantidad_perdida > 0);
+  const puedeRegistrarDev = !devRegistrada && ["ENTREGADO", "EN_USO"].includes(fullContrato?.estado ?? "");
+  const devTodoClasificado = prendasDev.length > 0 && prendasDev.every((p) => {
+    const l = devLineas[p.id];
+    return !!l && num(l.devueltas) + num(l.danadas) + num(l.perdidas) === p.total;
+  });
+  const devTotalSanciones = prendasDev.reduce((s, p) => s + num(devLineas[p.id]?.monto), 0);
   const tabIdx = visibleTabs.findIndex((t) => t.key === activeTab);
   const prendaOptions = (fullContrato?.prendas ?? []).map((p) => ({
     id: p.id,
@@ -1013,7 +1089,7 @@ export function ContratoModal({
 
         {/* Tabs */}
         <div className="flex border-b border-border shrink-0 px-6 overflow-x-auto">
-          {TABS.filter((t) => t.key !== "historial" || isAdmin).map((t) => (
+          {visibleTabs.map((t) => (
             <button key={t.key} onClick={() => setActiveTab(t.key)}
               className={`px-4 py-3 text-sm font-semibold border-b-2 -mb-px transition-colors whitespace-nowrap ${activeTab === t.key ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground"}`}>
               {t.label}
@@ -1065,7 +1141,7 @@ export function ContratoModal({
                 </button>
               )}
               {["EN_USO", "ENTREGADO"].includes(currentContrato.estado) && (
-                <button onClick={() => lifecycleAction("devolver", { total_pagado: parseFloat(totalPagado || "0"), con_deuda: deuda > 0.01 })} disabled={saving}
+                <button onClick={() => setActiveTab("devolucion")} disabled={saving}
                   className="text-xs px-3 py-1.5 rounded-xl bg-emerald-500/10 text-emerald-700 font-semibold hover:bg-emerald-500/20 transition-colors disabled:opacity-50">
                   Registrar devolución →
                 </button>
@@ -1678,6 +1754,195 @@ export function ContratoModal({
             </div>
           )}
 
+          {/* ── DEVOLUCIÓN ── */}
+          {activeTab === "devolucion" && (
+            <div className="px-6 py-5 space-y-4">
+              <div>
+                <h3 className="text-sm font-bold">Devolución de prendas</h3>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  Clasificá cada unidad. No hace falta registrar personas. Las sanciones se suman al
+                  total del contrato y se cobran como cualquier saldo pendiente.
+                </p>
+              </div>
+
+              {prendasDev.length === 0 ? (
+                <p className="text-sm text-muted-foreground py-6 text-center">Este contrato no tiene prendas cargadas.</p>
+              ) : devRegistrada ? (
+                /* ── Ya registrada: resumen de solo lectura ── */
+                <div className="space-y-3">
+                  <div className="rounded-xl border border-border overflow-hidden">
+                    <table className="w-full text-sm">
+                      <thead className="bg-muted/50 text-xs text-muted-foreground">
+                        <tr>
+                          <th className="text-left px-3 py-2 font-semibold">Prenda</th>
+                          <th className="text-center px-2 py-2 font-semibold">OK</th>
+                          <th className="text-center px-2 py-2 font-semibold">Daños</th>
+                          <th className="text-center px-2 py-2 font-semibold">Perdidas</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {prendasDev.map((p) => (
+                          <tr key={p.id} className="border-t border-border">
+                            <td className="px-3 py-2">
+                              <p className="font-medium">{p.modelo}</p>
+                              {p.variacion && (
+                                <p className="text-xs text-muted-foreground">
+                                  {[p.variacion.nombre_variacion, p.variacion.talla, p.variacion.color].filter(Boolean).join(" · ")}
+                                </p>
+                              )}
+                            </td>
+                            <td className="text-center px-2 py-2 font-semibold text-emerald-600">{p.cantidad_devuelta}</td>
+                            <td className={`text-center px-2 py-2 font-semibold ${p.cantidad_danada > 0 ? "text-amber-600" : "text-muted-foreground"}`}>{p.cantidad_danada}</td>
+                            <td className={`text-center px-2 py-2 font-semibold ${p.cantidad_perdida > 0 ? "text-crimson" : "text-muted-foreground"}`}>{p.cantidad_perdida}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+
+                  {(currentContrato?.sanciones ?? []).length > 0 && (
+                    <div className="space-y-1.5">
+                      <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Sanciones aplicadas</p>
+                      {(currentContrato?.sanciones ?? []).map((s) => (
+                        <div key={s.id} className="flex items-center justify-between gap-3 rounded-xl border border-crimson/20 bg-crimson/5 px-3 py-2">
+                          <div className="min-w-0">
+                            <p className="text-sm font-medium truncate">{s.descripcion ?? s.tipo}</p>
+                            <p className="text-xs text-muted-foreground">{s.tipo === "PERDIDA" ? "Pérdida" : s.tipo === "DANO" ? "Daños" : s.tipo === "RETRASO" ? "Retraso" : "Otro"} · {s.cantidad} u.</p>
+                          </div>
+                          <span className="text-sm font-bold text-crimson shrink-0">{formatBs(parseFloat(s.monto))}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ) : !puedeRegistrarDev ? (
+                <div className="rounded-xl border border-border bg-muted/30 px-4 py-6 text-center">
+                  <p className="text-sm text-muted-foreground">
+                    La devolución se registra cuando el contrato está <span className="font-semibold">entregado</span> o <span className="font-semibold">en uso</span>.
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-1">Estado actual: {ESTADO_CONTRATO_MAP[currentContrato?.estado ?? "RESERVADO"].label}</p>
+                </div>
+              ) : (
+                /* ── Formulario ── */
+                <>
+                  {prendasDev.map((p) => {
+                    const l = devLineas[p.id] ?? { devueltas: "0", danadas: "0", perdidas: "0", motivo: "", monto: "" };
+                    const set = (campo: keyof DevLineaForm, valor: string) =>
+                      setDevLineas((prev) => ({ ...prev, [p.id]: { ...l, [campo]: valor } }));
+                    const suma = num(l.devueltas) + num(l.danadas) + num(l.perdidas);
+                    const incidencias = num(l.danadas) + num(l.perdidas);
+                    return (
+                      <div key={p.id} className={`rounded-xl border p-3 space-y-2.5 ${suma === p.total ? "border-border" : "border-crimson/40 bg-crimson/5"}`}>
+                        <div className="flex items-baseline justify-between gap-2">
+                          <div className="min-w-0">
+                            <p className="text-sm font-semibold truncate">{p.modelo}</p>
+                            {p.variacion && (
+                              <p className="text-xs text-muted-foreground truncate">
+                                {[p.variacion.nombre_variacion, p.variacion.talla, p.variacion.color].filter(Boolean).join(" · ")}
+                              </p>
+                            )}
+                          </div>
+                          <span className="text-xs font-semibold text-muted-foreground shrink-0">{p.total} u.</span>
+                        </div>
+
+                        <div className="grid grid-cols-3 gap-2">
+                          {([
+                            ["devueltas", "Devueltas OK", "text-emerald-600"],
+                            ["danadas",   "Con daños",    "text-amber-600"],
+                            ["perdidas",  "Perdidas",     "text-crimson"],
+                          ] as [keyof DevLineaForm, string, string][]).map(([campo, label, color]) => (
+                            <div key={campo} className="space-y-1">
+                              <label className={`text-xs font-semibold ${color}`}>{label}</label>
+                              <input
+                                type="number" min="0" max={p.total} step="1"
+                                className={`${inp} text-sm py-1.5`}
+                                value={l[campo]}
+                                onChange={(e) => set(campo, e.target.value)}
+                              />
+                            </div>
+                          ))}
+                        </div>
+
+                        {suma !== p.total && (
+                          <p className="text-xs font-semibold text-crimson">
+                            {suma} de {p.total} unidades clasificadas — tienen que sumar {p.total}.
+                          </p>
+                        )}
+
+                        {incidencias > 0 && (
+                          <div className="grid grid-cols-2 gap-2 pt-1 border-t border-border">
+                            <div className="space-y-1">
+                              <label className="text-xs text-muted-foreground">Motivo</label>
+                              <input
+                                className={`${inp} text-sm py-1.5`}
+                                placeholder={num(l.perdidas) > 0 ? "Extraviada, robada…" : "Manchas, rotura…"}
+                                value={l.motivo}
+                                onChange={(e) => set("motivo", e.target.value)}
+                              />
+                            </div>
+                            <div className="space-y-1">
+                              <label className="text-xs text-muted-foreground">Sanción (Bs.)</label>
+                              <input
+                                type="number" min="0" step="0.01"
+                                className={`${inp} text-sm py-1.5`}
+                                placeholder="0"
+                                value={l.monto}
+                                onChange={(e) => set("monto", e.target.value)}
+                              />
+                            </div>
+                          </div>
+                        )}
+
+                        {num(l.perdidas) > 0 && (
+                          <p className="text-xs text-crimson">
+                            Se dará de baja {num(l.perdidas)} u. del stock de esta variación.
+                          </p>
+                        )}
+                      </div>
+                    );
+                  })}
+
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Observaciones</label>
+                    <textarea
+                      className={`${inp} resize-none`} rows={2}
+                      placeholder="Notas de la devolución…"
+                      value={devObservaciones}
+                      onChange={(e) => setDevObservaciones(e.target.value)}
+                    />
+                  </div>
+
+                  <div className="rounded-xl border border-border bg-muted/30 px-4 py-3 space-y-1.5">
+                    <div className="flex justify-between text-sm">
+                      <span className="text-muted-foreground">Total del contrato</span>
+                      <span className="font-semibold">{formatBs(parseFloat(currentContrato?.total ?? "0"))}</span>
+                    </div>
+                    {devTotalSanciones > 0 && (
+                      <div className="flex justify-between text-sm">
+                        <span className="text-crimson">+ Sanciones</span>
+                        <span className="font-semibold text-crimson">{formatBs(devTotalSanciones)}</span>
+                      </div>
+                    )}
+                    <div className="flex justify-between text-sm pt-1.5 border-t border-border">
+                      <span className="font-semibold">Quedará pendiente</span>
+                      <span className="font-bold">
+                        {formatBs(Math.max(0, parseFloat(currentContrato?.total ?? "0") + devTotalSanciones - parseFloat(currentContrato?.total_pagado ?? "0")))}
+                      </span>
+                    </div>
+                  </div>
+
+                  <Button
+                    onClick={handleRegistrarDevolucion}
+                    disabled={!devTodoClasificado || savingDevolucion}
+                    className="w-full"
+                  >
+                    {savingDevolucion ? "Registrando…" : "Registrar devolución"}
+                  </Button>
+                </>
+              )}
+            </div>
+          )}
+
           {/* ── FINANZAS ── */}
           {activeTab === "finanzas" && (
             <div className="px-6 py-5 space-y-5">
@@ -2031,7 +2296,7 @@ export function ContratoModal({
           )}
           <div className="flex-1" />
           <Button variant="outline" onClick={onClose} disabled={saving || deleting}>Cancelar</Button>
-          {activeTab === "historial" ? null : activeTab !== "finanzas" ? (
+          {activeTab === "historial" || activeTab === "devolucion" ? null : activeTab !== "finanzas" ? (
             <Button className="bg-primary text-primary-foreground" onClick={() => setActiveTab(visibleTabs[tabIdx + 1].key)}>Siguiente →</Button>
           ) : (
             <Button className="bg-primary text-primary-foreground min-w-[130px]" onClick={handleSubmit} disabled={saving || deleting}>

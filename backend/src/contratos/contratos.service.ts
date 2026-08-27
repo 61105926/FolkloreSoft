@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { BotNotifyService } from './bot-notify.service.js';
-import { Prisma, EstadoContrato, TipoContrato, CiudadContrato, TipoGarantia, FormaPago, TipoParticipante } from '@prisma/client';
+import { Prisma, EstadoContrato, TipoContrato, CiudadContrato, TipoGarantia, TipoSancion, FormaPago, TipoParticipante } from '@prisma/client';
 
 const INCLUDE_FULL = {
   cliente: true,
@@ -30,6 +30,7 @@ const INCLUDE_FULL = {
   _count: { select: { prendas: true, garantias: true, participantes: true } },
   historial: { orderBy: { createdAt: 'desc' as const } },
   movimientosCaja: { orderBy: { createdAt: 'desc' as const } },
+  sanciones: { orderBy: { createdAt: 'asc' as const } },
 } as const;
 
 const INCLUDE_LIST = {
@@ -374,6 +375,126 @@ export class ContratosService {
     await this.log(id, conDeuda ? 'CON_DEUDA' : 'DEVUELTO',
       conDeuda ? `Prendas devueltas — ${deudaDesc}` : 'Prendas devueltas correctamente');
     return result;
+  }
+
+  /**
+   * Devolución por línea de prenda: no requiere participantes cargados.
+   * Cada unidad tiene que quedar clasificada como devuelta, dañada o perdida.
+   * Las sanciones suman al total del contrato (deuda) — no entran a caja
+   * hasta que el cliente las paga con el flujo normal de pagos.
+   */
+  async registrarDevolucion(contratoId: number, body: {
+    observaciones?: string;
+    lineas?: {
+      prendaId: number;
+      devueltas?: number;
+      danadas?: number;
+      perdidas?: number;
+      sancion_monto?: number;
+      sancion_motivo?: string;
+    }[];
+  }, actor?: { id?: number; nombre?: string }) {
+    const contrato = await this.prisma.contratoAlquiler.findUnique({
+      where: { id: contratoId },
+      select: {
+        id: true, codigo: true, total: true, total_pagado: true,
+        prendas: { select: { id: true, modelo: true, total: true, variacionId: true } },
+      },
+    });
+    if (!contrato) throw new NotFoundException(`Contrato #${contratoId} no encontrado`);
+
+    const porId = new Map(contrato.prendas.map((p) => [p.id, p]));
+    const lineas = (body.lineas ?? []).map((l) => {
+      const prenda = porId.get(l.prendaId);
+      if (!prenda) {
+        throw new BadRequestException(`La prenda #${l.prendaId} no pertenece a este contrato`);
+      }
+      const devueltas = Math.trunc(l.devueltas ?? 0);
+      const danadas   = Math.trunc(l.danadas ?? 0);
+      const perdidas  = Math.trunc(l.perdidas ?? 0);
+      if (devueltas < 0 || danadas < 0 || perdidas < 0) {
+        throw new BadRequestException(`Las cantidades de "${prenda.modelo}" no pueden ser negativas`);
+      }
+      if (devueltas + danadas + perdidas !== prenda.total) {
+        throw new BadRequestException(
+          `"${prenda.modelo}": ${devueltas + danadas + perdidas} de ${prenda.total} unidades clasificadas. Tienen que sumar ${prenda.total}.`,
+        );
+      }
+      const monto = l.sancion_monto && l.sancion_monto > 0 ? l.sancion_monto : 0;
+      if (monto > 0 && danadas + perdidas === 0) {
+        throw new BadRequestException(`"${prenda.modelo}": no se puede sancionar una línea sin daños ni pérdidas`);
+      }
+      return { prenda, devueltas, danadas, perdidas, monto, motivo: l.sancion_motivo?.trim() };
+    });
+
+    if (lineas.length !== contrato.prendas.length) {
+      throw new BadRequestException('Faltan prendas por clasificar en la devolución');
+    }
+
+    const totalSanciones = lineas.reduce((s, l) => s + l.monto, 0);
+    const nuevoTotal = Number(contrato.total) + totalSanciones;
+    const conDeuda = Number(contrato.total_pagado) < nuevoTotal;
+
+    await this.prisma.$transaction(async (tx) => {
+      for (const l of lineas) {
+        await tx.contratoPrenda.update({
+          where: { id: l.prenda.id },
+          data: {
+            cantidad_devuelta: l.devueltas,
+            cantidad_danada:   l.danadas,
+            cantidad_perdida:  l.perdidas,
+          },
+        });
+
+        if (l.monto > 0) {
+          const tipo = l.perdidas > 0 ? TipoSancion.PERDIDA : TipoSancion.DANO;
+          await tx.sancionContrato.create({
+            data: {
+              contratoId,
+              prendaId: l.prenda.id,
+              tipo,
+              descripcion: l.motivo || (tipo === TipoSancion.PERDIDA ? 'Pérdida de prenda' : 'Daños en la prenda'),
+              monto: l.monto,
+              cantidad: l.danadas + l.perdidas,
+            },
+          });
+        }
+
+        // Lo perdido sale del inventario: si no, `stockDisponible` lo sigue contando
+        if (l.perdidas > 0 && l.prenda.variacionId) {
+          await tx.movimientoStock.create({
+            data: {
+              variacionId: l.prenda.variacionId,
+              tipo: 'BAJA',
+              cantidad: -Math.abs(l.perdidas),
+              motivo: `Pérdida en contrato ${contrato.codigo} — ${l.prenda.modelo}`,
+              userId: actor?.id ?? null,
+            },
+          });
+        }
+      }
+
+      await tx.contratoAlquiler.update({
+        where: { id: contratoId },
+        data: {
+          estado: conDeuda ? EstadoContrato.CON_DEUDA : EstadoContrato.DEVUELTO,
+          fecha_devolucion_real: new Date(),
+          total: nuevoTotal,
+          ...(body.observaciones?.trim() ? { observaciones: body.observaciones.trim() } : {}),
+        },
+      });
+    });
+
+    const danadas  = lineas.reduce((s, l) => s + l.danadas, 0);
+    const perdidas = lineas.reduce((s, l) => s + l.perdidas, 0);
+    const partes = [`${lineas.reduce((s, l) => s + l.devueltas, 0)} OK`];
+    if (danadas > 0)  partes.push(`${danadas} con daños`);
+    if (perdidas > 0) partes.push(`${perdidas} perdidas`);
+    if (totalSanciones > 0) partes.push(`sanción Bs. ${totalSanciones.toFixed(2)}`);
+    await this.log(contratoId, conDeuda ? 'CON_DEUDA' : 'DEVUELTO',
+      `Devolución registrada por ${actor?.nombre ?? 'Sistema'}: ${partes.join(' · ')}`);
+
+    return this.findOne(contratoId);
   }
 
   async confirmar(id: number) {
