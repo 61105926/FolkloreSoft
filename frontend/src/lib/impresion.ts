@@ -30,6 +30,19 @@ export interface ConfigImpresion {
   copiasComanda: number;
   /** Imprimir la comanda de bodega junto al comprobante. */
   comandaActiva: boolean;
+  /**
+   * Densidad de la impresora en DPI. Sólo aplica en modo QZ: es la resolución
+   * con la que se rasteriza el HTML. Si no se manda, muchos drivers reportan
+   * "Normal" y QZ cae a 72 DPI, que sale fino y borroso. Las térmicas de 80mm
+   * son 203 DPI casi siempre.
+   */
+  dpi: number;
+  /**
+   * Rasterizar el ticket antes de mandarlo. Con true el resultado es idéntico
+   * en cualquier driver; con false lo dibuja el driver, que en algunas
+   * impresoras da texto más nítido.
+   */
+  rasterizar: boolean;
 }
 
 export const CONFIG_IMPRESION_DEFAULT: ConfigImpresion = {
@@ -40,6 +53,8 @@ export const CONFIG_IMPRESION_DEFAULT: ConfigImpresion = {
   copiasComprobante: 1,
   copiasComanda: 1,
   comandaActiva: true,
+  dpi: 203,
+  rasterizar: true,
 };
 
 const STORAGE_KEY = "folkloresoft.impresion";
@@ -110,13 +125,23 @@ export function guardarConfigImpresion(config: ConfigImpresion) {
 
 // ── Documento ─────────────────────────────────────────────────────────────────
 
-/** Estilos compartidos por comprobante y comanda, en ambos modos de impresión. */
-function estilosTicket(anchoMm: number): string {
+/**
+ * Estilos compartidos por comprobante y comanda.
+ *
+ * En modo QZ el cuerpo tiene que medir exactamente el ancho del papel: QZ ya
+ * imprime con margen 0 y sin escalar, así que cualquier diferencia entre el
+ * ancho del body y el de la página termina en un reescalado que adelgaza el
+ * texto. El margen físico se hace con padding.
+ */
+function estilosTicket(anchoMm: number, paraQz = false): string {
   const util = Math.max(40, anchoMm - 8);
+  const cuerpo = paraQz
+    ? `width: ${anchoMm}mm; padding: 0 3mm;`
+    : `width: ${util}mm; padding: 0;`;
   return `
-    @page { size: ${anchoMm}mm auto; margin: 4mm; }
+    @page { size: ${anchoMm}mm auto; margin: ${paraQz ? "0" : "4mm"}; }
     * { box-sizing: border-box; }
-    body { font-family: Arial, sans-serif; font-size: 11px; font-weight: 900; color: #000; margin: 0; padding: 0; width: ${util}mm; }
+    body { font-family: Arial, sans-serif; font-size: 11px; font-weight: 900; color: #000; margin: 0; ${cuerpo}
     h2 { font-size: 12px; font-weight: 900; margin: 9px 0 3px; border-bottom: 2px solid #000; padding-bottom: 3px; text-transform: uppercase; letter-spacing: 0.05em; }
     table { width: 100%; border-collapse: collapse; }
     td, th { font-weight: 900; }
@@ -136,10 +161,10 @@ function estilosTicket(anchoMm: number): string {
 }
 
 /** Envuelve uno o más tickets en un documento HTML completo. */
-function documentoTickets(tickets: Ticket[], titulo: string, anchoMm: number): string {
+function documentoTickets(tickets: Ticket[], titulo: string, anchoMm: number, paraQz = false): string {
   return `<!DOCTYPE html><html lang="es"><head><meta charset="utf-8">
 <title>${titulo}</title>
-<style>${estilosTicket(anchoMm)}</style>
+<style>${estilosTicket(anchoMm, paraQz)}</style>
 </head><body>
 ${tickets.map((t) => `<div class="ticket">${t.cuerpo}</div>`).join("\n")}
 </body></html>`;
@@ -203,12 +228,19 @@ async function imprimirConQz(tickets: Ticket[], titulo: string, config: ConfigIm
     const impresora = impresoraDe(config, ticket.tipo);
     if (!impresora) throw new Error(`No hay impresora configurada para el ${ticket.tipo}`);
 
+    const dpi = Math.max(72, Math.round(config.dpi) || 203);
     const cfg = qz.configs.create(impresora, {
       units: "mm",
       size: { width: config.anchoMm, height: null },
       margins: 0,
-      scaleContent: true,
-      rasterize: true,
+      // El HTML ya viene del ancho exacto del papel: escalarlo sólo lo deforma
+      scaleContent: false,
+      rasterize: config.rasterizar,
+      // En mm la densidad se expresa en puntos por mm
+      density: dpi / 25.4,
+      fallbackDensity: dpi / 25.4,
+      interpolation: "nearest-neighbor",
+      colorType: "blackwhite",
       copies: copiasDe(config, ticket.tipo),
       jobName: `${titulo} · ${ticket.tipo}`,
     });
@@ -217,7 +249,7 @@ async function imprimirConQz(tickets: Ticket[], titulo: string, config: ConfigIm
       type: "pixel",
       format: "html",
       flavor: "plain",
-      data: documentoTickets([ticket], titulo, config.anchoMm),
+      data: documentoTickets([ticket], titulo, config.anchoMm, true),
     }]);
   }
 }

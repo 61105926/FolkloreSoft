@@ -22,6 +22,13 @@ const ANCHOS = [
   { valor: 58, label: '58 mm (angosta)' },
 ];
 
+const DPIS = [
+  { valor: 203, label: '203 DPI (térmica común)' },
+  { valor: 300, label: '300 DPI (térmica de etiquetas)' },
+  { valor: 180, label: '180 DPI' },
+  { valor: 600, label: '600 DPI (láser / inkjet)' },
+];
+
 function ticketPrueba(titulo: string) {
   return `
   <div class="center" style="margin-bottom:4px">
@@ -213,6 +220,38 @@ export function ImpresionConfig() {
               </ul>
             </div>
           )}
+
+          {/* Calidad de impresión */}
+          <div className="rounded-xl border border-border bg-muted/30 px-3 py-3 space-y-2">
+            <p className="text-xs font-bold">Calidad</p>
+            <div className="flex items-center gap-3 flex-wrap">
+              <label className="flex items-center gap-2 text-xs text-muted-foreground">
+                Densidad
+                <select
+                  value={config.dpi}
+                  onChange={(e) => set("dpi", Number(e.target.value))}
+                  className="px-2 py-1.5 rounded-lg border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+                >
+                  {DPIS.map((d) => <option key={d.valor} value={d.valor}>{d.label}</option>)}
+                </select>
+              </label>
+
+              <label className="flex items-center gap-2 text-xs text-muted-foreground">
+                <input
+                  type="checkbox"
+                  checked={config.rasterizar}
+                  onChange={(e) => set("rasterizar", e.target.checked)}
+                  className="h-4 w-4 rounded border-border"
+                />
+                Rasterizar el ticket
+              </label>
+            </div>
+            <p className="text-xs text-muted-foreground leading-relaxed">
+              Si el ticket sale más fino o más chico que la vista previa, es la densidad:
+              subila a la que dice el manual de tu impresora. Si sale grueso o borroso,
+              probá destildando <b>Rasterizar</b> para que lo dibuje el driver.
+            </p>
+          </div>
 
           {/* Selección de impresoras */}
           <div className="grid sm:grid-cols-2 gap-4">
