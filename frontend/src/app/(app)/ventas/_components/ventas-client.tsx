@@ -16,7 +16,7 @@ interface VentaItem {
   id: number; descripcion: string; cantidad: number;
   precio_unit: string; subtotal: string;
   conjunto?: { id: number; nombre: string; danza: string } | null;
-  variacion?: { id: number; nombre_variacion: string; talla?: string | null } | null;
+  variacion?: { id: number; nombre_variacion: string; talla?: string | null; color?: string | null } | null;
 }
 
 interface Venta {
@@ -465,6 +465,7 @@ function VentaDetailModal({ venta: initialVenta, clientes, conjuntos, token, bac
   const [showEdit, setShowEdit] = useState(false);
   const [showPago, setShowPago] = useState(false);
   const [actioning, setActioning] = useState(false);
+  const [avisoImpresion, setAvisoImpresion] = useState<string | null>(null);
 
   const saldo = Math.max(0, Number(venta.total) - Number(venta.total_pagado));
   const em = ESTADO_MAP[venta.estado];
@@ -475,6 +476,19 @@ function VentaDetailModal({ venta: initialVenta, clientes, conjuntos, token, bac
       const res = await fetch(`${backendUrl}/ventas/${venta.id}/${endpoint}`, { method: "PATCH", headers: { Authorization: `Bearer ${token}` } });
       if (res.ok) { const upd = await res.json(); setVenta(upd); onUpdated(upd); }
     } finally { setActioning(false); }
+  };
+
+  /** El comprobante lleva la talla/color en la descripción; la comanda los saca de `variacion`. */
+  const imprimir = async (opciones?: { comanda?: boolean; soloComanda?: boolean }) => {
+    const items = (venta.items ?? []).map((it) => {
+      const extras = [
+        it.variacion?.talla ? `T.${it.variacion.talla}` : null,
+        it.variacion?.color ?? null,
+      ].filter(Boolean).join(" · ");
+      return { ...it, descripcion: extras ? `${it.descripcion.split(" — ")[0]} — ${extras}` : it.descripcion };
+    });
+    const res = await imprimirVenta({ ...venta, items }, opciones);
+    if (res?.aviso) setAvisoImpresion(res.aviso);
   };
 
   if (showEdit) {
@@ -575,17 +589,24 @@ function VentaDetailModal({ venta: initialVenta, clientes, conjuntos, token, bac
           {/* Footer actions */}
           <div className="px-6 py-4 border-t border-border space-y-2 shrink-0">
             <div className="flex gap-2">
-              <button onClick={() => imprimirVenta({ ...venta, items: (venta.items ?? []).map((it) => {
-                const extras = [it.variacion?.talla ? `T.${it.variacion.talla}` : null, (it.variacion as any)?.color ?? null].filter(Boolean).join(" · ");
-                return { ...it, descripcion: extras ? `${it.descripcion.split(" — ")[0]} — ${extras}` : it.descripcion };
-              }) })} className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl border border-border text-xs font-semibold hover:bg-muted/60 transition-colors">
+              <button onClick={() => void imprimir()} className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl border border-border text-xs font-semibold hover:bg-muted/60 transition-colors">
                 <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" /></svg>
                 Imprimir
+              </button>
+              <button
+                onClick={() => void imprimir({ soloComanda: true })}
+                title="Reimprimir sólo la comanda de bodega"
+                className="px-3 py-2 rounded-xl border border-border text-xs font-semibold hover:bg-muted/60 transition-colors shrink-0"
+              >
+                Comanda
               </button>
               {venta.estado === "PENDIENTE" && (
                 <button onClick={() => setShowEdit(true)} className="flex-1 px-3 py-2 rounded-xl border border-border text-xs font-semibold hover:bg-muted/60 transition-colors">Editar</button>
               )}
             </div>
+            {avisoImpresion && (
+              <p className="text-[11px] text-amber-600 font-medium">{avisoImpresion}</p>
+            )}
             <div className="flex gap-2">
               {venta.estado === "PENDIENTE" && (
                 <button onClick={() => setShowPago(true)} className="flex-1 px-3 py-2 rounded-xl bg-emerald-600 text-white text-xs font-semibold hover:bg-emerald-700 transition-colors">
