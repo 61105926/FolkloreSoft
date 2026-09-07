@@ -1,4 +1,5 @@
 import type { Contrato } from "./eventos-client";
+import { imprimirTickets, leerConfigImpresion, type Ticket } from "@/lib/impresion";
 
 const TIPO_P_LABEL: Record<string, string> = {
   HOMBRE: "Hombre", CHOLITA: "Mujer", MACHA: "Macha", NINO: "Niño", OTRO: "Otro",
@@ -50,7 +51,6 @@ function comandaHtml(c: Contrato) {
   }).join("");
 
   return `
-  <div class="ticket">
     ${encabezado(c, "Comanda · Preparacion")}
     <table><tbody>
       ${row("N° Contrato", c.codigo, true)}
@@ -72,12 +72,12 @@ function comandaHtml(c: Contrato) {
     <div class="center" style="margin-top:6px;font-size:9px;font-weight:900">
       ${new Date().toLocaleString("es-BO")}
     </div>
-    <div class="feed"></div>
-  </div>`;
+    <div class="feed"></div>`;
 }
 
 export function imprimirContrato(c: Contrato, opciones?: { comanda?: boolean }) {
-  const conComanda     = opciones?.comanda ?? true;
+  const config         = leerConfigImpresion();
+  const conComanda     = opciones?.comanda ?? config.comandaActiva;
   const prendas_       = c.prendas ?? [];
   const participantes_ = c.participantes ?? [];
   const garantias_     = c.garantias ?? [];
@@ -116,32 +116,7 @@ export function imprimirContrato(c: Contrato, opciones?: { comanda?: boolean }) 
     </tr>`;
   }).join("");
 
-  const html = `<!DOCTYPE html><html lang="es"><head><meta charset="utf-8">
-  <title>Comprobante ${c.codigo}</title>
-  <style>
-    @page { size: 80mm auto; margin: 4mm; }
-    * { box-sizing: border-box; }
-    body { font-family: Arial, sans-serif; font-size: 11px; font-weight: 900; color: #000; margin: 0; padding: 0; width: 72mm; }
-    h2 { font-size: 12px; font-weight: 900; margin: 9px 0 3px; border-bottom: 2px solid #000; padding-bottom: 3px; text-transform: uppercase; letter-spacing: 0.05em; }
-    table { width: 100%; border-collapse: collapse; }
-    td, th { font-weight: 900; }
-    .center { text-align: center; }
-    .divider { border: none; border-top: 2px dashed #000; margin: 6px 0; }
-    .firma { border-top: 2px solid #000; padding-top: 4px; text-align: center; font-size: 10px; font-weight: 900; }
-    /* Cada ticket es una página: la térmica corta al terminar cada una */
-    .ticket { page-break-after: always; break-after: page; }
-    .ticket:last-child { page-break-after: auto; break-after: auto; }
-    /* Papel en blanco para que el corte no se coma la última línea */
-    .feed { height: 14mm; }
-    @media screen {
-      body { width: 80mm; padding: 8px; margin: 16px auto; }
-      .ticket { border: 1px dashed #ccc; padding: 8px; margin-bottom: 16px; }
-      .feed { height: 0; }
-    }
-  </style>
-  </head><body>
-
-  <div class="ticket">
+  const comprobante = `
   ${encabezado(c, `Contrato ${c.tipo === "RESERVA" ? "de Reserva" : "Directo"}`)}
   <table><tbody>
     ${row("N° Contrato", c.codigo, true)}
@@ -234,17 +209,10 @@ export function imprimirContrato(c: Contrato, opciones?: { comanda?: boolean }) 
   <div class="center" style="margin-top:8px;font-size:9px;font-weight:900">
     Generado el ${new Date().toLocaleString("es-BO")}
   </div>
-  <div class="feed"></div>
-  </div>
+  <div class="feed"></div>`;
 
-  ${conComanda ? comandaHtml(c) : ""}
+  const tickets: Ticket[] = [{ tipo: "comprobante", cuerpo: comprobante }];
+  if (conComanda) tickets.push({ tipo: "comanda", cuerpo: comandaHtml(c) });
 
-  </body></html>`;
-
-  const win = window.open("", "_blank", "width=420,height=800");
-  if (!win) return;
-  win.document.write(html);
-  win.document.close();
-  win.focus();
-  setTimeout(() => win.print(), 400);
+  return imprimirTickets(tickets, `Contrato ${c.codigo}`, config);
 }
