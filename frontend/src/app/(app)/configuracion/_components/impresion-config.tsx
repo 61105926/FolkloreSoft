@@ -7,12 +7,13 @@ import {
   imprimirTickets,
   impresoraPorDefecto,
   leerConfigImpresion,
-  firmaDisponible,
+  estadoFirma,
   listarImpresoras,
   snapshotConfigImpresion,
   snapshotConfigImpresionServidor,
   suscribirConfigImpresion,
   type ConfigImpresion,
+  type EstadoFirma,
   type ModoImpresion,
 } from "@/lib/impresion";
 
@@ -67,12 +68,12 @@ export function ImpresionConfig() {
   const [guardado, setGuardado] = useState(false);
   // Cambia en cada click de "Detectar" para relanzar la búsqueda
   const [intento, setIntento] = useState(0);
-  const [firmaOk, setFirmaOk] = useState<boolean | null>(null);
+  const [firma, setFirma] = useState<EstadoFirma | null>(null);
 
   // Estado de la firma en el backend: sin ella QZ pide autorización por ticket
   useEffect(() => {
     let vivo = true;
-    void firmaDisponible().then((ok) => { if (vivo) setFirmaOk(ok); });
+    void estadoFirma().then((e) => { if (vivo) setFirma(e); });
     return () => { vivo = false; };
   }, []);
 
@@ -112,10 +113,14 @@ export function ImpresionConfig() {
 
   /** Baja el certificado con el nombre que QZ espera, para no explicarlo por teléfono. */
   const descargarCertificado = async () => {
+    setAviso(null);
     try {
       const res = await fetch("/api/qz/certificate");
       const data = (await res.json()) as { certificado?: string };
-      if (!data.certificado) { setAviso("El servidor no tiene certificado cargado."); return; }
+      if (!data.certificado) {
+        setAviso("El servidor todavía no tiene QZ_CERTIFICATE cargado, así que no hay certificado para descargar.");
+        return;
+      }
       const url = URL.createObjectURL(new Blob([data.certificado], { type: "application/x-x509-ca-cert" }));
       const a = document.createElement("a");
       a.href = url;
@@ -249,13 +254,14 @@ export function ImpresionConfig() {
 
           {/* Firma */}
           <div className={`rounded-xl border-2 px-3 py-3 space-y-1.5 ${
-            firmaOk ? "border-emerald-200 bg-emerald-50" : "border-amber-200 bg-amber-50"
+            firma?.configurado ? "border-emerald-200 bg-emerald-50" : "border-amber-200 bg-amber-50"
           }`}>
-            <p className={`text-xs font-bold ${firmaOk ? "text-emerald-700" : "text-amber-700"}`}>
-              {firmaOk === null ? "Verificando firma…"
-                : firmaOk ? "Peticiones firmadas" : "Peticiones sin firmar"}
+            <p className={`text-xs font-bold ${firma?.configurado ? "text-emerald-700" : "text-amber-700"}`}>
+              {firma === null ? "Verificando firma…"
+                : firma.configurado ? "Peticiones firmadas" : "Peticiones sin firmar"}
             </p>
-            {firmaOk === false && (
+
+            {firma && !firma.configurado && (
               <>
                 <p className="text-xs text-amber-700">
                   QZ muestra <b>«An anonymous request · Untrusted website»</b> al conectarse y
@@ -269,32 +275,39 @@ export function ImpresionConfig() {
                 </p>
                 <p className="text-xs text-amber-700">
                   <b>1. En el servidor</b> — cargar{" "}
-                  <code className="font-mono">QZ_PRIVATE_KEY</code> y{" "}
-                  <code className="font-mono">QZ_CERTIFICATE</code>. Con esto las peticiones
-                  van firmadas y QZ deja de verlas como anónimas: en vez de «anonymous
-                  request» muestra el nombre del negocio. Se hace una sola vez.
+                  <code className="font-mono">QZ_PRIVATE_KEY</code>{firma.clave ? " ✓" : ""} y{" "}
+                  <code className="font-mono">QZ_CERTIFICATE</code>{firma.certificado ? " ✓" : ""}.
+                  Con esto las peticiones van firmadas y QZ deja de verlas como anónimas: en
+                  vez de «anonymous request» muestra el nombre del negocio. Se hace una sola vez.
                 </p>
                 <p className="text-xs text-amber-700">
                   <b>2. En cada equipo</b> — copiar el certificado como{" "}
                   <code className="font-mono">override.crt</code> en la carpeta de instalación
                   de QZ Tray y reiniciarlo. Sin esto QZ sigue preguntando, porque un
-                  certificado propio lo identifica pero no lo hace confiable. Es el mismo
-                  archivo que va en <code className="font-mono">QZ_CERTIFICATE</code>, sólo
-                  renombrado, y se va a poder descargar desde acá una vez hecho el paso 1.
+                  certificado propio lo identifica pero no lo hace confiable.
                 </p>
               </>
             )}
-            {firmaOk && (
-              <div className="flex items-center justify-between gap-2 flex-wrap">
-                <p className="text-xs text-emerald-700">
-                  Falta copiar el certificado como <code className="font-mono">override.crt</code>{" "}
-                  en la carpeta de QZ Tray de esta máquina para que no vuelva a preguntar.
-                </p>
-                <Button variant="outline" size="sm" onClick={() => void descargarCertificado()}>
-                  Descargar override.crt
-                </Button>
-              </div>
+
+            {firma?.configurado && (
+              <p className="text-xs text-emerald-700">
+                Falta el paso 2: copiar el <code className="font-mono">override.crt</code> en
+                la carpeta de instalación de QZ Tray de cada equipo y reiniciarlo.
+              </p>
             )}
+
+            {/* Descarga del certificado: siempre a mano, es lo que hay que llevar
+                a cada máquina */}
+            <div className="flex items-center gap-2 flex-wrap pt-1">
+              <Button variant="outline" size="sm" onClick={() => void descargarCertificado()}>
+                Descargar override.crt
+              </Button>
+              <span className="text-xs text-muted-foreground">
+                {firma?.certificado
+                  ? "Va en C:\\Program Files\\QZ Tray\\ y después hay que reiniciar QZ."
+                  : "Disponible cuando el servidor tenga QZ_CERTIFICATE cargado."}
+              </span>
+            </div>
           </div>
 
           {/* Formato */}

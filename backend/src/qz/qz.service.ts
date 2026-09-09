@@ -65,8 +65,12 @@ export class QzService {
     }
   }
 
+  get tieneClave(): boolean {
+    return this.clavePrivada !== null;
+  }
+
   get configurado(): boolean {
-    return this.certificado !== null && this.clavePrivada !== null;
+    return this.certificado !== null && this.tieneClave;
   }
 
   /**

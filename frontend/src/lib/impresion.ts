@@ -290,15 +290,26 @@ export async function conectarQz(): Promise<QzApi> {
   return qz;
 }
 
-/** ¿El backend tiene certificado y clave cargados? */
-export async function firmaDisponible(): Promise<boolean> {
+export interface EstadoFirma {
+  /** Certificado y clave presentes: las peticiones salen firmadas. */
+  configurado: boolean;
+  /** Sólo el certificado. Alcanza para bajar el override.crt. */
+  certificado: boolean;
+  clave: boolean;
+}
+
+export async function estadoFirma(): Promise<EstadoFirma> {
   try {
     const res = await fetch(`${API}/estado`);
-    if (!res.ok) return false;
-    const data = (await res.json()) as { configurado?: boolean };
-    return data.configurado === true;
+    if (!res.ok) return { configurado: false, certificado: false, clave: false };
+    const d = (await res.json()) as Partial<EstadoFirma>;
+    return {
+      configurado: d.configurado === true,
+      certificado: d.certificado === true,
+      clave: d.clave === true,
+    };
   } catch {
-    return false;
+    return { configurado: false, certificado: false, clave: false };
   }
 }
 
