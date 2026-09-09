@@ -258,10 +258,16 @@ export function ImpresionConfig() {
             {firmaOk === false && (
               <>
                 <p className="text-xs text-amber-700">
-                  QZ va a pedir autorización en <b>cada impresión</b> y no ofrece recordar la
-                  decisión. Para que deje de preguntar hay que cargar en el servidor las
-                  variables <code className="font-mono">QZ_PRIVATE_KEY</code> y{" "}
-                  <code className="font-mono">QZ_CERTIFICATE</code>.
+                  QZ va a mostrar <b>«An anonymous request · Untrusted website»</b> al
+                  conectarse y al imprimir. Como salida rápida podés darle <b>Allow</b> con{" "}
+                  <b>Remember this decision</b> tildado y deja de preguntar en esta máquina.
+                </p>
+                <p className="text-xs text-amber-700">
+                  La solución de fondo es cargar en el servidor las variables{" "}
+                  <code className="font-mono">QZ_PRIVATE_KEY</code> y{" "}
+                  <code className="font-mono">QZ_CERTIFICATE</code>: ahí las peticiones van
+                  firmadas y el sitio deja de ser anónimo en todos los equipos, sin depender
+                  de que alguien haya tildado la casilla.
                 </p>
                 <p className="text-xs text-amber-700">
                   Con eso QZ ya identifica al sitio, pero para <b>recordar</b> la decisión
