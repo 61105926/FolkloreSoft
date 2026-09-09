@@ -800,15 +800,39 @@ export class ContratosService {
     return g;
   }
 
-  updateGarantia(id: number, data: {
+  /**
+   * Corrige una garantía sin borrarla y volver a crearla.
+   *
+   * `valor` y `cantidad` aceptan null explícito: son dos datos distintos y hay
+   * que poder dejar uno vacío — un carnet suele tener cantidad y ningún monto.
+   */
+  async updateGarantia(id: number, data: {
     tipo?: TipoGarantia;
     descripcion?: string;
-    valor?: number;
+    valor?: number | null;
+    cantidad?: number | null;
     retenida?: boolean;
     motivo_retencion?: string;
     participanteId?: number | null;
   }) {
-    return this.prisma.contratoGarantia.update({ where: { id }, data });
+    const previa = await this.prisma.contratoGarantia.findUnique({
+      where: { id },
+      select: { contratoId: true, tipo: true },
+    });
+    if (!previa) throw new NotFoundException(`Garantía #${id} no encontrada`);
+
+    const g = await this.prisma.contratoGarantia.update({ where: { id }, data });
+
+    if (data.valor !== undefined || data.cantidad !== undefined) {
+      const detalle = [
+        data.cantidad ? `${data.cantidad} doc.` : null,
+        data.valor ? `Bs. ${Number(data.valor).toFixed(2)}` : null,
+      ].filter(Boolean).join(' \u00b7 ') || 'sin datos';
+      await this.log(previa.contratoId, 'GARANTIA_EDITADA',
+        `Garantía ${previa.tipo} actualizada: ${detalle}`);
+    }
+
+    return g;
   }
 
   async removeGarantia(id: number) {
