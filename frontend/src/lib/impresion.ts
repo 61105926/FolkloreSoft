@@ -205,15 +205,19 @@ async function cargarQz(): Promise<QzApi> {
 // ticket. La clave privada vive en el backend; acá sólo se piden el certificado
 // y la firma de cada payload.
 
-/** URL del backend vista desde el navegador (la reescribe next.config). */
-const API = "/api/backend";
+/**
+ * Rutas propias del frontend. No se usa /api/backend porque ese proxy sólo
+ * reenvía el Authorization que le mande el cliente, y acá no tenemos el token:
+ * /api/qz lo saca de la cookie del lado del servidor.
+ */
+const API = "/api/qz";
 
 let certificadoCache: string | null | undefined;
 
 async function pedirCertificado(): Promise<string> {
   if (certificadoCache !== undefined) return certificadoCache ?? "";
   try {
-    const res = await fetch(`${API}/qz/certificate`);
+    const res = await fetch(`${API}/certificate`);
     const data = res.ok ? ((await res.json()) as { certificado?: string }) : null;
     certificadoCache = data?.certificado?.trim() || null;
   } catch {
@@ -224,7 +228,7 @@ async function pedirCertificado(): Promise<string> {
 
 async function pedirFirma(datos: string): Promise<string> {
   try {
-    const res = await fetch(`${API}/qz/sign`, {
+    const res = await fetch(`${API}/sign`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ data: datos }),
@@ -289,7 +293,7 @@ export async function conectarQz(): Promise<QzApi> {
 /** ¿El backend tiene certificado y clave cargados? */
 export async function firmaDisponible(): Promise<boolean> {
   try {
-    const res = await fetch(`${API}/qz/estado`);
+    const res = await fetch(`${API}/estado`);
     if (!res.ok) return false;
     const data = (await res.json()) as { configurado?: boolean };
     return data.configurado === true;

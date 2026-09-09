@@ -113,7 +113,7 @@ export function ImpresionConfig() {
   /** Baja el certificado con el nombre que QZ espera, para no explicarlo por teléfono. */
   const descargarCertificado = async () => {
     try {
-      const res = await fetch("/api/backend/qz/certificate");
+      const res = await fetch("/api/qz/certificate");
       const data = (await res.json()) as { certificado?: string };
       if (!data.certificado) { setAviso("El servidor no tiene certificado cargado."); return; }
       const url = URL.createObjectURL(new Blob([data.certificado], { type: "application/x-x509-ca-cert" }));
@@ -267,7 +267,9 @@ export function ImpresionConfig() {
                   Con eso QZ ya identifica al sitio, pero para <b>recordar</b> la decisión
                   necesita confiar: hay que copiar el certificado como{" "}
                   <code className="font-mono">override.crt</code> en la carpeta de instalación
-                  de QZ, una vez por equipo.
+                  de QZ, una vez por equipo. Es el mismo archivo que va en{" "}
+                  <code className="font-mono">QZ_CERTIFICATE</code>, sólo renombrado; una vez
+                  cargado en el servidor lo podés bajar desde acá.
                 </p>
               </>
             )}
