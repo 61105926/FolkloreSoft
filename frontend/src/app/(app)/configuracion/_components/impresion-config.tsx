@@ -280,6 +280,23 @@ export function ImpresionConfig() {
                   Con esto las peticiones van firmadas y QZ deja de verlas como anónimas: en
                   vez de «anonymous request» muestra el nombre del negocio. Se hace una sola vez.
                 </p>
+                {firma.diagnostico && (
+                  <div className="rounded-lg border border-amber-300 bg-white/60 px-2.5 py-2 space-y-1">
+                    <p className="text-[11px] font-bold text-amber-800">Qué llegó al servidor</p>
+                    {([
+                      { nombre: "QZ_PRIVATE_KEY", d: firma.diagnostico.clave },
+                      { nombre: "QZ_CERTIFICATE", d: firma.diagnostico.certificado },
+                    ]).map(({ nombre, d }) => (
+                      <p key={nombre} className="text-[11px] text-amber-800 font-mono">
+                        {d.problema ? "✗" : "✓"} {nombre}:{" "}
+                        {d.presente
+                          ? `${d.etiqueta ?? "sin etiqueta"} · ${d.caracteres} caracteres`
+                          : "vacía"}
+                        {d.problema && <span className="font-sans"> — {d.problema}</span>}
+                      </p>
+                    ))}
+                  </div>
+                )}
                 <p className="text-xs text-amber-700">
                   <b>2. En cada equipo</b> — copiar el certificado como{" "}
                   <code className="font-mono">override.crt</code> en la carpeta de instalación

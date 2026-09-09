@@ -69,6 +69,59 @@ export class QzService {
     return this.clavePrivada !== null;
   }
 
+  /**
+   * Qué llegó en cada variable, sin exponer el contenido.
+   *
+   * La etiqueta del PEM es suficiente para detectar el error más común: pegar
+   * el certificado en las dos variables. Ahí QZ_PRIVATE_KEY dice CERTIFICATE
+   * en vez de PRIVATE KEY y no hay forma de darse cuenta mirando la pantalla.
+   */
+  private inspeccionar(crudo: string | undefined): {
+    presente: boolean;
+    etiqueta: string | null;
+    caracteres: number;
+    problema: string | null;
+  } {
+    if (!crudo?.trim()) {
+      return { presente: false, etiqueta: null, caracteres: 0, problema: 'La variable está vacía o no existe' };
+    }
+    const texto = crudo.replace(/\\n/g, '\n');
+    const marcas = texto.match(/-----BEGIN ([^-]+)-----([\s\S]*?)-----END \1-----/);
+    if (!marcas) {
+      const abre = /-----BEGIN ([^-]+)-----/.exec(texto);
+      return {
+        presente: true,
+        etiqueta: abre?.[1]?.trim() ?? null,
+        caracteres: crudo.length,
+        problema: abre
+          ? 'Falta la línea END: el valor llegó cortado'
+          : 'No tiene las marcas BEGIN/END de un PEM',
+      };
+    }
+    return {
+      presente: true,
+      etiqueta: marcas[1].trim(),
+      caracteres: crudo.length,
+      problema: null,
+    };
+  }
+
+  diagnostico() {
+    const clave = this.inspeccionar(process.env.QZ_PRIVATE_KEY);
+    const cert = this.inspeccionar(process.env.QZ_CERTIFICATE);
+
+    if (!clave.problema && clave.etiqueta && !/PRIVATE KEY/.test(clave.etiqueta)) {
+      clave.problema = `Se esperaba una clave privada y llegó un "${clave.etiqueta}"`;
+    } else if (!clave.problema && !this.tieneClave) {
+      clave.problema = 'El PEM está bien formado pero no se pudo leer como clave RSA';
+    }
+    if (!cert.problema && cert.etiqueta && !/CERTIFICATE/.test(cert.etiqueta)) {
+      cert.problema = `Se esperaba un certificado y llegó un "${cert.etiqueta}"`;
+    }
+
+    return { clave, certificado: cert };
+  }
+
   get configurado(): boolean {
     return this.certificado !== null && this.tieneClave;
   }

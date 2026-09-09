@@ -16,6 +16,7 @@ export class QzController {
       // certificado, sin esperar a que también esté la clave privada
       certificado: this.svc.certificado !== null,
       clave: this.svc.tieneClave,
+      diagnostico: this.svc.diagnostico(),
     };
   }
 

@@ -290,12 +290,21 @@ export async function conectarQz(): Promise<QzApi> {
   return qz;
 }
 
+export interface DiagnosticoPem {
+  presente: boolean;
+  /** Etiqueta del PEM: "PRIVATE KEY", "CERTIFICATE"… */
+  etiqueta: string | null;
+  caracteres: number;
+  problema: string | null;
+}
+
 export interface EstadoFirma {
   /** Certificado y clave presentes: las peticiones salen firmadas. */
   configurado: boolean;
   /** Sólo el certificado. Alcanza para bajar el override.crt. */
   certificado: boolean;
   clave: boolean;
+  diagnostico?: { clave: DiagnosticoPem; certificado: DiagnosticoPem };
 }
 
 export async function estadoFirma(): Promise<EstadoFirma> {
@@ -307,6 +316,7 @@ export async function estadoFirma(): Promise<EstadoFirma> {
       configurado: d.configurado === true,
       certificado: d.certificado === true,
       clave: d.clave === true,
+      diagnostico: d.diagnostico,
     };
   } catch {
     return { configurado: false, certificado: false, clave: false };
