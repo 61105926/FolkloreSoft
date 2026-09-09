@@ -258,24 +258,29 @@ export function ImpresionConfig() {
             {firmaOk === false && (
               <>
                 <p className="text-xs text-amber-700">
-                  QZ va a mostrar <b>«An anonymous request · Untrusted website»</b> al
-                  conectarse y al imprimir. Como salida rápida podés darle <b>Allow</b> con{" "}
-                  <b>Remember this decision</b> tildado y deja de preguntar en esta máquina.
+                  QZ muestra <b>«An anonymous request · Untrusted website»</b> al conectarse y
+                  al imprimir. Como salida rápida podés darle <b>Allow</b> con{" "}
+                  <b>Remember this decision</b> tildado: deja de preguntar, pero sólo en esta
+                  máquina y hasta que se limpie la configuración de QZ.
+                </p>
+                <p className="text-xs text-amber-700 font-semibold">
+                  Para que deje de preguntar de verdad hacen falta dos pasos, y ninguno
+                  alcanza solo:
                 </p>
                 <p className="text-xs text-amber-700">
-                  La solución de fondo es cargar en el servidor las variables{" "}
+                  <b>1. En el servidor</b> — cargar{" "}
                   <code className="font-mono">QZ_PRIVATE_KEY</code> y{" "}
-                  <code className="font-mono">QZ_CERTIFICATE</code>: ahí las peticiones van
-                  firmadas y el sitio deja de ser anónimo en todos los equipos, sin depender
-                  de que alguien haya tildado la casilla.
+                  <code className="font-mono">QZ_CERTIFICATE</code>. Con esto las peticiones
+                  van firmadas y QZ deja de verlas como anónimas: en vez de «anonymous
+                  request» muestra el nombre del negocio. Se hace una sola vez.
                 </p>
                 <p className="text-xs text-amber-700">
-                  Con eso QZ ya identifica al sitio, pero para <b>recordar</b> la decisión
-                  necesita confiar: hay que copiar el certificado como{" "}
+                  <b>2. En cada equipo</b> — copiar el certificado como{" "}
                   <code className="font-mono">override.crt</code> en la carpeta de instalación
-                  de QZ, una vez por equipo. Es el mismo archivo que va en{" "}
-                  <code className="font-mono">QZ_CERTIFICATE</code>, sólo renombrado; una vez
-                  cargado en el servidor lo podés bajar desde acá.
+                  de QZ Tray y reiniciarlo. Sin esto QZ sigue preguntando, porque un
+                  certificado propio lo identifica pero no lo hace confiable. Es el mismo
+                  archivo que va en <code className="font-mono">QZ_CERTIFICATE</code>, sólo
+                  renombrado, y se va a poder descargar desde acá una vez hecho el paso 1.
                 </p>
               </>
             )}
