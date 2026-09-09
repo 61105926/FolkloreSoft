@@ -16,6 +16,11 @@ export interface Ticket {
   tipo: TipoTicket;
   /** HTML del cuerpo del ticket, sin <html> ni <style>: los agrega el envoltorio. */
   cuerpo: string;
+  /**
+   * Mismo ticket en ESC/POS. Se usa cuando se imprime por QZ en modo raw, que
+   * es lo único que puede cortar el papel entre el comprobante y la comanda.
+   */
+  escpos?: string;
 }
 
 export type ModoImpresion = "navegador" | "qz";
@@ -43,6 +48,14 @@ export interface ConfigImpresion {
    * impresoras da texto más nítido.
    */
   rasterizar: boolean;
+  /**
+   * Cómo se manda el ticket cuando se imprime por QZ.
+   *  - "escpos": comandos crudos. Sale nítido en cualquier térmica y corta el
+   *    papel entre tickets. Requiere una impresora compatible con ESC/POS.
+   *  - "html": se rasteriza el mismo HTML de la vista previa. Sirve para
+   *    impresoras que no son térmicas.
+   */
+  formatoQz: "escpos" | "html";
 }
 
 export const CONFIG_IMPRESION_DEFAULT: ConfigImpresion = {
@@ -55,6 +68,7 @@ export const CONFIG_IMPRESION_DEFAULT: ConfigImpresion = {
   comandaActiva: true,
   dpi: 203,
   rasterizar: true,
+  formatoQz: "escpos",
 };
 
 const STORAGE_KEY = "folkloresoft.impresion";
@@ -141,7 +155,7 @@ function estilosTicket(anchoMm: number, paraQz = false): string {
   return `
     @page { size: ${anchoMm}mm auto; margin: ${paraQz ? "0" : "4mm"}; }
     * { box-sizing: border-box; }
-    body { font-family: Arial, sans-serif; font-size: 11px; font-weight: 900; color: #000; margin: 0; ${cuerpo}
+    body { font-family: Arial, sans-serif; font-size: 11px; font-weight: 900; color: #000; margin: 0; ${cuerpo} }
     h2 { font-size: 12px; font-weight: 900; margin: 9px 0 3px; border-bottom: 2px solid #000; padding-bottom: 3px; text-transform: uppercase; letter-spacing: 0.05em; }
     table { width: 100%; border-collapse: collapse; }
     td, th { font-weight: 900; }
@@ -186,13 +200,102 @@ async function cargarQz(): Promise<QzApi> {
   return qzCache;
 }
 
+// ── Firma ─────────────────────────────────────────────────────────────────────
+// Sin firma QZ trata cada trabajo como anónimo y pide autorización en cada
+// ticket. La clave privada vive en el backend; acá sólo se piden el certificado
+// y la firma de cada payload.
+
+/** URL del backend vista desde el navegador (la reescribe next.config). */
+const API = "/api/backend";
+
+let certificadoCache: string | null | undefined;
+
+async function pedirCertificado(): Promise<string> {
+  if (certificadoCache !== undefined) return certificadoCache ?? "";
+  try {
+    const res = await fetch(`${API}/qz/certificate`);
+    const data = res.ok ? ((await res.json()) as { certificado?: string }) : null;
+    certificadoCache = data?.certificado?.trim() || null;
+  } catch {
+    certificadoCache = null;
+  }
+  return certificadoCache ?? "";
+}
+
+async function pedirFirma(datos: string): Promise<string> {
+  try {
+    const res = await fetch(`${API}/qz/sign`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ data: datos }),
+    });
+    if (!res.ok) return "";
+    const data = (await res.json()) as { firma?: string };
+    return data.firma ?? "";
+  } catch {
+    return "";
+  }
+}
+
+let firmaConfigurada = false;
+
+function configurarFirma(qz: QzApi) {
+  if (firmaConfigurada) return;
+  firmaConfigurada = true;
+
+  qz.security.setSignatureAlgorithm("SHA512");
+
+  // Resolver vacío (no rechazar) es lo que le dice a QZ «este pedido va sin
+  // firma». Rechazar lo toma como error de firma y aborta sin preguntar nada.
+  qz.security.setCertificatePromise((resolve: (v: string) => void) => {
+    void pedirCertificado().then(resolve);
+  });
+
+  qz.security.setSignaturePromise((datos: string) =>
+    (resolve: (v: string) => void) => {
+      void pedirFirma(datos).then(resolve);
+    });
+}
+
+/** Mensaje accionable en vez del críptico de la librería. */
+function errorConexion(e: unknown): Error {
+  const detalle = e instanceof Error ? e.message : String(e);
+  if (/unable to establish|connection|websocket/i.test(detalle)) {
+    return new Error(
+      "No se pudo conectar con QZ Tray. Si el programa está abierto, entrá una vez a " +
+      "https://localhost:8181 en este navegador y aceptá la advertencia de seguridad: " +
+      "el certificado de QZ para localhost no viene aceptado de fábrica.",
+    );
+  }
+  return new Error(detalle);
+}
+
 /** Abre la conexión con QZ Tray si todavía no está abierta. */
 export async function conectarQz(): Promise<QzApi> {
   const qz = await cargarQz();
+  configurarFirma(qz);
   if (!qz.websocket.isActive()) {
-    await qz.websocket.connect({ retries: 1, delay: 1 });
+    try {
+      // retries:1 porque QZ recorre 8 puertos antes de rendirse; con 0 la
+      // primera negativa cortaba el barrido.
+      await qz.websocket.connect({ retries: 1, delay: 1 });
+    } catch (e) {
+      throw errorConexion(e);
+    }
   }
   return qz;
+}
+
+/** ¿El backend tiene certificado y clave cargados? */
+export async function firmaDisponible(): Promise<boolean> {
+  try {
+    const res = await fetch(`${API}/qz/estado`);
+    if (!res.ok) return false;
+    const data = (await res.json()) as { configurado?: boolean };
+    return data.configurado === true;
+  } catch {
+    return false;
+  }
 }
 
 export async function listarImpresoras(): Promise<string[]> {
@@ -228,6 +331,24 @@ async function imprimirConQz(tickets: Ticket[], titulo: string, config: ConfigIm
     const impresora = impresoraDe(config, ticket.tipo);
     if (!impresora) throw new Error(`No hay impresora configurada para el ${ticket.tipo}`);
 
+    const copias = copiasDe(config, ticket.tipo);
+
+    // Camino ESC/POS: comandos crudos, sin driver de por medio. Es lo único que
+    // corta el papel entre el comprobante y la comanda.
+    if (config.formatoQz === "escpos" && ticket.escpos) {
+      const cfg = qz.configs.create(impresora, {
+        copies: copias,
+        jobName: `${titulo} · ${ticket.tipo}`,
+      });
+      await qz.print(cfg, [{
+        type: "raw",
+        format: "command",
+        flavor: "plain",
+        data: ticket.escpos,
+      }]);
+      continue;
+    }
+
     const dpi = Math.max(72, Math.round(config.dpi) || 203);
     const cfg = qz.configs.create(impresora, {
       units: "mm",
@@ -241,7 +362,7 @@ async function imprimirConQz(tickets: Ticket[], titulo: string, config: ConfigIm
       fallbackDensity: dpi / 25.4,
       interpolation: "nearest-neighbor",
       colorType: "blackwhite",
-      copies: copiasDe(config, ticket.tipo),
+      copies: copias,
       jobName: `${titulo} · ${ticket.tipo}`,
     });
 

@@ -1,4 +1,5 @@
 import { imprimirTickets, leerConfigImpresion, type Ticket } from "@/lib/impresion";
+import { columnas, TicketEscPos } from "@/lib/escpos";
 
 export interface VentaItemImpresion {
   descripcion: string;
@@ -176,23 +177,128 @@ function comprobanteHtml(v: VentaParaImprimir) {
   <div class="feed"></div>`;
 }
 
+// ── ESC/POS ───────────────────────────────────────────────────────────────────
+
+function encabezadoEscPos(t: TicketEscPos, v: VentaParaImprimir, titulo: string) {
+  t.centrada(v.sucursal?.nombre ?? "DANZA CON ALTURA", { grande: true, negrita: true });
+  t.centrada(v.sucursal?.direccion ?? "CALLE LOS ANDES #1090");
+  t.centrada(`Tel: ${v.sucursal?.telefono ?? "75804700"}`);
+  t.separador("=");
+  t.centrada(titulo, { negrita: true });
+  t.separador("=");
+}
+
+function comprobanteEscPos(v: VentaParaImprimir, anchoMm: number): string {
+  const t = new TicketEscPos(columnas(anchoMm));
+  const saldo = Math.max(0, Number(v.total) - Number(v.total_pagado));
+  const descuento = Number(v.descuento ?? 0);
+
+  encabezadoEscPos(t, v, "Comprobante de Venta");
+  t.par("N. Venta", v.codigo, true);
+  t.par("Fecha", new Date(v.createdAt).toLocaleDateString("es-BO"));
+  t.par("Estado", ESTADO_LABEL[v.estado] ?? v.estado);
+
+  t.linea();
+  t.titulo("Cliente");
+  t.par("Nombre", v.cliente.nombre, true);
+  if (v.cliente.ci) t.par("CI", v.cliente.ci);
+  if (v.cliente.celular) t.par("Celular", v.cliente.celular);
+
+  t.linea();
+  t.titulo("Items");
+  for (const it of v.items) {
+    t.item(
+      it.descripcion,
+      `${it.cantidad} x Bs. ${Number(it.precio_unit).toFixed(2)}`,
+      `Bs. ${Number(it.subtotal).toFixed(2)}`,
+    );
+  }
+  t.separador();
+
+  if (descuento > 0) {
+    t.par("Subtotal", `Bs. ${(Number(v.total) + descuento).toFixed(2)}`);
+    t.par("Descuento", `-Bs. ${descuento.toFixed(2)}`);
+  }
+  t.par("TOTAL", `Bs. ${Number(v.total).toFixed(2)}`, true);
+  t.par("Pagado", `Bs. ${Number(v.total_pagado).toFixed(2)}`);
+  if (v.forma_pago) t.par("Forma de pago", FORMA_PAGO_LABEL[v.forma_pago] ?? v.forma_pago);
+  if (saldo > 0.01) t.par("SALDO PENDIENTE", `Bs. ${saldo.toFixed(2)}`, true);
+  else t.centrada("PAGADO COMPLETO", { negrita: true });
+
+  if (v.observaciones) {
+    t.linea();
+    t.titulo("Observaciones");
+    t.linea(v.observaciones);
+  }
+
+  t.firma(`Firma cliente - ${v.cliente.nombre}`);
+  t.firma("Firma del responsable");
+  t.linea();
+  t.centrada(`Generado el ${new Date().toLocaleString("es-BO")}`);
+  return t.finalizar();
+}
+
+function comandaEscPos(v: VentaParaImprimir, anchoMm: number): string {
+  const t = new TicketEscPos(columnas(anchoMm));
+  const totalUnidades = v.items.reduce((s, it) => s + it.cantidad, 0);
+
+  encabezadoEscPos(t, v, "Comanda - Preparacion");
+  t.par("N. Venta", v.codigo, true);
+  t.par("Cliente", v.cliente.nombre);
+  if (v.cliente.celular) t.par("Celular", v.cliente.celular);
+  t.par("Fecha", new Date(v.createdAt).toLocaleDateString("es-BO"), true);
+  t.par("Estado", ESTADO_LABEL[v.estado] ?? v.estado);
+
+  t.linea();
+  t.titulo("Preparar");
+  if (v.items.length === 0) {
+    t.linea("Sin items cargados");
+  } else {
+    for (const it of v.items) {
+      const { modelo, extras } = detalleItem(it);
+      t.parEnvuelto(`[ ] ${modelo}`, `x${it.cantidad}`, true);
+      if (extras) t.detalle(extras);
+    }
+  }
+  t.separador();
+  t.par("TOTAL UNIDADES", String(totalUnidades), true);
+
+  if (v.observaciones) {
+    t.linea();
+    t.separador("*");
+    t.linea(`OBS: ${v.observaciones}`);
+    t.separador("*");
+  }
+
+  t.firma("Preparado por");
+  t.linea();
+  t.centrada(new Date().toLocaleString("es-BO"));
+  return t.finalizar();
+}
+
 export function imprimirVenta(
   v: VentaParaImprimir,
   opciones?: { comanda?: boolean; soloComanda?: boolean },
 ) {
   const config = leerConfigImpresion();
 
+  const comanda: Ticket = {
+    tipo: "comanda",
+    cuerpo: comandaHtml(v),
+    escpos: comandaEscPos(v, config.anchoMm),
+  };
+
   if (opciones?.soloComanda) {
-    return imprimirTickets(
-      [{ tipo: "comanda", cuerpo: comandaHtml(v) }],
-      `Comanda ${v.codigo}`,
-      config,
-    );
+    return imprimirTickets([comanda], `Comanda ${v.codigo}`, config);
   }
 
   const conComanda = opciones?.comanda ?? config.comandaActiva;
-  const tickets: Ticket[] = [{ tipo: "comprobante", cuerpo: comprobanteHtml(v) }];
-  if (conComanda) tickets.push({ tipo: "comanda", cuerpo: comandaHtml(v) });
+  const tickets: Ticket[] = [{
+    tipo: "comprobante",
+    cuerpo: comprobanteHtml(v),
+    escpos: comprobanteEscPos(v, config.anchoMm),
+  }];
+  if (conComanda) tickets.push(comanda);
 
   return imprimirTickets(tickets, `Venta ${v.codigo}`, config);
 }

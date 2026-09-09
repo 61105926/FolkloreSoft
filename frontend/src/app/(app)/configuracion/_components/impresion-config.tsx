@@ -7,6 +7,7 @@ import {
   imprimirTickets,
   impresoraPorDefecto,
   leerConfigImpresion,
+  firmaDisponible,
   listarImpresoras,
   snapshotConfigImpresion,
   snapshotConfigImpresionServidor,
@@ -66,6 +67,14 @@ export function ImpresionConfig() {
   const [guardado, setGuardado] = useState(false);
   // Cambia en cada click de "Detectar" para relanzar la búsqueda
   const [intento, setIntento] = useState(0);
+  const [firmaOk, setFirmaOk] = useState<boolean | null>(null);
+
+  // Estado de la firma en el backend: sin ella QZ pide autorización por ticket
+  useEffect(() => {
+    let vivo = true;
+    void firmaDisponible().then((ok) => { if (vivo) setFirmaOk(ok); });
+    return () => { vivo = false; };
+  }, []);
 
   const set = <K extends keyof ConfigImpresion>(clave: K, valor: ConfigImpresion[K]) => {
     guardarConfigImpresion({ ...leerConfigImpresion(), [clave]: valor });
@@ -100,6 +109,23 @@ export function ImpresionConfig() {
     })();
     return () => { vivo = false; };
   }, [config.modo, intento]);
+
+  /** Baja el certificado con el nombre que QZ espera, para no explicarlo por teléfono. */
+  const descargarCertificado = async () => {
+    try {
+      const res = await fetch("/api/backend/qz/certificate");
+      const data = (await res.json()) as { certificado?: string };
+      if (!data.certificado) { setAviso("El servidor no tiene certificado cargado."); return; }
+      const url = URL.createObjectURL(new Blob([data.certificado], { type: "application/x-x509-ca-cert" }));
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "override.crt";
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch {
+      setAviso("No se pudo descargar el certificado.");
+    }
+  };
 
   const buscarImpresoras = () => {
     setEstado("buscando");
@@ -221,7 +247,69 @@ export function ImpresionConfig() {
             </div>
           )}
 
-          {/* Calidad de impresión */}
+          {/* Firma */}
+          <div className={`rounded-xl border-2 px-3 py-3 space-y-1.5 ${
+            firmaOk ? "border-emerald-200 bg-emerald-50" : "border-amber-200 bg-amber-50"
+          }`}>
+            <p className={`text-xs font-bold ${firmaOk ? "text-emerald-700" : "text-amber-700"}`}>
+              {firmaOk === null ? "Verificando firma…"
+                : firmaOk ? "Peticiones firmadas" : "Peticiones sin firmar"}
+            </p>
+            {firmaOk === false && (
+              <>
+                <p className="text-xs text-amber-700">
+                  QZ va a pedir autorización en <b>cada impresión</b> y no ofrece recordar la
+                  decisión. Para que deje de preguntar hay que cargar en el servidor las
+                  variables <code className="font-mono">QZ_PRIVATE_KEY</code> y{" "}
+                  <code className="font-mono">QZ_CERTIFICATE</code>.
+                </p>
+                <p className="text-xs text-amber-700">
+                  Con eso QZ ya identifica al sitio, pero para <b>recordar</b> la decisión
+                  necesita confiar: hay que copiar el certificado como{" "}
+                  <code className="font-mono">override.crt</code> en la carpeta de instalación
+                  de QZ, una vez por equipo.
+                </p>
+              </>
+            )}
+            {firmaOk && (
+              <div className="flex items-center justify-between gap-2 flex-wrap">
+                <p className="text-xs text-emerald-700">
+                  Falta copiar el certificado como <code className="font-mono">override.crt</code>{" "}
+                  en la carpeta de QZ Tray de esta máquina para que no vuelva a preguntar.
+                </p>
+                <Button variant="outline" size="sm" onClick={() => void descargarCertificado()}>
+                  Descargar override.crt
+                </Button>
+              </div>
+            )}
+          </div>
+
+          {/* Formato */}
+          <div className="rounded-xl border border-border bg-muted/30 px-3 py-3 space-y-2">
+            <p className="text-xs font-bold">Formato del ticket</p>
+            <div className="grid sm:grid-cols-2 gap-2">
+              {([
+                { valor: "escpos" as const, titulo: "ESC/POS (recomendado)", detalle: "Comandos crudos. Sale nítido en cualquier térmica y corta el papel entre el comprobante y la comanda." },
+                { valor: "html" as const, titulo: "HTML rasterizado", detalle: "Imprime la misma vista previa como imagen. Para impresoras que no son térmicas." },
+              ]).map((op) => (
+                <button
+                  key={op.valor}
+                  onClick={() => set("formatoQz", op.valor)}
+                  className={`text-left rounded-lg border-2 p-2.5 transition-all ${
+                    config.formatoQz === op.valor
+                      ? "border-primary bg-primary/5"
+                      : "border-border hover:border-primary/40"
+                  }`}
+                >
+                  <p className="text-xs font-bold">{op.titulo}</p>
+                  <p className="text-[11px] text-muted-foreground mt-0.5 leading-relaxed">{op.detalle}</p>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Calidad de impresión — sólo aplica al camino HTML */}
+          {config.formatoQz === "html" && (
           <div className="rounded-xl border border-border bg-muted/30 px-3 py-3 space-y-2">
             <p className="text-xs font-bold">Calidad</p>
             <div className="flex items-center gap-3 flex-wrap">
@@ -252,6 +340,7 @@ export function ImpresionConfig() {
               probá destildando <b>Rasterizar</b> para que lo dibuje el driver.
             </p>
           </div>
+          )}
 
           {/* Selección de impresoras */}
           <div className="grid sm:grid-cols-2 gap-4">

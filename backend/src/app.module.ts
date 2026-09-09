@@ -13,6 +13,7 @@ import { ClientesModule } from './clientes/clientes.module.js';
 import { CajaModule } from './caja/caja.module.js';
 import { BotModule } from './bot/bot.module.js';
 import { VentasModule } from './ventas/ventas.module.js';
+import { QzModule } from './qz/qz.module.js';
 import { HealthController } from './health.controller.js';
 
 @Module({
@@ -31,6 +32,7 @@ import { HealthController } from './health.controller.js';
     CajaModule,
     BotModule,
     VentasModule,
+    QzModule,
   ],
   controllers: [HealthController],
 })

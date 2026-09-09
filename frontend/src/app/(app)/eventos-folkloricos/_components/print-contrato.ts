@@ -1,5 +1,6 @@
-import type { Contrato } from "./eventos-client";
+import type { Contrato, ContratoPrenda } from "./eventos-client";
 import { imprimirTickets, leerConfigImpresion, type Ticket } from "@/lib/impresion";
+import { columnas, TicketEscPos } from "@/lib/escpos";
 
 const TIPO_P_LABEL: Record<string, string> = {
   HOMBRE: "Hombre", CHOLITA: "Mujer", MACHA: "Macha", NINO: "Niño", OTRO: "Otro",
@@ -73,6 +74,158 @@ function comandaHtml(c: Contrato) {
       ${new Date().toLocaleString("es-BO")}
     </div>
     <div class="feed"></div>`;
+}
+
+// ── ESC/POS ───────────────────────────────────────────────────────────────────
+
+function encabezadoEscPos(t: TicketEscPos, c: Contrato, titulo: string) {
+  t.centrada(c.sucursal?.nombre ?? "DANZA CON ALTURA", { grande: true, negrita: true });
+  t.centrada(c.sucursal?.direccion ?? "CALLE LOS ANDES #1090");
+  t.centrada(`Tel: ${c.sucursal?.telefono ?? "75804700"}`);
+  t.separador("=");
+  t.centrada(titulo, { negrita: true });
+  t.separador("=");
+}
+
+/** Detalle de talla y color de una prenda, o aviso de que no la tiene. */
+function detallePrenda(p: ContratoPrenda): string {
+  if (!p.variacion) return "SIN TALLA ASIGNADA";
+  return [
+    p.variacion.nombre_variacion,
+    p.variacion.talla ? `T.${p.variacion.talla}` : null,
+    p.variacion.color,
+  ].filter(Boolean).join(" - ");
+}
+
+function comprobanteEscPos(c: Contrato, anchoMm: number): string {
+  const t = new TicketEscPos(columnas(anchoMm));
+  const prendas_ = c.prendas ?? [];
+  const participantes_ = c.participantes ?? [];
+  const garantias_ = c.garantias ?? [];
+  const saldo = (parseFloat(c.total) - parseFloat(c.total_pagado)).toFixed(2);
+  const garantiaEf = garantias_
+    .filter((g) => g.tipo === "EFECTIVO")
+    .reduce((s, g) => s + (g.valor ? parseFloat(String(g.valor)) : 0), 0);
+
+  encabezadoEscPos(t, c, `Contrato ${c.tipo === "RESERVA" ? "de Reserva" : "Directo"}`);
+  t.par("N. Contrato", c.codigo, true);
+  t.par("Fecha", new Date(c.fecha_contrato).toLocaleDateString("es-BO"));
+  t.par("Estado", c.estado.replace(/_/g, " "));
+
+  t.linea();
+  t.titulo("Cliente");
+  t.par("Nombre", c.cliente.nombre, true);
+  if (c.cliente.ci) t.par("CI", c.cliente.ci);
+  if (c.cliente.celular) t.par("Celular", c.cliente.celular);
+
+  t.linea();
+  t.titulo("Tipo de Evento");
+  t.par("Nombre", c.nombre_evento_ext ?? c.evento?.nombre ?? "-");
+  if (c.institucion) t.par("Institucion", c.institucion);
+  if (c.ubicacion) t.par("Lugar", c.ubicacion);
+  t.par("Entrega", new Date(c.fecha_entrega).toLocaleDateString("es-BO"));
+  t.par("Devolucion", new Date(c.fecha_devolucion).toLocaleDateString("es-BO"));
+
+  if (prendas_.length > 0) {
+    t.linea();
+    t.titulo("Items");
+    for (const p of prendas_) {
+      const cant = (p.cantidad_hombres ?? 0) + (p.cantidad_cholitas ?? 0)
+        + (p.cantidad_machas ?? 0) + (p.cantidad_ninos ?? 0);
+      t.item(
+        p.modelo,
+        `${detallePrenda(p)}  |  ${cant} x Bs. ${parseFloat(p.costo_unitario).toFixed(2)}`,
+        `Bs. ${parseFloat(p.subtotal).toFixed(2)}`,
+      );
+    }
+    t.separador();
+  }
+
+  if (participantes_.length > 0) {
+    t.linea();
+    t.titulo("Participantes");
+    for (const p of participantes_) {
+      const prenda = prendas_.find((pr) => pr.id === p.prendaId);
+      t.par(p.nombre, prenda?.modelo ?? "-");
+      if (p.ci) t.linea(`   CI: ${p.ci}`);
+    }
+  }
+
+  if (garantias_.length > 0) {
+    t.linea();
+    t.titulo("Garantias");
+    for (const g of garantias_.filter((x) => x.tipo !== "EFECTIVO")) {
+      const label = g.tipo === "DOCUMENTO_CARNET" ? "Documento / Carnet"
+        : g.tipo === "CARTA_INSTITUCIONAL" ? "Carta institucional"
+        : g.tipo.replace(/_/g, " ");
+      const valor = g.valor ? `Bs. ${parseFloat(String(g.valor)).toFixed(2)}` : (g.descripcion || "Retenido");
+      t.par(label, valor);
+    }
+    if (garantiaEf > 0) t.par("Efectivo (a devolver)", `Bs. ${garantiaEf.toFixed(2)}`);
+  }
+
+  t.linea();
+  t.titulo("Resumen Financiero");
+  t.par("Total contrato", `Bs. ${parseFloat(c.total).toFixed(2)}`, true);
+  if (c.tipo === "RESERVA") t.par("Anticipo pactado", `Bs. ${parseFloat(c.anticipo).toFixed(2)}`);
+  t.par("Total pagado", `Bs. ${parseFloat(c.total_pagado).toFixed(2)}`);
+  if (c.forma_pago) t.par("Forma de pago", c.forma_pago);
+  t.par("SALDO PENDIENTE", `Bs. ${saldo}`, true);
+
+  if (c.observaciones) {
+    t.linea();
+    t.titulo("Observaciones");
+    t.linea(c.observaciones);
+  }
+  if (c.condiciones) {
+    t.linea();
+    t.titulo("Condiciones");
+    t.linea(c.condiciones);
+  }
+
+  t.firma(`Firma cliente - ${c.cliente.nombre}`);
+  t.firma("Firma del responsable");
+  t.linea();
+  t.centrada(`Generado el ${new Date().toLocaleString("es-BO")}`);
+  return t.finalizar();
+}
+
+function comandaEscPos(c: Contrato, anchoMm: number): string {
+  const t = new TicketEscPos(columnas(anchoMm));
+  const prendas_ = c.prendas ?? [];
+  const totalUnidades = prendas_.reduce((s, p) => s + p.total, 0);
+
+  encabezadoEscPos(t, c, "Comanda - Preparacion");
+  t.par("N. Contrato", c.codigo, true);
+  t.par("Cliente", c.cliente.nombre);
+  t.par("Entrega", new Date(c.fecha_entrega).toLocaleDateString("es-BO"), true);
+  t.par("Devolucion", new Date(c.fecha_devolucion).toLocaleDateString("es-BO"));
+  if (c.ubicacion) t.par("Lugar", c.ubicacion);
+
+  t.linea();
+  t.titulo("Preparar");
+  if (prendas_.length === 0) {
+    t.linea("Sin prendas cargadas");
+  } else {
+    for (const p of prendas_) {
+      t.parEnvuelto(`[ ] ${p.modelo}`, `x${p.total}`, true);
+      t.detalle(detallePrenda(p));
+    }
+  }
+  t.separador();
+  t.par("TOTAL UNIDADES", String(totalUnidades), true);
+
+  if (c.observaciones) {
+    t.linea();
+    t.separador("*");
+    t.linea(`OBS: ${c.observaciones}`);
+    t.separador("*");
+  }
+
+  t.firma("Preparado por");
+  t.linea();
+  t.centrada(new Date().toLocaleString("es-BO"));
+  return t.finalizar();
 }
 
 export function imprimirContrato(c: Contrato, opciones?: { comanda?: boolean }) {
@@ -211,8 +364,18 @@ export function imprimirContrato(c: Contrato, opciones?: { comanda?: boolean }) 
   </div>
   <div class="feed"></div>`;
 
-  const tickets: Ticket[] = [{ tipo: "comprobante", cuerpo: comprobante }];
-  if (conComanda) tickets.push({ tipo: "comanda", cuerpo: comandaHtml(c) });
+  const tickets: Ticket[] = [{
+    tipo: "comprobante",
+    cuerpo: comprobante,
+    escpos: comprobanteEscPos(c, config.anchoMm),
+  }];
+  if (conComanda) {
+    tickets.push({
+      tipo: "comanda",
+      cuerpo: comandaHtml(c),
+      escpos: comandaEscPos(c, config.anchoMm),
+    });
+  }
 
   return imprimirTickets(tickets, `Contrato ${c.codigo}`, config);
 }
