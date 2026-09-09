@@ -13,6 +13,10 @@ services:
       JWT_SECRET: ${JWT_SECRET}
       JWT_ACCESS_EXPIRES_IN: ${JWT_ACCESS_EXPIRES_IN:-15m}
       FRONTEND_URL: ${FRONTEND_URL}
+      # Firma de peticiones para QZ Tray. Sin estas dos, QZ pide autorización
+      # en cada impresión. Ver Configuración → Impresión en la app.
+      QZ_PRIVATE_KEY: ${QZ_PRIVATE_KEY:-}
+      QZ_CERTIFICATE: ${QZ_CERTIFICATE:-}
       PORT: 4002
     expose:
       - "4002"
