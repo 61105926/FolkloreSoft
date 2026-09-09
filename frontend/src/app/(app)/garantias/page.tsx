@@ -19,6 +19,7 @@ export default async function GarantiasPage() {
       tipo: "EFECTIVO" | "DOCUMENTO_CARNET" | "CARTA_INSTITUCIONAL" | "OTRO";
       descripcion: string | null;
       valor: string | null;
+      cantidad: number | null;
       retenida: boolean;
       motivo_retencion: string | null;
       createdAt: string;

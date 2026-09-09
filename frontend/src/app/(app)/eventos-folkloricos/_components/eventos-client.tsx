@@ -46,6 +46,8 @@ export interface ContratoGarantia {
   participante?: { id: number; nombre: string } | null;
   tipo: TipoGarantia;
   descripcion: string | null; valor: string | null;
+  /** Cuántos documentos se retuvieron. No aplica a EFECTIVO. */
+  cantidad: number | null;
   retenida: boolean; motivo_retencion: string | null; createdAt: string;
 }
 

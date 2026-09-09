@@ -155,6 +155,7 @@ export class ContratosService {
       tipo: TipoGarantia;
       descripcion?: string;
       valor?: number;
+      cantidad?: number;
       participanteId?: number;
     }[];
   }, actor?: { id?: number; nombre?: string; sucursalId?: number | null }) {
@@ -765,6 +766,7 @@ export class ContratosService {
     tipo: TipoGarantia;
     descripcion?: string;
     valor?: number;
+    cantidad?: number;
     participanteId?: number;
   }) {
     const g = await this.prisma.contratoGarantia.create({

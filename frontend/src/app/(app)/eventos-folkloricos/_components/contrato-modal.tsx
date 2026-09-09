@@ -494,10 +494,18 @@ export function ContratoModal({
     const g = contractGarantias.find((g) => g.tipo === "DOCUMENTO_CARNET");
     return g?.valor ? String(parseFloat(String(g.valor))) : "";
   });
+  const [gCarnetCant, setGCarnetCant] = useState(() => {
+    const g = contractGarantias.find((g) => g.tipo === "DOCUMENTO_CARNET");
+    return g?.cantidad ? String(g.cantidad) : "1";
+  });
   const [gCarta, setGCarta] = useState(() => contractGarantias.some((g) => g.tipo === "CARTA_INSTITUCIONAL"));
   const [gCartaMonto, setGCartaMonto] = useState(() => {
     const g = contractGarantias.find((g) => g.tipo === "CARTA_INSTITUCIONAL");
     return g?.valor ? String(parseFloat(String(g.valor))) : "";
+  });
+  const [gCartaCant, setGCartaCant] = useState(() => {
+    const g = contractGarantias.find((g) => g.tipo === "CARTA_INSTITUCIONAL");
+    return g?.cantidad ? String(g.cantidad) : "1";
   });
 
   // ── Live participants + contract garantías (edit mode) ─────────────────────
@@ -650,7 +658,7 @@ export function ContratoModal({
   // ── Edit-mode: toggle a contract-level guarantee via API ───────────────────
   const toggleContractGarantia = async (
     tipo: TipoGarantia,
-    opts?: { valor?: number; descripcion?: string }
+    opts?: { valor?: number; descripcion?: string; cantidad?: number }
   ) => {
     const cid = fullContrato?.id ?? contrato?.id;
     if (!cid) return;
@@ -972,8 +980,8 @@ export function ContratoModal({
         const activePrendas = prendas.filter((p) => !p.deleted && p.modelo.trim());
         const garantiasToSubmit = [
           ...(gEfectivo ? [{ tipo: "EFECTIVO" as TipoGarantia, valor: gEfectivoMonto ? parseFloat(gEfectivoMonto) : undefined, descripcion: gEfectivoFormaPago || undefined }] : []),
-          ...(gCarnet ? [{ tipo: "DOCUMENTO_CARNET" as TipoGarantia, valor: gCarnetMonto ? parseFloat(gCarnetMonto) : undefined }] : []),
-          ...(gCarta  ? [{ tipo: "CARTA_INSTITUCIONAL" as TipoGarantia, valor: gCartaMonto ? parseFloat(gCartaMonto) : undefined }] : []),
+          ...(gCarnet ? [{ tipo: "DOCUMENTO_CARNET" as TipoGarantia, valor: gCarnetMonto ? parseFloat(gCarnetMonto) : undefined, cantidad: gCarnetCant ? parseInt(gCarnetCant) : undefined }] : []),
+          ...(gCarta  ? [{ tipo: "CARTA_INSTITUCIONAL" as TipoGarantia, valor: gCartaMonto ? parseFloat(gCartaMonto) : undefined, cantidad: gCartaCant ? parseInt(gCartaCant) : undefined }] : []),
         ];
 
         const res = await fetch(`${backendUrl}/contratos`, {
@@ -1661,21 +1669,34 @@ export function ContratoModal({
                         </label>
                         {checked && (
                           <div className="pl-7 space-y-2">
-                            <div className="space-y-1">
-                              <label className="text-[10px] text-muted-foreground font-medium uppercase tracking-wide">Cantidad (Bs.)</label>
-                              <input
-                                type="number" min="0"
-                                className={`${inp} text-sm w-full`}
-                                placeholder="0"
-                                value={liveCarnet?.valor ? String(parseFloat(String(liveCarnet.valor))) : gCarnetMonto}
-                                readOnly={!!liveCarnet}
-                                onChange={(e) => setGCarnetMonto(e.target.value)}
-                              />
+                            <div className="grid grid-cols-2 gap-2">
+                              <div className="space-y-1">
+                                <label className="text-[10px] text-muted-foreground font-medium uppercase tracking-wide">Cantidad</label>
+                                <input
+                                  type="number" min="1" step="1"
+                                  className={`${inp} text-sm w-full`}
+                                  placeholder="1"
+                                  value={liveCarnet?.cantidad ? String(liveCarnet.cantidad) : gCarnetCant}
+                                  readOnly={!!liveCarnet}
+                                  onChange={(e) => setGCarnetCant(e.target.value)}
+                                />
+                              </div>
+                              <div className="space-y-1">
+                                <label className="text-[10px] text-muted-foreground font-medium uppercase tracking-wide">Monto declarado (Bs.)</label>
+                                <input
+                                  type="number" min="0" step="0.01"
+                                  className={`${inp} text-sm w-full`}
+                                  placeholder="Opcional"
+                                  value={liveCarnet?.valor ? String(parseFloat(String(liveCarnet.valor))) : gCarnetMonto}
+                                  readOnly={!!liveCarnet}
+                                  onChange={(e) => setGCarnetMonto(e.target.value)}
+                                />
+                              </div>
                             </div>
                             {isEdit && !liveCarnet && (
                               <button
                                 onClick={async () => {
-                                  await toggleContractGarantia("DOCUMENTO_CARNET", { valor: gCarnetMonto ? parseFloat(gCarnetMonto) : undefined });
+                                  await toggleContractGarantia("DOCUMENTO_CARNET", { valor: gCarnetMonto ? parseFloat(gCarnetMonto) : undefined, cantidad: gCarnetCant ? parseInt(gCarnetCant) : undefined });
                                   setGCarnet(false); setGCarnetMonto("");
                                 }}
                                 disabled={savingGarantia}
@@ -1724,21 +1745,34 @@ export function ContratoModal({
                         </label>
                         {checked && (
                           <div className="pl-7 space-y-2">
-                            <div className="space-y-1">
-                              <label className="text-[10px] text-muted-foreground font-medium uppercase tracking-wide">Cantidad (Bs.)</label>
-                              <input
-                                type="number" min="0"
-                                className={`${inp} text-sm w-full`}
-                                placeholder="0"
-                                value={liveCarta?.valor ? String(parseFloat(String(liveCarta.valor))) : gCartaMonto}
-                                readOnly={!!liveCarta}
-                                onChange={(e) => setGCartaMonto(e.target.value)}
-                              />
+                            <div className="grid grid-cols-2 gap-2">
+                              <div className="space-y-1">
+                                <label className="text-[10px] text-muted-foreground font-medium uppercase tracking-wide">Cantidad</label>
+                                <input
+                                  type="number" min="1" step="1"
+                                  className={`${inp} text-sm w-full`}
+                                  placeholder="1"
+                                  value={liveCarta?.cantidad ? String(liveCarta.cantidad) : gCartaCant}
+                                  readOnly={!!liveCarta}
+                                  onChange={(e) => setGCartaCant(e.target.value)}
+                                />
+                              </div>
+                              <div className="space-y-1">
+                                <label className="text-[10px] text-muted-foreground font-medium uppercase tracking-wide">Monto declarado (Bs.)</label>
+                                <input
+                                  type="number" min="0" step="0.01"
+                                  className={`${inp} text-sm w-full`}
+                                  placeholder="Opcional"
+                                  value={liveCarta?.valor ? String(parseFloat(String(liveCarta.valor))) : gCartaMonto}
+                                  readOnly={!!liveCarta}
+                                  onChange={(e) => setGCartaMonto(e.target.value)}
+                                />
+                              </div>
                             </div>
                             {isEdit && !liveCarta && (
                               <button
                                 onClick={async () => {
-                                  await toggleContractGarantia("CARTA_INSTITUCIONAL", { valor: gCartaMonto ? parseFloat(gCartaMonto) : undefined });
+                                  await toggleContractGarantia("CARTA_INSTITUCIONAL", { valor: gCartaMonto ? parseFloat(gCartaMonto) : undefined, cantidad: gCartaCant ? parseInt(gCartaCant) : undefined });
                                   setGCarta(false); setGCartaMonto("");
                                 }}
                                 disabled={savingGarantia}

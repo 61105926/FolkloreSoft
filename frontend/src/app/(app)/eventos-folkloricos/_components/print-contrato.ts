@@ -1,4 +1,4 @@
-import type { Contrato, ContratoPrenda } from "./eventos-client";
+import type { Contrato, ContratoGarantia, ContratoPrenda } from "./eventos-client";
 import { imprimirTickets, leerConfigImpresion, type Ticket } from "@/lib/impresion";
 import { columnas, TicketEscPos } from "@/lib/escpos";
 
@@ -74,6 +74,25 @@ function comandaHtml(c: Contrato) {
       ${new Date().toLocaleString("es-BO")}
     </div>
     <div class="feed"></div>`;
+}
+
+/**
+ * Texto de una garantía documental: cantidad y monto son datos distintos.
+ * Antes competían por `valor` y un contrato con 1 carnet se imprimía "Bs. 1.00".
+ */
+function valorGarantia(g: ContratoGarantia): string {
+  const partes: string[] = [];
+  if (g.cantidad && g.cantidad > 0) {
+    const unidad = g.tipo === "CARTA_INSTITUCIONAL"
+      ? (g.cantidad === 1 ? "carta" : "cartas")
+      : (g.cantidad === 1 ? "documento" : "documentos");
+    partes.push(`${g.cantidad} ${unidad}`);
+  }
+  if (g.valor && parseFloat(String(g.valor)) > 0) {
+    partes.push(`Bs. ${parseFloat(String(g.valor)).toFixed(2)}`);
+  }
+  if (partes.length === 0) return g.descripcion || "Retenido";
+  return partes.join(" · ");
 }
 
 // ── ESC/POS ───────────────────────────────────────────────────────────────────
@@ -158,8 +177,7 @@ function comprobanteEscPos(c: Contrato, anchoMm: number): string {
       const label = g.tipo === "DOCUMENTO_CARNET" ? "Documento / Carnet"
         : g.tipo === "CARTA_INSTITUCIONAL" ? "Carta institucional"
         : g.tipo.replace(/_/g, " ");
-      const valor = g.valor ? `Bs. ${parseFloat(String(g.valor)).toFixed(2)}` : (g.descripcion || "Retenido");
-      t.par(label, valor);
+      t.par(label, valorGarantia(g));
     }
     if (garantiaEf > 0) t.par("Efectivo (a devolver)", `Bs. ${garantiaEf.toFixed(2)}`);
   }
@@ -326,11 +344,7 @@ export function imprimirContrato(c: Contrato, opciones?: { comanda?: boolean }) 
   <table><tbody>
     ${garantiasOtras.map((g) => {
       const label = g.tipo === "DOCUMENTO_CARNET" ? "Documento / Carnet" : g.tipo === "CARTA_INSTITUCIONAL" ? "Carta institucional" : g.tipo.replace(/_/g, " ");
-      // Carnet y carta guardan el monto declarado en `valor` y no llevan descripción
-      const valor = g.valor
-        ? `Bs. ${parseFloat(String(g.valor)).toFixed(2)}`
-        : (g.descripcion || "Retenido");
-      return row(label, valor);
+      return row(label, valorGarantia(g));
     }).join("")}
     ${garantiaEf > 0 ? row("Efectivo (a devolver)", `Bs. ${garantiaEf.toFixed(2)}`) : ""}
   </tbody></table>

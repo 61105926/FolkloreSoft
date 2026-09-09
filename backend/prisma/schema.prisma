@@ -389,7 +389,11 @@ model ContratoGarantia {
   participanteId   Int?
   tipo             TipoGarantia
   descripcion      String?
+  /// Monto declarado. En EFECTIVO es la plata retenida; en documentos, el valor
+  /// que se les asigna como respaldo.
   valor            Decimal?              @db.Decimal(10, 2)
+  /// Cuántos documentos se retuvieron (2 carnets, 1 carta). No aplica a EFECTIVO.
+  cantidad         Int?
   retenida         Boolean               @default(false)
   motivo_retencion String?
   createdAt        DateTime              @default(now())

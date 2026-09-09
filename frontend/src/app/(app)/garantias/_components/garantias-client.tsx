@@ -13,6 +13,7 @@ interface Garantia {
   tipo: TipoGarantia;
   descripcion: string | null;
   valor: string | null;
+  cantidad: number | null;
   retenida: boolean;
   motivo_retencion: string | null;
   createdAt: string;
@@ -170,9 +171,14 @@ export function GarantiasClient({ initialGarantias }: Props) {
                     {g.descripcion ?? "—"}
                   </td>
                   <td className="px-4 py-3 hidden sm:table-cell">
-                    {g.valor
-                      ? <span className="font-semibold text-emerald-700">Bs. {parseFloat(g.valor).toLocaleString("es-BO", { minimumFractionDigits: 2 })}</span>
-                      : <span className="text-gray-400 font-medium">—</span>}
+                    {/* Cantidad de documentos y monto declarado son datos distintos */}
+                    {g.cantidad || g.valor ? (
+                      <span className="font-semibold text-emerald-700">
+                        {g.cantidad ? `${g.cantidad} ${g.cantidad === 1 ? "doc." : "docs."}` : ""}
+                        {g.cantidad && g.valor ? " · " : ""}
+                        {g.valor ? `Bs. ${parseFloat(g.valor).toLocaleString("es-BO", { minimumFractionDigits: 2 })}` : ""}
+                      </span>
+                    ) : <span className="text-gray-400 font-medium">—</span>}
                   </td>
                   <td className="px-4 py-3">
                     <p className="font-mono font-bold text-xs text-gray-800">{g.contrato.codigo}</p>
