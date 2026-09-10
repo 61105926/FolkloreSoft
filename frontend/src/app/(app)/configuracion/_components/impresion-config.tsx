@@ -307,10 +307,19 @@ export function ImpresionConfig() {
             )}
 
             {firma?.configurado && (
-              <p className="text-xs text-emerald-700">
-                Falta el paso 2: copiar el <code className="font-mono">override.crt</code> en
-                la carpeta de instalación de QZ Tray de cada equipo y reiniciarlo.
-              </p>
+              <>
+                <p className="text-xs text-emerald-700">
+                  QZ ya identifica al sitio: en vez de «anonymous request» muestra el nombre
+                  del negocio y «Verified by QZ Industries».
+                </p>
+                <p className="text-xs text-emerald-700">
+                  En cada equipo nuevo queda copiar el{" "}
+                  <code className="font-mono">override.crt</code> en la carpeta de instalación
+                  de QZ Tray y reiniciarlo. La primera vez QZ pide autorización una sola vez:
+                  tildá <b>Remember this decision</b> y dale <b>Allow</b>. Si el botón está
+                  gris, esperá un segundo — QZ lo deshabilita a propósito.
+                </p>
+              </>
             )}
 
             {/* Descarga del certificado: siempre a mano, es lo que hay que llevar
