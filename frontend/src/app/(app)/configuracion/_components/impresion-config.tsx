@@ -83,10 +83,11 @@ export function ImpresionConfig() {
     setTimeout(() => setGuardado(false), 1800);
   };
 
-  // Busca impresoras al entrar en modo QZ y cada vez que se pide reintentar.
-  // Los setState viven dentro del async, no en el cuerpo del efecto.
+  // Busca impresoras sólo cuando se pide explícitamente (intento > 0).
+  // Hacerlo al abrir la pantalla disparaba el diálogo de autorización de QZ
+  // cada vez que alguien entraba a Configuración, sin haber pedido nada.
   useEffect(() => {
-    if (config.modo !== "qz") return;
+    if (config.modo !== "qz" || intento === 0) return;
     let vivo = true;
     void (async () => {
       try {
@@ -409,7 +410,7 @@ export function ImpresionConfig() {
                   className="w-full px-3 py-2 rounded-xl border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 disabled:opacity-50"
                 >
                   <option value="">
-                    {impresoras.length === 0 ? "Detectá las impresoras primero" : "— Sin asignar —"}
+                    {impresoras.length === 0 ? "Tocá «Detectar impresoras»" : "— Sin asignar —"}
                   </option>
                   {impresoras.map((p) => <option key={p} value={p}>{p}</option>)}
                 </select>
