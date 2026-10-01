@@ -3,7 +3,7 @@ import { LoginForm } from "./_components/login-form";
 export default function LoginPage() {
   return (
     <main className="min-h-screen flex">
-      {/* Left panel — atmospheric Bolivian folklore */}
+      {/* Panel izquierdo — presentación de la marca */}
       <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden flex-col items-center justify-center bg-graphite">
         {/* Aguayo stripe band top */}
         <div className="aguayo-stripe absolute top-0 left-0 w-full h-2" />
@@ -33,25 +33,29 @@ export default function LoginPage() {
           {/* Logo mark */}
           <div className="mb-6 flex justify-center">
             <div className="w-20 h-20 rounded-2xl bg-crimson flex items-center justify-center shadow-2xl">
-              <span className="text-white font-bold text-3xl" style={{ fontFamily: "var(--font-outfit)" }}>
-                F
+              <span className="text-white font-bold text-3xl tracking-tight" style={{ fontFamily: "var(--font-outfit)" }}>
+                EV
               </span>
             </div>
           </div>
 
+          <p className="text-gold text-sm font-semibold uppercase tracking-[0.2em] mb-2">
+            Diseñador
+          </p>
           <h1
-            className="text-5xl font-bold text-white mb-4 tracking-tight"
+            className="text-4xl font-bold text-white mb-4 tracking-tight"
             style={{ fontFamily: "var(--font-outfit)" }}
           >
-            FOLCKLORE
+            Edwin Velasquez
           </h1>
 
           <div className="aguayo-stripe w-24 h-1 mx-auto mb-6 rounded-full" />
 
           <p className="text-gray-300 text-lg leading-relaxed">
-            Sistema de gestión de ropa folklórica boliviana.
+            Sistema de gestión de trajes folklóricos en danzas bolivianas.
             <br />
-            <span className="text-gold font-semibold">Tradición y profesionalismo</span> en un solo lugar.
+            <span className="text-gold font-semibold">Tradición y profesionalismo</span> en un solo lugar,
+            junto a Danza Con Altura.
           </p>
 
           {/* Decorative dances list */}
@@ -78,13 +82,19 @@ export default function LoginPage() {
         {/* Mobile logo */}
         <div className="lg:hidden mb-8 text-center">
           <div className="inline-flex w-14 h-14 rounded-xl bg-crimson items-center justify-center mb-3">
-            <span className="text-white font-bold text-2xl" style={{ fontFamily: "var(--font-outfit)" }}>
-              F
+            <span className="text-white font-bold text-xl tracking-tight" style={{ fontFamily: "var(--font-outfit)" }}>
+              EV
             </span>
           </div>
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">
+            Diseñador
+          </p>
           <h1 className="text-2xl font-bold tracking-tight text-graphite" style={{ fontFamily: "var(--font-outfit)" }}>
-            FOLCKLORE
+            Edwin Velasquez
           </h1>
+          <p className="text-xs text-muted-foreground mt-1">
+            Trajes folklóricos · Danza Con Altura
+          </p>
         </div>
 
         <div className="w-full max-w-sm">
@@ -103,7 +113,7 @@ export default function LoginPage() {
           <LoginForm />
 
           <p className="mt-6 text-center text-xs text-muted-foreground">
-            © {new Date().getFullYear()} FOLCKLORE · Bolivia
+            © {new Date().getFullYear()} Diseñador Edwin Velasquez · Bolivia
           </p>
         </div>
       </div>
