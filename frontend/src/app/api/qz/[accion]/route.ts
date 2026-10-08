@@ -1,5 +1,5 @@
-import { cookies } from "next/headers";
 import { NextResponse, type NextRequest } from "next/server";
+import { COOKIE_ACCESS, tokenDeSesion } from "@/lib/sesion-servidor";
 
 /**
  * Puente hacia los endpoints de firma de QZ.
@@ -24,7 +24,7 @@ async function manejar(req: NextRequest, accion: string) {
     return NextResponse.json({ message: "Acción desconocida" }, { status: 404 });
   }
 
-  const token = (await cookies()).get("accessToken")?.value;
+  const { token, renovado } = await tokenDeSesion();
   const headers = new Headers();
   if (token) headers.set("authorization", `Bearer ${token}`);
   headers.set("content-type", "application/json");
@@ -39,10 +39,12 @@ async function manejar(req: NextRequest, accion: string) {
       cache: "no-store",
     });
     const texto = await res.text();
-    return new NextResponse(texto, {
+    const respuesta = new NextResponse(texto, {
       status: res.status,
       headers: { "content-type": res.headers.get("content-type") ?? "application/json" },
     });
+    if (renovado) respuesta.cookies.set("accessToken", renovado, COOKIE_ACCESS);
+    return respuesta;
   } catch {
     return NextResponse.json({ message: "Backend no disponible" }, { status: 503 });
   }
