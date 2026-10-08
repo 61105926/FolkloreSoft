@@ -59,7 +59,11 @@ export async function middleware(request: NextRequest) {
 
       if (res.ok) {
         const body = (await res.json()) as { accessToken: string };
-        const response = NextResponse.next();
+        // Escribirlo también en la petición: si sólo va en la respuesta, el
+        // render de esta misma navegación sigue leyendo la cookie vencida y la
+        // pantalla carga vacía hasta que el usuario recarga.
+        request.cookies.set("accessToken", body.accessToken);
+        const response = NextResponse.next({ request });
         response.cookies.set("accessToken", body.accessToken, {
           httpOnly: true,
           secure: process.env.COOKIE_SECURE === "true",
